@@ -1,4 +1,4 @@
-module Parser where
+module Syntax.Parser where
 
 import Control.Monad (void)
 import Text.Megaparsec
