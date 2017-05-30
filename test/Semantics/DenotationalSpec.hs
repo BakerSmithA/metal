@@ -104,3 +104,11 @@ stmValSpec = do
                 let cond = Not (Eq Read (Literal '#'))
                     loop = While cond MoveRight
                 stmVal loop testConfig `shouldBeAt` 3
+
+            it "breaks by rejecting" $ do
+                let loop = While TRUE Reject
+                stmVal loop `shouldReject` testConfig
+
+            it "breaks by accepting" $ do
+                let loop = While TRUE Accept
+                stmVal loop `shouldAccept` testConfig

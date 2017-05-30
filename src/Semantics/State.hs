@@ -14,7 +14,6 @@ type Tape = Pos -> TapeSymbol
 initialTape :: Tape
 initialTape p = ' '
 
-
 -- An environment for functions, i.e. a mapping from function names to the body
 -- of that function.
 type EnvF = FuncName -> Stm
