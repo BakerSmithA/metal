@@ -65,6 +65,7 @@ cond p b1 b2 c = if p c then b1 c else b2 c
 
 -- Evaulates a while loop with condition `b` and body `stm`.
 while :: Bexp -> Stm -> Config -> State
+--while b stm = stmVal stm
 while b stm = fix f where
     f g = cond (bexpVal b) (\c -> stmVal stm c >>= g) return
 
@@ -97,6 +98,7 @@ printStr s = return
 stmVal :: Stm -> Config -> State
 stmVal (MoveLeft)           = moveLeft
 stmVal (MoveRight)          = moveRight
+stmVal (Write s)            = write s
 stmVal (Reject)             = \c -> HaltR
 stmVal (Accept)             = \c -> HaltA
 stmVal (If b stm)           = cond (bexpVal b) (stmVal stm) return
