@@ -19,15 +19,19 @@ executable Turing
   main-is:             Main.hs
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.9 && <4.10, megaparsec >=5.2 && <5.3
+  build-depends:       base >=4.9 && <4.10
+                     , megaparsec >=5.2 && <5.3
   hs-source-dirs:      src
   default-language:    Haskell2010
 
 test-suite spec
   type:                exitcode-stdio-1.0
   main-is:             Tests.hs
-  hs-source-dirs:      test
+  hs-source-dirs:      src, test
   ghc-options:         -Wall
-  build-depends:       base == 4.* , hspec == 2.*
+  build-depends:       base == 4.*
+                     , hspec == 2.*
+                     , hspec-megaparsec
+                     , megaparsec >=5.2 && <5.3
   other-modules:       Syntax.ParserSpec
   default-language:    Haskell2010
