@@ -17,8 +17,28 @@ type EnvF = FuncName -> Stm
 -- specification by ommitting the output in the state.
 type Config = (Tape, Pos, EnvF)
 
--- `ProgState` allows for special accept and reject states, as well an
+-- A type that llows for special accept and reject states, as well an
 -- intermediate states.
-data ProgState = Inter Config
-               | HaltR
-               | HaltA
+data ProgState a = Inter a
+                 | HaltR
+                 | HaltA
+
+instance Functor ProgState where
+    -- fmap :: (a -> b) -> State a -> State b
+    fmap f (Inter x) = Inter (f x)
+    fmap f (HaltR)   = HaltR
+    fmap f (HaltA)   = HaltA
+
+instance Applicative ProgState where
+    -- pure :: a -> State a
+    pure = Inter
+    -- (<*>) :: State (a -> b) -> State a -> State b
+    (Inter f) <*> s = fmap f s
+
+instance Monad ProgState where
+    -- (>>=) :: State a -> (a -> State b) -> State b
+    (Inter x) >>= f = f x
+    (HaltR)   >>= f = HaltR
+    (HaltA)   >>= f = HaltA
+
+type State = ProgState Config
