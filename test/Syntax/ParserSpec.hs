@@ -1,5 +1,6 @@
-module Syntax.ParserSpec where
+module Syntax.ParserSpec (parserSpec) where
 
+import Syntax.Tree
 import Syntax.Parser
 
 import Text.Megaparsec
@@ -45,17 +46,11 @@ tapeSymbolSpec = do
         it "parses digits" $ do
             parse tapeSymbol "" "1" `shouldParse` '1'
 
-        it "parses a plus symbol" $ do
+        it "parses a ASCII symbols" $ do
             parse tapeSymbol "" "+" `shouldParse` '+'
-
-        it "parses a division symbol" $ do
-            parse tapeSymbol "" "/" `shouldParse` '/'
-
-        it "fails to parse various symbols" $ do
-            parse tapeSymbol "" `shouldFailOn` "="
-            parse tapeSymbol "" `shouldFailOn` "-"
-            parse tapeSymbol "" `shouldFailOn` ";"
-            parse tapeSymbol "" `shouldFailOn` "|"
+            parse tapeSymbol "" "#" `shouldParse` '#'
+            parse tapeSymbol "" "<" `shouldParse` '<'
+            parse tapeSymbol "" "{" `shouldParse` '{'
 
 derivedSymbolSpec :: Spec
 derivedSymbolSpec = do
