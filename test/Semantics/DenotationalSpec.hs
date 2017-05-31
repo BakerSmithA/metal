@@ -46,7 +46,8 @@ denotationalSpec :: Spec
 denotationalSpec = do
     derivedSymbolValSpec
     bexpValSpec
-    stmValSpec
+    evalIfSpec
+    evalStmSpec
 
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
@@ -108,72 +109,78 @@ bexpValSpec = do
             bexpVal (Le (Literal 'C') (Literal 'B')) testConfig `shouldBe` False
             bexpVal (Le (Literal '?') (Literal '=')) testConfig `shouldBe` False
 
-stmValSpec :: Spec
-stmValSpec = do
-    describe "stmVal" $ do
+evalIfSpec :: Spec
+evalIfSpec = describe "evalIf" $ do
+    context "evaluating single if statement" $ do
+        it "performs the first branch" $ do
+            let ifStm = If TRUE (Write '1') []
+            evalStm ifStm testConfig `shouldRead` '1'
+
+        it "performs nothing if predicate is false" $ do
+            let ifStm = If FALSE (Write '1') []
+            evalStm ifStm testConfig `shouldRead` 'b'
+
+    context "evaluate if-else statement" $ do
+        it "performs the first branch" $ do
+            let ifStm = If TRUE (Write '1') [(TRUE, Write '2')]
+            evalStm ifStm testConfig `shouldRead` '1'
+
+        it "performs the second branch" $ do
+            let ifStm = If FALSE (Write '1') [(TRUE, Write '2')]
+            evalStm ifStm testConfig `shouldRead` '2'
+
+        it "performs the third branch" $ do
+            let ifStm = If FALSE (Write '1') [(FALSE, Write '2'), (TRUE, Write '3')]
+            evalStm ifStm testConfig `shouldRead` '3'
+
+evalStmSpec :: Spec
+evalStmSpec = do
+    describe "evalStm" $ do
         context "head at zero position" $ do
             it "does not move left" $ do
-                stmVal MoveLeft initialConfig `shouldBeAt` 0
+                evalStm MoveLeft initialConfig `shouldBeAt` 0
 
         context "evaluating writing" $ do
             it "writes" $ do
-                stmVal (Write 'x') testConfig `shouldRead` 'x'
+                evalStm (Write 'x') testConfig `shouldRead` 'x'
 
         context "evauluating movement" $ do
             it "moves left" $ do
-                stmVal MoveLeft testConfig `shouldBeAt` 0
+                evalStm MoveLeft testConfig `shouldBeAt` 0
 
             it "moves right" $ do
-                stmVal MoveRight testConfig `shouldBeAt` 2
+                evalStm MoveRight testConfig `shouldBeAt` 2
 
         context "evaluating halting" $ do
             it "rejects" $ do
-                stmVal Reject `shouldReject` testConfig
+                evalStm Reject `shouldReject` testConfig
 
             it "accepts" $ do
-                stmVal Accept `shouldAccept` testConfig
-
-        context "evaluating if statement" $ do
-            it "performs the first branch" $ do
-                let ifStm = If TRUE (Write '1')
-                stmVal ifStm testConfig `shouldRead` '1'
-
-            it "performs nothing if predicate is false" $ do
-                let ifStm = If FALSE (Write '1')
-                stmVal ifStm testConfig `shouldRead` 'b'
-
-        context "evaluating if-else statement" $ do
-            it "performs the first branch" $ do
-                let ifElse = IfElse TRUE (Write '1') (Write '2')
-                stmVal ifElse testConfig `shouldRead` '1'
-
-            it "performs the first branch" $ do
-                let ifElse = IfElse FALSE (Write '1') (Write '2')
-                stmVal ifElse testConfig `shouldRead` '2'
+                evalStm Accept `shouldAccept` testConfig
 
         context "evaluating while loop" $ do
             it "does not loop if the condition is false" $ do
                 let loop = While FALSE (Write '1')
-                stmVal loop testConfig `shouldRead` 'b'
+                evalStm loop testConfig `shouldRead` 'b'
 
             it "performs a loop" $ do
                 -- Move left until at '#' character is reached.
                 let cond = Not (Eq Read (Literal '#'))
                     loop = While cond MoveRight
-                stmVal loop testConfig `shouldBeAt` 3
+                evalStm loop testConfig `shouldBeAt` 3
 
             it "breaks by rejecting" $ do
                 let loop = While TRUE Reject
-                stmVal loop `shouldReject` testConfig
+                evalStm loop `shouldReject` testConfig
 
             it "breaks by accepting" $ do
                 let loop = While TRUE Accept
-                stmVal loop `shouldAccept` testConfig
+                evalStm loop `shouldAccept` testConfig
 
         context "evaluating function declarations" $ do
             it "adds functions to the environment" $ do
                 let decl = Func "f" MoveRight
-                let Inter (_, _, envf) = stmVal decl initialConfig
+                let Inter (_, _, envf) = evalStm decl initialConfig
                 envf "f" `shouldBe` (Just MoveRight)
 
         context "evaluating function calls" $ do
@@ -181,25 +188,28 @@ stmValSpec = do
                 let decl = Func "f" MoveRight
                     call = Call "f"
                     comp = Comp decl call
-                stmVal comp initialConfig `shouldBeAt` 1
+                evalStm comp initialConfig `shouldBeAt` 1
 
             it "evaluates a recursive function" $ do
                 -- The statement used in the test is shown below. This function
                 -- moves right until a '#' is encountered. When a '#' is found,
-                -- the program accepts.
+                -- the program accepts. If the end of the input is found
+                -- (i.e. ' ') the program rejects.
                 --
                 --  func f {
                 --      if read == # {
                 --          accept
+                --      else if read == space {
+                --          reject
                 --      } else {
                 --          right
                 --          call f
                 --      }
                 --  }
                 --  call f
-                let ifElse = IfElse (Eq Read (Literal '#')) (Accept) (Comp (MoveRight) (Call "f"))
-                    comp   = Comp (Func "f" ifElse) (Call "f")
-                stmVal comp `shouldAccept` testConfig
+                let ifStm = If (Eq Read (Literal '#')) (Accept) [(TRUE, Comp (MoveRight) (Call "f"))]
+                    comp  = Comp (Func "f" ifStm) (Call "f")
+                evalStm comp `shouldAccept` testConfig
 
             -- it "overrides declarations of outer functions, and restores" $ do
             --     -- The statement used in the test is:
@@ -214,7 +224,7 @@ stmValSpec = do
             --     let declInner                 = Func "f" MoveRight
             --         declOuter                 = Comp (Comp (Write 'x') declInner) (Call "f")
             --         comp                      = Comp declOuter (Call "f")
-            --         st@(Inter (tape, pos, _)) = stmVal comp initialConfig
+            --         st@(Inter (tape, pos, _)) = evalStm comp initialConfig
             --
             --     pos `shouldBe` 1
             --     tape 0 `shouldBe` 'x'

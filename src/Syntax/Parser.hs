@@ -2,10 +2,13 @@ module Syntax.Parser where
 
 import Syntax.Tree
 import Control.Monad (void)
+import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.String
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
+
+-- TODO: Add ability to use space as a tape symbol literal, e.g. using string "space".
 
 -- Abstract Grammar
 --
@@ -23,14 +26,15 @@ import qualified Text.Megaparsec.Lexer as L
 --                | Bexp 'or' Bexp
 --                | DerivedSymbol '==' DerivedSymbol
 --                | DerivedSymbol '<=' DerivedSymbol
+--  Else          : 'else' { Stm } | ε
+--  ElseIf        : 'else if' { Stm } ElseIf | Else
+--  If            : 'if' { Stm } ElseIf
 --  Stm           : 'left'
 --                | 'right'
 --                | 'write' TapeSymbol
 --                | 'reject'
 --                | 'accept'
---                | 'if' Bexp '{' Stm '}'
---                | 'if' Bexp '{' Stm '} else {' Stm '}'
---                | 'while' Bexp '{' Stm '}'
+--                | If
 --                | 'func' FuncName '{' Stm '}'
 --                | 'call' FuncName
 --                | Stm '\n' Stm
@@ -118,6 +122,26 @@ bexpOps = [[Prefix (Not <$ tok "not")],
 bexp :: Parser Bexp
 bexp = makeExprParser bexp' bexpOps
 
+-- Parses if-else statement, the EBNF syntax of which is:
+--  If     : 'if' { Stm } ElseIf
+--  ElseIf : 'else if' { Stm } ElseIf | Else
+--  Else   : 'else' { Stm } | ε
+ifStm :: Parser Stm
+ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> clauses where
+    clauses = (++) <$> many elseIfClause <*> elseClause
+
+    elseIfClause = do
+        b <- tok "else if" *> bexp
+        stm <- braces stm
+        return (b, stm)
+
+    elseClause = do
+        -- There may or may not be an else clause, therefore it is optionally
+        -- parsed.
+        stm <- optional (tok "else" *> braces stm)
+        let branch = fmap (\stm -> (TRUE, stm)) stm
+        return (maybeToList branch)
+
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = MoveLeft <$ tok "left"
@@ -125,8 +149,7 @@ stm' = MoveLeft <$ tok "left"
    <|> Write <$ tok "write" <*> tapeSymbol
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
-   <|> try (IfElse <$ tok "if" <*> bexp <*> braces stm <* tok "else" <*> braces stm)
-   <|> If <$ tok "if" <*> bexp <*> braces stm
+   <|> ifStm
    <|> While <$ tok "while" <*> bexp <*> braces stm
    <|> Func <$ tok "func" <*> funcName <*> braces stm
    <|> Call <$ tok "call" <*> funcName

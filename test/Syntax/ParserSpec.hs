@@ -14,6 +14,7 @@ parserSpec = do
     derivedSymbolSpec
     funcNameSpec
     bexpSpec
+    ifStmSpec
     stmSpec
 
 encasedStringSpec :: Spec
@@ -135,6 +136,70 @@ bexpSpec = describe "bexp" $ do
         it "allows brackets at the top level" $ do
             parse bexp "" "(True)" `shouldParse` TRUE
 
+ifStmSpec :: Spec
+ifStmSpec = describe "ifStm" $ do
+    context "parsing a single IF" $ do
+        it "parses IF" $ do
+            parse stm "" "if True { right }" `shouldParse` (If TRUE MoveRight [])
+
+        it "fails to parse if a boolean expression is missing" $ do
+            parse stm "" `shouldFailOn` "if { right }"
+
+        it "fails to parse if the first brace is missing" $ do
+            parse stm "" `shouldFailOn` "if True right }"
+
+        it "fails to parse if the second brace is missing" $ do
+            parse stm "" `shouldFailOn` "if True { right"
+
+        it "fails to parse if both braces are missing" $ do
+            parse stm "" `shouldFailOn` "if True right"
+
+    context "parsing an IF-ELSEIF" $ do
+        it "parses with a single ELSE-IF clause" $ do
+            let str      = "if True { right } else if False { left }"
+                expected = If TRUE MoveRight [(FALSE, MoveLeft)]
+            parse stm "" str `shouldParse` expected
+
+        it "parses with multiple ELSE-IF clauses" $ do
+            let str      = "if True { right } else if False { left } else if True { accept }"
+                expected = If TRUE MoveRight [(FALSE, MoveLeft), (TRUE, Accept)]
+            parse stm "" str `shouldParse` expected
+
+        it "fails to parse if ELSE-IF is before IF" $ do
+            parse stm "" `shouldFailOn` "else if True { right } if True right }"
+
+        it "fails to parse if the first brace is missing" $ do
+            parse stm "" `shouldFailOn` "if True { right } else if True right }"
+
+        it "fails to parse if the second brace is missing" $ do
+            parse stm "" `shouldFailOn` "if True { right } else if True { right"
+
+        it "fails to parse if both braces are missing" $ do
+            parse stm "" `shouldFailOn` "if True { right } else if True right"
+
+    context "parsing an ELSE clause" $ do
+        it "parses ELSE with just an IF" $ do
+            let str      = "if True { right } else { left }"
+                expected = If TRUE MoveRight [(TRUE, MoveLeft)]
+            parse stm "" str `shouldParse` expected
+
+        it "parses ELSE with a preceding ELSE-IF" $ do
+            let str      = "if True { right } else if False { left } else { accept }"
+                expected = If TRUE MoveRight [(FALSE, MoveLeft), (TRUE, Accept)]
+            parse stm "" str `shouldParse` expected
+
+        it "fails to parse if the ELSE is before IF" $ do
+            parse stm "" `shouldFailOn` "else { accept } if { left }"
+
+        it "fails to parse if the first brace is missing" $ do
+            parse stm "" `shouldFailOn` "if True { right } else right }"
+
+        it "fails to parse if the second brace is missing" $ do
+            parse stm "" `shouldFailOn` "if True { right } else { right"
+
+        it "fails to parse if both braces are missing" $ do
+            parse stm "" `shouldFailOn` "if True { right } else right"
+
 stmSpec :: Spec
 stmSpec = describe "stm" $ do
     context "parsing Turing Machine operators" $ do
@@ -152,44 +217,6 @@ stmSpec = describe "stm" $ do
 
         it "parses ACCEPT" $ do
             parse stm "" "accept" `shouldParse` Accept
-
-    context "parsing IF statements" $ do
-        it "parses IF" $ do
-            parse stm "" "if True { right }" `shouldParse` (If TRUE MoveRight)
-
-        it "fails to parse if a boolean expression is missing" $ do
-            parse stm "" `shouldFailOn` "if { right }"
-
-        it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True right }"
-
-        it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right"
-
-        it "fails to parse if both braces are missing" $ do
-            parse stm "" `shouldFailOn` "if True right"
-
-    context "parsing IF-ELSE statements" $ do
-        it "parses IF-ELSE" $ do
-            parse stm "" "if True { right } else { left }" `shouldParse` (IfElse TRUE MoveRight MoveLeft)
-
-        it "fails to parse if a boolean expression is missing" $ do
-            parse stm "" `shouldFailOn` "if { right } else { left }"
-
-        it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True right } else { left }"
-
-        it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right else { left }"
-
-        it "fails to parse if the third brace is missing" $ do
-            parse stm "" `shouldFailOn` "if { right } else left }"
-
-        it "fails to parse if the fourth brace is missing" $ do
-            parse stm "" `shouldFailOn` "if { right } else { left"
-
-        it "fails to parse if all braces are missing" $ do
-            parse stm "" `shouldFailOn` "if right else left"
 
     context "parsing WHILE statements" $ do
         it "parses WHILE" $ do
@@ -258,4 +285,4 @@ stmSpec = describe "stm" $ do
             parse stm "" "left\n//Comment\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
 
         it "ignores in-line comments" $ do
-            parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft)
+            parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [])
