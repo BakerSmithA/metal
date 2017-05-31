@@ -230,9 +230,32 @@ stmSpec = describe "stm" $ do
         it "fails to parse if no function name is given" $ do
             parse stm "" `shouldFailOn` "call"
 
+    context "parsing composition" $ do
+        it "parses composition" $ do
+            parse stm "" "left\n right" `shouldParse` (Comp MoveLeft MoveRight)
+
+        it "allows for multiple newlines between statements" $ do
+            parse stm "" "left \n\n right" `shouldParse` (Comp MoveLeft MoveRight)
+
     context "parsing printing" $ do
         it "parses printing a string" $ do
             parse stm "" "print \"This is a string\"" `shouldParse` (PrintStr "This is a string")
 
         it "parses printing the symbol read from the tape" $ do
             parse stm "" "print" `shouldParse` PrintRead
+
+    context "removing whitespace and comments" $ do
+        it "ignores whitespace at the start of a statement" $ do
+            parse stm "" " left" `shouldParse` MoveLeft
+
+        it "ignores whole-line comments at the start" $ do
+            parse stm "" "//Comment\n left" `shouldParse` MoveLeft
+
+        it "ignores in-line comments at the start" $ do
+            parse stm "" "/* Comment */\n left" `shouldParse` MoveLeft
+
+        it "ignores whole line comments" $ do
+            parse stm "" "left\n//Comment\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
+
+        it "ignores in-line comments" $ do
+            parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft)

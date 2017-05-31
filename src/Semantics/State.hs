@@ -16,14 +16,21 @@ initialTape p = ' '
 
 -- An environment for functions, i.e. a mapping from function names to the body
 -- of that function.
-type EnvF = FuncName -> Stm
+type EnvF = FuncName -> Maybe Stm
 
 -- An initial function environment, where every function name maps to no body.
 initialEnvF :: EnvF
-initialEnvF fName = undefined
+initialEnvF fName = Nothing
 
--- Here we slightly from the denotational semantics specified in the
--- specification by ommitting the output in the state.
+-- Returns the body of a function according to the name of a function.
+-- An runtime error is produced if the function has not been defined.
+funcBody :: FuncName -> EnvF -> Stm
+funcBody fName envf = case envf fName of
+    Just body -> body
+    Nothing   -> error ("No function named " ++ fName)
+
+-- Here we differ slightly from the denotational semantics of the
+-- specification by ommitting the output (e.g. using print) in the state.
 type Config = (Tape, Pos, EnvF)
 
 -- An initial configuration in which the tape is empty, the read/write head is
@@ -31,7 +38,7 @@ type Config = (Tape, Pos, EnvF)
 initialConfig :: Config
 initialConfig = (initialTape, 0, initialEnvF)
 
--- A type that llows for special accept and reject states, as well an
+-- A type that allows for special accept and reject states, as well as
 -- intermediate states.
 data ProgState a = Inter a
                  | HaltR

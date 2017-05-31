@@ -48,9 +48,9 @@ reservedKeywords = ["read", "True", "False", "not", "and", "or", "left", "right"
 -- are the same as C, with '//' indicating a whole line comment and '/* ... */'
 -- indicating an in-line comment.
 whitespace :: Parser ()
-whitespace = L.space (void spaceChar) lineCmnt blockCmnt
-  where lineCmnt  = L.skipLineComment "//"
-        blockCmnt = L.skipBlockComment "/*" "*/"
+whitespace = L.space (void separatorChar) lineCmnt blockCmnt
+  where lineCmnt  = L.skipLineComment "//" <* void (many newline)
+        blockCmnt = L.skipBlockComment "/*" "*/" <* void (many newline)
 
 -- Succeeds if the specified string can be parsed, followed by any ignored
 -- whitespace.
@@ -135,7 +135,7 @@ stm' = MoveLeft <$ tok "left"
 
 -- The operators that can work on statements.
 stmOps :: [[Operator Parser Stm]]
-stmOps = [[InfixL (Comp <$ tok ";")]]
+stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
 
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'
@@ -151,4 +151,4 @@ stmOps = [[InfixL (Comp <$ tok ";")]]
 --      | 'print'
 --      | 'print' String
 stm :: Parser Stm
-stm = makeExprParser stm' stmOps
+stm = whitespace *> makeExprParser stm' stmOps

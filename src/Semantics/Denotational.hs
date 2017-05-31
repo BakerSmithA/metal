@@ -65,21 +65,20 @@ cond p b1 b2 c = if p c then b1 c else b2 c
 
 -- Evaulates a while loop with condition `b` and body `stm`.
 while :: Bexp -> Stm -> Config -> State
---while b stm = stmVal stm
 while b stm = fix f where
     f g = cond (bexpVal b) (\c -> stmVal stm c >>= g) return
 
 -- Evaulates a function declaration by adding the function to the environment.
 declFunc :: FuncName -> Stm -> Config -> State
 declFunc fName stm (tape, pos, envf) = Inter (tape, pos, envf') where
-    envf' = update fName stm envf
+    envf' = update fName (Just stm) envf
 
 -- Evaulates a function call to the function named `fName`. Once the scope of
 -- the function exits, the function environment is returned to what it was
 -- before the function call.
 callFunc :: FuncName -> Config -> State
 callFunc fName c@(tape, pos, envf) = do
-    let body          = envf fName
+    let body = funcBody fName envf
     (tape', pos', _) <- stmVal body c
     return (tape', pos', envf)
 
