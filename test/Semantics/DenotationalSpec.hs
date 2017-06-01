@@ -239,3 +239,48 @@ evalStmSpec = do
 
                 evalStm comp `shouldAccept` testConfig
                 evalStm comp `shouldReject` nonTerminatedTestConfig
+
+            it "evaluates nested functions, and removes the nested declarations once the scope is exited" $ do
+                -- The statement used in the test is shown below.
+                --
+                --  func outer {
+                --      write #
+                --      func inner {
+                --          right
+                --      }
+                --      call inner
+                --  }
+                --  call outer
+                let innerBody               = MoveRight
+                    innerDecl               = Func "inner" innerBody
+                    outerBody               = Comp (Comp (Write '#') innerDecl) (Call "inner")
+                    outerDecl               = Func "outer" outerBody
+                    comp                    = Comp outerDecl (Call "outer")
+                    Inter (tape, pos, envf) = evalStm comp testConfig
+
+                tape 1 `shouldBe` '#'
+                pos `shouldBe` 2
+                envf "outer" `shouldBe` (Just outerBody)
+                envf "inner" `shouldBe` Nothing
+
+            it "evaluates nested functions where the name of the outer is overridden" $ do
+                -- The statement used in the test is shown below.
+                --
+                --  func f {
+                --      write #
+                --      func f {
+                --          right
+                --      }
+                --      call f
+                --  }
+                --  call f
+                let innerBody               = MoveRight
+                    innerDecl               = Func "f" innerBody
+                    outerBody               = Comp (Comp (Write '#') innerDecl) (Call "f")
+                    outerDecl               = Func "f" outerBody
+                    comp                    = Comp outerDecl (Call "f")
+                    Inter (tape, pos, envf) = evalStm comp testConfig
+
+                tape 1 `shouldBe` '#'
+                pos `shouldBe` 2
+                envf "f" `shouldBe` (Just outerBody)
