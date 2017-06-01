@@ -8,9 +8,9 @@ import Test.HUnit.Lang
 
 -- A configuration used for testing, where the tape is populated with the
 -- string "Ab5#", the read/write head is at index 1 (at 'b'), and the
--- function environment is empty.
+-- empty variable and function environments.
 testConfig :: Config
-testConfig = (tape, 1, initialEnvF) where
+testConfig = (tape, 1, initialEnvV, initialEnvF) where
     tape 0 = 'A'
     tape 1 = 'b'
     tape 2 = '5'
@@ -19,23 +19,23 @@ testConfig = (tape, 1, initialEnvF) where
 
 -- A configuration used for testing that is not terminated by a '#' symbol. The
 -- tape is populated with the string "Ab5x", the read/write head is at index 1
--- (at 'b'), and the function environment is empty.
+-- (at 'b'), and the empty variable and function environments.
 nonTerminatedTestConfig :: Config
-nonTerminatedTestConfig = (tape', pos, envF) where
+nonTerminatedTestConfig = (tape', pos, envv, envf) where
     tape' = update 3 'x' tape
-    (tape, pos, envF) = testConfig
+    (tape, pos, envv, envf) = testConfig
 
 -- Asserts that the read/write head should be at position `p`.
 shouldBeAt :: State -> Pos -> Expectation
 shouldBeAt st p = case st of
-    Inter (tape, pos, envf) -> pos `shouldBe` p
-    _                       -> assertFailure "Expected inter-config"
+    Inter (tape, pos, envv, envf) -> pos `shouldBe` p
+    _                             -> assertFailure "Expected inter-config"
 
 -- Asserts that the symbol under the read/write head should be `s`.
 shouldRead :: State -> TapeSymbol -> Expectation
 shouldRead st s = case st of
-    Inter (tape, pos, envf) -> tape pos `shouldBe` s
-    _                       -> assertFailure "Expected inter-config"
+    Inter (tape, pos, envv, envf) -> tape pos `shouldBe` s
+    _                             -> assertFailure "Expected inter-config"
 
 -- Asserts that the machine rejected.
 shouldReject :: (Config -> State) -> Config -> Expectation
@@ -122,37 +122,37 @@ evalIfSpec :: Spec
 evalIfSpec = describe "evalIf" $ do
     context "evaluating a single if statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write '1') [] Nothing
+            let ifStm = If TRUE (Write (Literal '1')) [] Nothing
             evalStm ifStm testConfig `shouldRead` '1'
 
         it "performs nothing if predicate is false" $ do
-            let ifStm = If FALSE (Write '1') [] Nothing
+            let ifStm = If FALSE (Write (Literal '1')) [] Nothing
             evalStm ifStm testConfig `shouldRead` 'b'
 
     context "evaluating an if-elseif statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write '1') [(TRUE, Write '2')] Nothing
+            let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] Nothing
             evalStm ifStm testConfig `shouldRead` '1'
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write '1') [(TRUE, Write '2')] Nothing
+            let ifStm = If FALSE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] Nothing
             evalStm ifStm testConfig `shouldRead` '2'
 
         it "performs the third branch" $ do
-            let ifStm = If FALSE (Write '1') [(FALSE, Write '2'), (TRUE, Write '3')] Nothing
+            let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2')), (TRUE, Write (Literal '3'))] Nothing
             evalStm ifStm testConfig `shouldRead` '3'
 
     context "evaluating an if-elseif-else statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write '1') [(TRUE, Write '2')] (Just (Write '3'))
+            let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
             evalStm ifStm testConfig `shouldRead` '1'
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write '1') [(TRUE, Write '2')] (Just (Write '3'))
+            let ifStm = If FALSE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
             evalStm ifStm testConfig `shouldRead` '2'
 
         it "performs the else branch" $ do
-            let ifStm = If FALSE (Write '1') [(FALSE, Write '2')] (Just (Write '3'))
+            let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2'))] (Just (Write (Literal '3')))
             evalStm ifStm testConfig `shouldRead` '3'
 
 evalStmSpec :: Spec
@@ -164,7 +164,7 @@ evalStmSpec = do
 
         context "evaluating writing" $ do
             it "writes" $ do
-                evalStm (Write 'x') testConfig `shouldRead` 'x'
+                evalStm (Write (Literal 'x')) testConfig `shouldRead` 'x'
 
         context "evauluating movement" $ do
             it "moves left" $ do
@@ -182,7 +182,7 @@ evalStmSpec = do
 
         context "evaluating while loop" $ do
             it "does not loop if the condition is false" $ do
-                let loop = While FALSE (Write '1')
+                let loop = While FALSE (Write (Literal '1'))
                 evalStm loop testConfig `shouldRead` 'b'
 
             it "performs a loop" $ do
@@ -202,7 +202,7 @@ evalStmSpec = do
         context "evaluating function declarations" $ do
             it "adds functions to the environment" $ do
                 let decl = Func "f" MoveRight
-                let Inter (_, _, envf) = evalStm decl initialConfig
+                let Inter (_, _, _, envf) = evalStm decl initialConfig
                 envf "f" `shouldBe` (Just MoveRight)
 
         context "evaluating function calls" $ do
@@ -251,12 +251,12 @@ evalStmSpec = do
                 --      inner
                 --  }
                 --  outer
-                let innerBody               = MoveRight
-                    innerDecl               = Func "inner" innerBody
-                    outerBody               = Comp (Comp (Write '#') innerDecl) (Call "inner")
-                    outerDecl               = Func "outer" outerBody
-                    comp                    = Comp outerDecl (Call "outer")
-                    Inter (tape, pos, envf) = evalStm comp testConfig
+                let innerBody                     = MoveRight
+                    innerDecl                     = Func "inner" innerBody
+                    outerBody                     = Comp (Comp (Write (Literal '#')) innerDecl) (Call "inner")
+                    outerDecl                     = Func "outer" outerBody
+                    comp                          = Comp outerDecl (Call "outer")
+                    Inter (tape, pos, envv, envf) = evalStm comp testConfig
 
                 tape 1 `shouldBe` '#'
                 pos `shouldBe` 2
@@ -274,12 +274,12 @@ evalStmSpec = do
                 --      f
                 --  }
                 --  f
-                let innerBody               = MoveRight
-                    innerDecl               = Func "f" innerBody
-                    outerBody               = Comp (Comp (Write '#') innerDecl) (Call "f")
-                    outerDecl               = Func "f" outerBody
-                    comp                    = Comp outerDecl (Call "f")
-                    Inter (tape, pos, envf) = evalStm comp testConfig
+                let innerBody                     = MoveRight
+                    innerDecl                     = Func "f" innerBody
+                    outerBody                     = Comp (Comp (Write (Literal '#')) innerDecl) (Call "f")
+                    outerDecl                     = Func "f" outerBody
+                    comp                          = Comp outerDecl (Call "f")
+                    Inter (tape, pos, envv, envf) = evalStm comp testConfig
 
                 tape 1 `shouldBe` '#'
                 pos `shouldBe` 2

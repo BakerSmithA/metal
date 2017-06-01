@@ -13,9 +13,13 @@ import qualified Text.Megaparsec.Lexer as L
 --  UpperChar     : 'A' | 'B' | ... | 'Z'
 --  Digit         : '0' | '1' | ... | '9'
 --  String        : " (LowerChar | UpperChar | Digit)* "
---  TapeSymbol    : LowerChar | UpperChar | Digit | '+' | '/'
---  DerivedSymbol : 'read' | TapeSymbol
+--  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
+--  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
+--  DerivedSymbol : 'read'
+--                | 'space'
+--                | VarName
+--                | \' TapeSymbol \'
 --  Bexp          : 'True'
 --                | 'False'
 --                | 'not' Bexp
@@ -28,15 +32,17 @@ import qualified Text.Megaparsec.Lexer as L
 --  If            : 'if' { Stm } ElseIf
 --  Stm           : 'left'
 --                | 'right'
---                | 'write' TapeSymbol
+--                | 'write' DerivedSymbol
 --                | 'reject'
 --                | 'accept'
---                | If
+--                | 'let' VarName '=' DerivedSymbol
 --                | 'func' FuncName '{' Stm '}'
 --                | FuncName
 --                | Stm '\n' Stm
 --                | 'print'
 --                | 'print' String
+--                | 'while' Bexp '{' Stm '}'
+--                | If
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -71,27 +77,42 @@ encasedString :: Parser String
 encasedString = between (tok "\"") (tok "\"") (many (noneOf "\""))
 
 -- Parses a tape symbol, the EBNF syntax of which is:
---  TapeSymbol  : LowerChar | UpperChar | Digit | '+' | '/'
+--  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
 tapeSymbol :: Parser TapeSymbol
-tapeSymbol = try (tok "space") *> return ' '
-         <|> asciiChar <* whitespace
+tapeSymbol = asciiChar <* whitespace
 
--- Parses a derived symbol, the EBNF syntax of which is:
---   DerivedSymbol : 'read' | TapeSymbol
-derivedSymbol :: Parser DerivedSymbol
-derivedSymbol = Read <$ tok "read"
-            <|> Literal <$> tapeSymbol
-
--- Parses a function name, the EBNF syntax of which is:
---  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
--- A practical consideration when parsing function names is that they do not
+-- Parses an identifier, i.e. variable or function name, the EBNF syntax for
+-- both being:
+--  LowerChar (LowerChar | UpperChar | Digit)*
+-- A practical consideration when parsing identifiers is that they do not
 -- conflict with reserved keywords.
-funcName :: Parser FuncName
-funcName = (str >>= check) <* whitespace where
+identifier :: Parser String
+identifier = (str >>= check) <* whitespace where
     str        = (:) <$> lowerChar <*> many alphaNumChar
     check word = if word `elem` reservedKeywords
                     then fail $ "keyword " ++ show word ++ " cannot be an identifier"
                     else return word
+
+-- Parses a variable name, the EBNF syntax of which is:
+--  VarName : LowerChar (LowerChar | UpperChar | Digit)*
+varName :: Parser VarName
+varName = identifier
+
+-- Parses a function name, the EBNF syntax of which is:
+--  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
+funcName :: Parser FuncName
+funcName = identifier
+
+-- Parses a derived symbol, the EBNF syntax of which is:
+--  DerivedSymbol : 'read'
+--                | 'space'
+--                | VarName
+--                | \' TapeSymbol \'
+derivedSymbol :: Parser DerivedSymbol
+derivedSymbol = Read <$ tok "read"
+            <|> tok "space" *> return (Literal ' ')
+            <|> Var <$> varName
+            <|> Literal <$ tok "'" <*> tapeSymbol <* tok "'"
 
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.
@@ -136,7 +157,7 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseCla
 stm' :: Parser Stm
 stm' = MoveLeft <$ tok "left"
    <|> MoveRight <$ tok "right"
-   <|> Write <$ tok "write" <*> tapeSymbol
+   <|> Write <$ tok "write" <*> derivedSymbol
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> ifStm

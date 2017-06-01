@@ -11,8 +11,9 @@ parserSpec :: Spec
 parserSpec = do
     encasedStringSpec
     tapeSymbolSpec
-    derivedSymbolSpec
+    varNameSpec
     funcNameSpec
+    derivedSymbolSpec
     bexpSpec
     ifStmSpec
     stmSpec
@@ -53,19 +54,29 @@ tapeSymbolSpec = do
             parse tapeSymbol "" "<" `shouldParse` '<'
             parse tapeSymbol "" "{" `shouldParse` '{'
 
-        it "parses the string 'space' to represent a space" $ do
-            parse tapeSymbol "" "space" `shouldParse` ' '
+varNameSpec :: Spec
+varNameSpec = do
+    describe "varName" $ do
+        it "parses names beginning with a lower char" $ do
+            parse funcName "" "vname" `shouldParse` "vname"
 
-derivedSymbolSpec :: Spec
-derivedSymbolSpec = do
-    describe "derivedSymbol" $ do
-        it "parses literals" $ do
-            parse derivedSymbol "" "b" `shouldParse` Literal 'b'
-            parse derivedSymbol "" "B" `shouldParse` Literal 'B'
-            parse derivedSymbol "" "1" `shouldParse` Literal '1'
+        it "parses names containing uppcase characters" $ do
+            parse funcName "" "vNAME" `shouldParse` "vNAME"
 
-        it "parses read" $ do
-            parse derivedSymbol "" "read" `shouldParse` Read
+        it "parses names containing digits" $ do
+            parse funcName "" "v1234" `shouldParse` "v1234"
+
+        it "parses if the variable name is a superset of a reserved word" $ do
+            parse funcName "" "trueV" `shouldParse` "trueV"
+
+        it "fails if the start character is uppercase" $ do
+            parse funcName "" `shouldFailOn` "Vname"
+
+        it "fails if the start character is a digit" $ do
+            parse funcName "" `shouldFailOn` "1vName"
+
+        it "fails if the function name is a reserved keyword" $ do
+            parse funcName "" `shouldFailOn` "True"
 
 funcNameSpec :: Spec
 funcNameSpec = do
@@ -90,6 +101,23 @@ funcNameSpec = do
 
         it "fails if the function name is a reserved keyword" $ do
             parse funcName "" `shouldFailOn` "True"
+
+derivedSymbolSpec :: Spec
+derivedSymbolSpec = do
+    describe "derivedSymbol" $ do
+        it "parses read" $ do
+            parse derivedSymbol "" "read" `shouldParse` Read
+
+        it "parses the string 'space' to represent a space" $ do
+            parse derivedSymbol "" "space" `shouldParse` Literal ' '
+
+        it "parses variable names" $ do
+            parse derivedSymbol "" "x" `shouldParse` Var "x"
+
+        it "parses literals" $ do
+            parse derivedSymbol "" "'b'" `shouldParse` Literal 'b'
+            parse derivedSymbol "" "'B'" `shouldParse` Literal 'B'
+            parse derivedSymbol "" "'1'" `shouldParse` Literal '1'
 
 bexpSpec :: Spec
 bexpSpec = describe "bexp" $ do
@@ -120,17 +148,17 @@ bexpSpec = describe "bexp" $ do
 
     context "parsing EQ operator" $ do
         it "parses EQ" $ do
-            parse bexp "" "x == read" `shouldParse` (Eq (Literal 'x') Read)
+            parse bexp "" "x == read" `shouldParse` (Eq (Var "x") Read)
 
         it "fails to parse chains" $ do
-            parse bexp "" "x == y == z" `shouldParse` (Eq (Literal 'x') (Literal 'y'))
+            parse bexp "" "'x' == y == z" `shouldParse` (Eq (Literal 'x') (Var "y"))
 
     context "parsing LE operator" $ do
         it "parses LE" $ do
-            parse bexp "" "x <= read" `shouldParse` (Le (Literal 'x') Read)
+            parse bexp "" "x <= read" `shouldParse` (Le (Var "x") Read)
 
         it "fails to parse chains" $ do
-            parse bexp "" "x <= y <= z" `shouldParse` (Le (Literal 'x') (Literal 'y'))
+            parse bexp "" "x <= y <= z" `shouldParse` (Le (Var "x") (Var "y"))
 
     context "parsing boolean expressions with parenthesis" $ do
         it "gives precedence to bracketed expressions" $ do
@@ -213,7 +241,7 @@ stmSpec = describe "stm" $ do
             parse stm "" "right" `shouldParse` MoveRight
 
         it "parses WRITE command" $ do
-            parse stm "" "write x" `shouldParse` (Write 'x')
+            parse stm "" "write 'x'" `shouldParse` (Write (Literal 'x'))
 
         it "parses REJECT" $ do
             parse stm "" "reject" `shouldParse` Reject

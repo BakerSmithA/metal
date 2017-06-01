@@ -14,6 +14,14 @@ type Tape = Pos -> TapeSymbol
 initialTape :: Tape
 initialTape p = ' '
 
+-- An environment for variables, i.e. a mapping from variable names to the
+-- tape symbol associated with the variable.
+type EnvV = VarName -> Maybe TapeSymbol
+
+-- An initial variable environment, where every variable name maps to no value.
+initialEnvV :: EnvV
+initialEnvV vName = Nothing
+
 -- An environment for functions, i.e. a mapping from function names to the body
 -- of that function.
 type EnvF = FuncName -> Maybe Stm
@@ -31,12 +39,12 @@ funcBody fName envf = case envf fName of
 
 -- Here we differ slightly from the denotational semantics of the
 -- specification by ommitting the output (e.g. using print) in the state.
-type Config = (Tape, Pos, EnvF)
+type Config = (Tape, Pos, EnvV, EnvF)
 
 -- An initial configuration in which the tape is empty, the read/write head is
 -- in the left-most zeroed position, and the function environment is empty.
 initialConfig :: Config
-initialConfig = (initialTape, 0, initialEnvF)
+initialConfig = (initialTape, 0, initialEnvV, initialEnvF)
 
 -- A type that allows for special accept and reject states, as well as
 -- intermediate states.

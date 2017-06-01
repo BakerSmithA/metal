@@ -6,8 +6,11 @@ import Data.Maybe
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> Config -> TapeSymbol
-derivedSymbolVal (Literal s) st               = s
-derivedSymbolVal (Read)     (tape, pos, envf) = tape pos
+derivedSymbolVal (Read)      (tape, pos, envv, envf) = tape pos
+derivedSymbolVal (Literal s) st                      = s
+derivedSymbolVal (Var vName) (tape, pos, envv, envf) = case envv vName of
+    Just x  -> x
+    Nothing -> error ("No variable named " ++ vName)
 
 -- The semantic function B[[.]] over boolean expressions.
 bexpVal :: Bexp -> Config -> Bool
@@ -30,18 +33,19 @@ update x r f x' = if x' == x then r else f x'
 -- Evauluates moving the read/write head left, ensuring the head doesn't move
 -- past the zero position.
 evalMoveLeft :: Config -> State
-evalMoveLeft (tape, pos, envf) = Inter (tape, check pos, envf) where
+evalMoveLeft (tape, pos, envv, envf) = Inter (tape, check pos, envv, envf) where
     check 0 = 0
     check x = x - 1
 
 -- Evaluates moving the read/write head right.
 evalMoveRight :: Config -> State
-evalMoveRight (tape, pos, envf) = Inter (tape, pos + 1, envf)
+evalMoveRight (tape, pos, envv, envf) = Inter (tape, pos + 1, envv, envf)
 
 -- Evaualtes writing `s` at the position of the read/write head.
-evalWrite :: TapeSymbol -> Config -> State
-evalWrite s (tape, pos, envf) = Inter (tape', pos, envf) where
-    tape' = update pos s tape
+evalWrite :: DerivedSymbol -> Config -> State
+evalWrite d config@(tape, pos, envv, envf) = Inter (tape', pos, envv, envf) where
+    tape' = update pos dVal tape
+    dVal  = derivedSymbolVal d config
 
 -- Conditionally chooses to 'execute' a branch if associated predicate
 -- evaluates to true. Returns the branch to execute, or `id` if no predicates
@@ -64,17 +68,17 @@ evalWhile b stm = fix f where
 
 -- Evaulates a function declaration by adding the function to the environment.
 evalDeclFunc :: FuncName -> Stm -> Config -> State
-evalDeclFunc fName stm (tape, pos, envf) = Inter (tape, pos, envf') where
+evalDeclFunc fName stm (tape, pos, envv, envf) = Inter (tape, pos, envv, envf') where
     envf' = update fName (Just stm) envf
 
 -- Evaulates a function call to the function named `fName`. Once the scope of
 -- the function exits, the function environment is returned to what it was
 -- before the function call.
 evalCallFunc :: FuncName -> Config -> State
-evalCallFunc fName c@(tape, pos, envf) = do
+evalCallFunc fName c@(tape, pos, envv, envf) = do
     let body = funcBody fName envf
-    (tape', pos', _) <- evalStm body c
-    return (tape', pos', envf)
+    (tape', pos', _, _) <- evalStm body c
+    return (tape', pos', envv, envf)
 
 -- Evaulates a command to print the symbol under the read/write head.
 -- TODO
@@ -91,7 +95,7 @@ evalPrintStr s = return
 evalStm :: Stm -> Config -> State
 evalStm (MoveLeft)             = evalMoveLeft
 evalStm (MoveRight)            = evalMoveRight
-evalStm (Write s)              = evalWrite s
+evalStm (Write d)              = evalWrite d
 evalStm (Reject)               = \c -> HaltR
 evalStm (Accept)               = \c -> HaltA
 evalStm (If b stm elseIfs els) = evalIf b stm elseIfs els
