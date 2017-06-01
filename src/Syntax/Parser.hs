@@ -2,13 +2,10 @@ module Syntax.Parser where
 
 import Syntax.Tree
 import Control.Monad (void)
-import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.String
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
-
--- TODO: Add ability to use space as a tape symbol literal, e.g. using string "space".
 
 -- Abstract Grammar
 --
@@ -44,9 +41,9 @@ import qualified Text.Megaparsec.Lexer as L
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
 reservedKeywords :: [String]
-reservedKeywords = ["read", "True", "False", "not", "and", "or", "left", "right",
-                    "write", "reject", "accept", "if", "else", "while", "call",
-                    "print"]
+reservedKeywords = ["space", "read", "True", "False", "not", "and", "or",
+                    "left", "right", "write", "reject", "accept", "if", "else",
+                    "while", "call", "print"]
 
 -- Consumes whole line and in-line comments. The syntax for both comment types
 -- are the same as C, with '//' indicating a whole line comment and '/* ... */'
@@ -76,7 +73,8 @@ encasedString = between (tok "\"") (tok "\"") (many (noneOf "\""))
 -- Parses a tape symbol, the EBNF syntax of which is:
 --  TapeSymbol  : LowerChar | UpperChar | Digit | '+' | '/'
 tapeSymbol :: Parser TapeSymbol
-tapeSymbol = asciiChar <* whitespace
+tapeSymbol = try (tok "space") *> return ' '
+         <|> asciiChar <* whitespace
 
 -- Parses a derived symbol, the EBNF syntax of which is:
 --   DerivedSymbol : 'read' | TapeSymbol
@@ -127,20 +125,12 @@ bexp = makeExprParser bexp' bexpOps
 --  ElseIf : 'else if' { Stm } ElseIf | Else
 --  Else   : 'else' { Stm } | ε
 ifStm :: Parser Stm
-ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> clauses where
-    clauses = (++) <$> many elseIfClause <*> elseClause
-
+ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseClause where
     elseIfClause = do
         b <- tok "else if" *> bexp
         stm <- braces stm
         return (b, stm)
-
-    elseClause = do
-        -- There may or may not be an else clause, therefore it is optionally
-        -- parsed.
-        stm <- optional (tok "else" *> braces stm)
-        let branch = fmap (\stm -> (TRUE, stm)) stm
-        return (maybeToList branch)
+    elseClause = optional (tok "else" *> braces stm)
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm

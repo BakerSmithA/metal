@@ -2,6 +2,7 @@ module Semantics.Denotational where
 
 import Syntax.Tree
 import Semantics.State
+import Data.Maybe
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> Config -> TapeSymbol
@@ -50,10 +51,11 @@ cond []               c = return c
 cond ((p, branch):bs) c = if p c then branch c else cond bs c
 
 -- Evaluates an if-else statement.
-evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Config -> State
-evalIf b stm ps = cond bs where
-    bs                    = map makeBranch ((b, stm):ps)
-    makeBranch (b', stm') = (bexpVal b', evalStm stm')
+evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> State
+evalIf b stm elseIfClauses elseStm = cond branches where
+    branches   = map (\(b, stm) -> (bexpVal b, evalStm stm)) allClauses
+    allClauses = ((b, stm):elseIfClauses) ++ (maybeToList elseClause)
+    elseClause = fmap (\stm -> (TRUE, stm)) elseStm
 
 -- Evaulates a while loop with condition `b` and body `stm`.
 evalWhile :: Bexp -> Stm -> Config -> State
@@ -87,15 +89,15 @@ evalPrintStr s = return
 -- The semantic function S[[.]] over statements. The writer returned keeps
 -- track of the text output of the statement.
 evalStm :: Stm -> Config -> State
-evalStm (MoveLeft)           = evalMoveLeft
-evalStm (MoveRight)          = evalMoveRight
-evalStm (Write s)            = evalWrite s
-evalStm (Reject)             = \c -> HaltR
-evalStm (Accept)             = \c -> HaltA
-evalStm (If b stm cs)        = evalIf b stm cs
-evalStm (While b stm)        = evalWhile b stm
-evalStm (Func fName body)    = evalDeclFunc fName body
-evalStm (Call fName)         = evalCallFunc fName
-evalStm (Comp stm1 stm2)     = \c -> (evalStm stm1 c) >>= (evalStm stm2)
-evalStm (PrintRead)          = evalPrintRead
-evalStm (PrintStr str)       = evalPrintStr str
+evalStm (MoveLeft)             = evalMoveLeft
+evalStm (MoveRight)            = evalMoveRight
+evalStm (Write s)              = evalWrite s
+evalStm (Reject)               = \c -> HaltR
+evalStm (Accept)               = \c -> HaltA
+evalStm (If b stm elseIfs els) = evalIf b stm elseIfs els
+evalStm (While b stm)          = evalWhile b stm
+evalStm (Func fName body)      = evalDeclFunc fName body
+evalStm (Call fName)           = evalCallFunc fName
+evalStm (Comp stm1 stm2)       = \c -> (evalStm stm1 c) >>= (evalStm stm2)
+evalStm (PrintRead)            = evalPrintRead
+evalStm (PrintStr str)         = evalPrintStr str

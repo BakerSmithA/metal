@@ -53,6 +53,9 @@ tapeSymbolSpec = do
             parse tapeSymbol "" "<" `shouldParse` '<'
             parse tapeSymbol "" "{" `shouldParse` '{'
 
+        it "parses the string 'space' to represent a space" $ do
+            parse tapeSymbol "" "space" `shouldParse` ' '
+
 derivedSymbolSpec :: Spec
 derivedSymbolSpec = do
     describe "derivedSymbol" $ do
@@ -140,7 +143,7 @@ ifStmSpec :: Spec
 ifStmSpec = describe "ifStm" $ do
     context "parsing a single IF" $ do
         it "parses IF" $ do
-            parse stm "" "if True { right }" `shouldParse` (If TRUE MoveRight [])
+            parse stm "" "if True { right }" `shouldParse` (If TRUE MoveRight [] Nothing)
 
         it "fails to parse if a boolean expression is missing" $ do
             parse stm "" `shouldFailOn` "if { right }"
@@ -157,12 +160,12 @@ ifStmSpec = describe "ifStm" $ do
     context "parsing an IF-ELSEIF" $ do
         it "parses with a single ELSE-IF clause" $ do
             let str      = "if True { right } else if False { left }"
-                expected = If TRUE MoveRight [(FALSE, MoveLeft)]
+                expected = If TRUE MoveRight [(FALSE, MoveLeft)] Nothing
             parse stm "" str `shouldParse` expected
 
         it "parses with multiple ELSE-IF clauses" $ do
             let str      = "if True { right } else if False { left } else if True { accept }"
-                expected = If TRUE MoveRight [(FALSE, MoveLeft), (TRUE, Accept)]
+                expected = If TRUE MoveRight [(FALSE, MoveLeft), (TRUE, Accept)] Nothing
             parse stm "" str `shouldParse` expected
 
         it "fails to parse if ELSE-IF is before IF" $ do
@@ -180,12 +183,12 @@ ifStmSpec = describe "ifStm" $ do
     context "parsing an ELSE clause" $ do
         it "parses ELSE with just an IF" $ do
             let str      = "if True { right } else { left }"
-                expected = If TRUE MoveRight [(TRUE, MoveLeft)]
+                expected = If TRUE MoveRight [] (Just MoveLeft)
             parse stm "" str `shouldParse` expected
 
         it "parses ELSE with a preceding ELSE-IF" $ do
             let str      = "if True { right } else if False { left } else { accept }"
-                expected = If TRUE MoveRight [(FALSE, MoveLeft), (TRUE, Accept)]
+                expected = If TRUE MoveRight [(FALSE, MoveLeft)] (Just Accept)
             parse stm "" str `shouldParse` expected
 
         it "fails to parse if the ELSE is before IF" $ do
@@ -285,4 +288,4 @@ stmSpec = describe "stm" $ do
             parse stm "" "left\n//Comment\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
 
         it "ignores in-line comments" $ do
-            parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [])
+            parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [] Nothing)

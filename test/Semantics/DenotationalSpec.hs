@@ -15,6 +15,15 @@ testConfig = (tape, 1, initialEnvF) where
     tape 1 = 'b'
     tape 2 = '5'
     tape 3 = '#'
+    tape _ = ' '
+
+-- A configuration used for testing that is not terminated by a '#' symbol. The
+-- tape is populated with the string "Ab5x", the read/write head is at index 1
+-- (at 'b'), and the function environment is empty.
+nonTerminatedTestConfig :: Config
+nonTerminatedTestConfig = (tape', pos, envF) where
+    tape' = update 3 'x' tape
+    (tape, pos, envF) = testConfig
 
 -- Asserts that the read/write head should be at position `p`.
 shouldBeAt :: State -> Pos -> Expectation
@@ -111,26 +120,39 @@ bexpValSpec = do
 
 evalIfSpec :: Spec
 evalIfSpec = describe "evalIf" $ do
-    context "evaluating single if statement" $ do
+    context "evaluating a single if statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write '1') []
+            let ifStm = If TRUE (Write '1') [] Nothing
             evalStm ifStm testConfig `shouldRead` '1'
 
         it "performs nothing if predicate is false" $ do
-            let ifStm = If FALSE (Write '1') []
+            let ifStm = If FALSE (Write '1') [] Nothing
             evalStm ifStm testConfig `shouldRead` 'b'
 
-    context "evaluate if-else statement" $ do
+    context "evaluating an if-elseif statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write '1') [(TRUE, Write '2')]
+            let ifStm = If TRUE (Write '1') [(TRUE, Write '2')] Nothing
             evalStm ifStm testConfig `shouldRead` '1'
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write '1') [(TRUE, Write '2')]
+            let ifStm = If FALSE (Write '1') [(TRUE, Write '2')] Nothing
             evalStm ifStm testConfig `shouldRead` '2'
 
         it "performs the third branch" $ do
-            let ifStm = If FALSE (Write '1') [(FALSE, Write '2'), (TRUE, Write '3')]
+            let ifStm = If FALSE (Write '1') [(FALSE, Write '2'), (TRUE, Write '3')] Nothing
+            evalStm ifStm testConfig `shouldRead` '3'
+
+    context "evaluating an if-elseif-else statement" $ do
+        it "performs the first branch" $ do
+            let ifStm = If TRUE (Write '1') [(TRUE, Write '2')] (Just (Write '3'))
+            evalStm ifStm testConfig `shouldRead` '1'
+
+        it "performs the second branch" $ do
+            let ifStm = If FALSE (Write '1') [(TRUE, Write '2')] (Just (Write '3'))
+            evalStm ifStm testConfig `shouldRead` '2'
+
+        it "performs the else branch" $ do
+            let ifStm = If FALSE (Write '1') [(FALSE, Write '2')] (Just (Write '3'))
             evalStm ifStm testConfig `shouldRead` '3'
 
 evalStmSpec :: Spec
@@ -199,7 +221,7 @@ evalStmSpec = do
                 --  func f {
                 --      if read == # {
                 --          accept
-                --      else if read == space {
+                --      } else if read == space {
                 --          reject
                 --      } else {
                 --          right
@@ -207,24 +229,13 @@ evalStmSpec = do
                 --      }
                 --  }
                 --  call f
-                let ifStm = If (Eq Read (Literal '#')) (Accept) [(TRUE, Comp (MoveRight) (Call "f"))]
-                    comp  = Comp (Func "f" ifStm) (Call "f")
-                evalStm comp `shouldAccept` testConfig
+                let b1            = Eq Read (Literal '#')
+                    b2            = Eq Read (Literal ' ')
+                    elseIfClauses = [(b2, Reject)]
+                    elseClause    = Just (Comp MoveRight (Call "f"))
+                    ifStm         = If b1 Accept elseIfClauses elseClause
+                    funcDecl      = Func "f" ifStm
+                    comp          = Comp funcDecl (Call "f")
 
-            -- it "overrides declarations of outer functions, and restores" $ do
-            --     -- The statement used in the test is:
-            --     --  func f {
-            --     --      write x
-            --     --      func f {
-            --     --          right
-            --     --      }
-            --     --      call f
-            --     --  }
-            --     --  call f
-            --     let declInner                 = Func "f" MoveRight
-            --         declOuter                 = Comp (Comp (Write 'x') declInner) (Call "f")
-            --         comp                      = Comp declOuter (Call "f")
-            --         st@(Inter (tape, pos, _)) = evalStm comp initialConfig
-            --
-            --     pos `shouldBe` 1
-            --     tape 0 `shouldBe` 'x'
+                evalStm comp `shouldAccept` testConfig
+                evalStm comp `shouldReject` nonTerminatedTestConfig

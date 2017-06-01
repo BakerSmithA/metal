@@ -29,7 +29,7 @@ data Stm = MoveLeft
          | Write TapeSymbol
          | Reject
          | Accept
-         | If Bexp Stm [(Bexp, Stm)]
+         | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
          | Func FuncName Stm
          | Call FuncName
