@@ -17,7 +17,6 @@ import qualified Text.Megaparsec.Lexer as L
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
 --  DerivedSymbol : 'read'
---                | 'space'
 --                | VarName
 --                | \' TapeSymbol \'
 --  Bexp          : 'True'
@@ -110,7 +109,6 @@ funcName = identifier
 --                | \' TapeSymbol \'
 derivedSymbol :: Parser DerivedSymbol
 derivedSymbol = Read <$ tok "read"
-            <|> tok "space" *> return (Literal ' ')
             <|> Var <$> varName
             <|> Literal <$ tok "'" <*> tapeSymbol <* tok "'"
 

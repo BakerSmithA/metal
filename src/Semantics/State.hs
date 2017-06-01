@@ -2,6 +2,14 @@ module Semantics.State where
 
 import Syntax.Tree
 
+-- Updates the value of `f x` to be `r`.
+update :: (Eq a) => a -> b -> (a -> b) -> (a -> b)
+update x r f x' = if x' == x then r else f x'
+
+-- Updates the values of `f x_i` for all i, to be r_i.
+updateMany :: (Eq a) => [(a, b)] -> (a -> b) -> (a -> b)
+updateMany xs f = foldr (\(x, r) acc -> update x r acc) f xs
+
 -- A position on a tape, i.e. the index of the cell.
 type Pos = Integer
 
@@ -13,6 +21,10 @@ type Tape = Pos -> TapeSymbol
 -- space character.
 initialTape :: Tape
 initialTape p = ' '
+
+-- Places `str` at the start of the tape.
+placeOnTape :: String -> Tape -> Tape
+placeOnTape str = updateMany (zip [0..] str)
 
 -- An environment for variables, i.e. a mapping from variable names to the
 -- tape symbol associated with the variable.
@@ -41,10 +53,17 @@ funcBody fName envf = case envf fName of
 -- specification by ommitting the output (e.g. using print) in the state.
 type Config = (Tape, Pos, EnvV, EnvF)
 
+-- A configuration in which the tape contains the string `str`, the read/write
+-- head is in the left-most zeroed position, and the function environment is
+-- empty.
+configFromTapeStr :: String -> Config
+configFromTapeStr str = (tape, 0, initialEnvV, initialEnvF) where
+    tape = placeOnTape str initialTape
+
 -- An initial configuration in which the tape is empty, the read/write head is
 -- in the left-most zeroed position, and the function environment is empty.
 initialConfig :: Config
-initialConfig = (initialTape, 0, initialEnvV, initialEnvF)
+initialConfig = configFromTapeStr ""
 
 -- A type that allows for special accept and reject states, as well as
 -- intermediate states.
@@ -72,8 +91,3 @@ instance Monad ProgState where
     (HaltA)   >>= f = HaltA
 
 type State = ProgState Config
-
--- An initial state in which the tape is empty, the read/write head is
--- in the left-most zeroed position, and the function environment is empty.
-initialState :: State
-initialState  = Inter initialConfig

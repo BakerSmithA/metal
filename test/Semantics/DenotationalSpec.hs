@@ -218,9 +218,9 @@ evalStmSpec = do
                 -- (i.e. ' ') the program rejects.
                 --
                 --  func f {
-                --      if read == # {
+                --      if read == '#' {
                 --          accept
-                --      } else if read == space {
+                --      } else if read == ' ' {
                 --          reject
                 --      } else {
                 --          right
@@ -243,7 +243,7 @@ evalStmSpec = do
                 -- The statement used in the test is shown below.
                 --
                 --  func outer {
-                --      write #
+                --      write '#'
                 --      func inner {
                 --          right
                 --      }
@@ -266,7 +266,7 @@ evalStmSpec = do
                 -- The statement used in the test is shown below.
                 --
                 --  func f {
-                --      write #
+                --      write '#'
                 --      func f {
                 --          right
                 --      }

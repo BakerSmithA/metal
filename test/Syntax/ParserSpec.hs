@@ -108,9 +108,6 @@ derivedSymbolSpec = do
         it "parses read" $ do
             parse derivedSymbol "" "read" `shouldParse` Read
 
-        it "parses the string 'space' to represent a space" $ do
-            parse derivedSymbol "" "space" `shouldParse` Literal ' '
-
         it "parses variable names" $ do
             parse derivedSymbol "" "x" `shouldParse` Var "x"
 
@@ -301,6 +298,7 @@ stmSpec = describe "stm" $ do
 
         it "allows for multiple newlines between statements" $ do
             parse stm "" "left \n\n right" `shouldParse` (Comp MoveLeft MoveRight)
+            parse stm "" "left \n\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
 
     context "parsing printing" $ do
         it "parses printing a string" $ do
@@ -324,3 +322,9 @@ stmSpec = describe "stm" $ do
 
         it "ignores in-line comments" $ do
             parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [] Nothing)
+
+        it "ignores whitespace at the end of a statement" $ do
+            parse stm "" "left   " `shouldParse` MoveLeft
+
+        it "ignores newlines at the end of a statement" $ do
+            parse stm "" "left\n\n" `shouldParse` MoveLeft

@@ -26,10 +26,6 @@ bexpVal (Le s1 s2)  st = (derivedSymbolVal s1 st) <= (derivedSymbolVal s2 st)
 fix :: (a -> a) -> a
 fix f = let x = f x in x
 
--- Updates the value of `f x` to be `r`.
-update :: (Eq a) => a -> b -> (a -> b) -> (a -> b)
-update x r f x' = if x' == x then r else f x'
-
 -- Evauluates moving the read/write head left, ensuring the head doesn't move
 -- past the zero position.
 evalMoveLeft :: Config -> State
