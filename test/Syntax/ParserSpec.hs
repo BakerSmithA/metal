@@ -255,10 +255,7 @@ stmSpec = describe "stm" $ do
 
     context "parsing function calls" $ do
         it "parses function calls" $ do
-            parse stm "" "call fName" `shouldParse` (Call "fName")
-
-        it "fails to parse if no function name is given" $ do
-            parse stm "" `shouldFailOn` "call"
+            parse stm "" "fName" `shouldParse` (Call "fName")
 
     context "parsing composition" $ do
         it "parses composition" $ do

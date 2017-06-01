@@ -225,10 +225,10 @@ evalStmSpec = do
                 --          reject
                 --      } else {
                 --          right
-                --          call f
+                --          f
                 --      }
                 --  }
-                --  call f
+                --  f
                 let b1            = Eq Read (Literal '#')
                     b2            = Eq Read (Literal ' ')
                     elseIfClauses = [(b2, Reject)]
@@ -248,9 +248,9 @@ evalStmSpec = do
                 --      func inner {
                 --          right
                 --      }
-                --      call inner
+                --      inner
                 --  }
-                --  call outer
+                --  outer
                 let innerBody               = MoveRight
                     innerDecl               = Func "inner" innerBody
                     outerBody               = Comp (Comp (Write '#') innerDecl) (Call "inner")
@@ -271,9 +271,9 @@ evalStmSpec = do
                 --      func f {
                 --          right
                 --      }
-                --      call f
+                --      f
                 --  }
-                --  call f
+                --  f
                 let innerBody               = MoveRight
                     innerDecl               = Func "f" innerBody
                     outerBody               = Comp (Comp (Write '#') innerDecl) (Call "f")

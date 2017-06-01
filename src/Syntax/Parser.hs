@@ -33,7 +33,7 @@ import qualified Text.Megaparsec.Lexer as L
 --                | 'accept'
 --                | If
 --                | 'func' FuncName '{' Stm '}'
---                | 'call' FuncName
+--                | FuncName
 --                | Stm '\n' Stm
 --                | 'print'
 --                | 'print' String
@@ -142,9 +142,9 @@ stm' = MoveLeft <$ tok "left"
    <|> ifStm
    <|> While <$ tok "while" <*> bexp <*> braces stm
    <|> Func <$ tok "func" <*> funcName <*> braces stm
-   <|> Call <$ tok "call" <*> funcName
    <|> try (PrintStr <$ tok "print" <*> encasedString)
-   <|> PrintRead <$ tok "print"
+   <|> try (PrintRead <$ tok "print")
+   <|> Call <$> funcName
 
 -- The operators that can work on statements.
 stmOps :: [[Operator Parser Stm]]
@@ -160,7 +160,7 @@ stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
 --      | 'if' Bexp '{' Stm '} else {' Stm '}'
 --      | 'while' Bexp '{' Stm '}'
 --      | 'func' FuncName '{' Stm '}'
---      | 'call' FuncName
+--      | FuncName
 --      | 'print'
 --      | 'print' String
 stm :: Parser Stm
