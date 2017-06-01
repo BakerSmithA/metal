@@ -48,8 +48,8 @@ import qualified Text.Megaparsec.Lexer as L
 -- names, however function names are allowed to contain reserved keywords.
 reservedKeywords :: [String]
 reservedKeywords = ["space", "read", "True", "False", "not", "and", "or",
-                    "left", "right", "write", "reject", "accept", "if", "else",
-                    "while", "call", "print"]
+                    "left", "right", "write", "reject", "accept", "let", "if",
+                    "else", "while", "call", "print"]
 
 -- Consumes whole line and in-line comments. The syntax for both comment types
 -- are the same as C, with '//' indicating a whole line comment and '/* ... */'
@@ -160,12 +160,13 @@ stm' = MoveLeft <$ tok "left"
    <|> Write <$ tok "write" <*> derivedSymbol
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
-   <|> ifStm
-   <|> While <$ tok "while" <*> bexp <*> braces stm
-   <|> Func <$ tok "func" <*> funcName <*> braces stm
+   <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
+   <|> FuncDecl <$ tok "func" <*> funcName <*> braces stm
+   <|> try (Call <$> funcName)
    <|> try (PrintStr <$ tok "print" <*> encasedString)
    <|> try (PrintRead <$ tok "print")
-   <|> Call <$> funcName
+   <|> While <$ tok "while" <*> bexp <*> braces stm
+   <|> ifStm
 
 -- The operators that can work on statements.
 stmOps :: [[Operator Parser Stm]]
@@ -174,15 +175,16 @@ stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'
 --      | 'right'
---      | 'write' TapeSymbol
+--      | 'write' DerivedSymbol
 --      | 'reject'
 --      | 'accept'
---      | 'if' Bexp '{' Stm '}'
---      | 'if' Bexp '{' Stm '} else {' Stm '}'
---      | 'while' Bexp '{' Stm '}'
+--      | 'let' VarName '=' DerivedSymbol
 --      | 'func' FuncName '{' Stm '}'
 --      | FuncName
+--      | Stm '\n' Stm
 --      | 'print'
 --      | 'print' String
+--      | 'while' Bexp '{' Stm '}'
+--      | If
 stm :: Parser Stm
 stm = whitespace *> makeExprParser stm' stmOps

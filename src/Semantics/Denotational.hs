@@ -47,24 +47,11 @@ evalWrite d config@(tape, pos, envv, envf) = Inter (tape', pos, envv, envf) wher
     tape' = update pos dVal tape
     dVal  = derivedSymbolVal d config
 
--- Conditionally chooses to 'execute' a branch if associated predicate
--- evaluates to true. Returns the branch to execute, or `id` if no predicates
--- evaluate to true.
-cond :: [(Config -> Bool, Config -> State)] -> (Config -> State)
-cond []               c = return c
-cond ((p, branch):bs) c = if p c then branch c else cond bs c
-
--- Evaluates an if-else statement.
-evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> State
-evalIf b stm elseIfClauses elseStm = cond branches where
-    branches   = map (\(b, stm) -> (bexpVal b, evalStm stm)) allClauses
-    allClauses = ((b, stm):elseIfClauses) ++ (maybeToList elseClause)
-    elseClause = fmap (\stm -> (TRUE, stm)) elseStm
-
--- Evaulates a while loop with condition `b` and body `stm`.
-evalWhile :: Bexp -> Stm -> Config -> State
-evalWhile b stm = fix f where
-    f g = cond [(bexpVal b, \c -> evalStm stm c >>= g)]
+-- Evaluates a variable declaration by adding the variable to the environment.
+evalDeclVar :: VarName -> DerivedSymbol -> Config -> State
+evalDeclVar vName d config@(tape, pos, envv, envf) = Inter (tape, pos, envv', envf) where
+    envv' = update vName dVal envv
+    dVal  = Just (derivedSymbolVal d config)
 
 -- Evaulates a function declaration by adding the function to the environment.
 evalDeclFunc :: FuncName -> Stm -> Config -> State
@@ -90,6 +77,25 @@ evalPrintRead = return
 evalPrintStr :: String -> Config -> State
 evalPrintStr s = return
 
+-- Conditionally chooses to 'execute' a branch if associated predicate
+-- evaluates to true. Returns the branch to execute, or `id` if no predicates
+-- evaluate to true.
+cond :: [(Config -> Bool, Config -> State)] -> (Config -> State)
+cond []               c = return c
+cond ((p, branch):bs) c = if p c then branch c else cond bs c
+
+-- Evaulates a while loop with condition `b` and body `stm`.
+evalWhile :: Bexp -> Stm -> Config -> State
+evalWhile b stm = fix f where
+    f g = cond [(bexpVal b, \c -> evalStm stm c >>= g)]
+
+-- Evaluates an if-else statement.
+evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> State
+evalIf b stm elseIfClauses elseStm = cond branches where
+    branches   = map (\(b, stm) -> (bexpVal b, evalStm stm)) allClauses
+    allClauses = ((b, stm):elseIfClauses) ++ (maybeToList elseClause)
+    elseClause = fmap (\stm -> (TRUE, stm)) elseStm
+
 -- The semantic function S[[.]] over statements. The writer returned keeps
 -- track of the text output of the statement.
 evalStm :: Stm -> Config -> State
@@ -98,10 +104,11 @@ evalStm (MoveRight)            = evalMoveRight
 evalStm (Write d)              = evalWrite d
 evalStm (Reject)               = \c -> HaltR
 evalStm (Accept)               = \c -> HaltA
-evalStm (If b stm elseIfs els) = evalIf b stm elseIfs els
-evalStm (While b stm)          = evalWhile b stm
-evalStm (Func fName body)      = evalDeclFunc fName body
+evalStm (VarDecl vName d)      = evalDeclVar vName d
+evalStm (FuncDecl fName body)  = evalDeclFunc fName body
 evalStm (Call fName)           = evalCallFunc fName
 evalStm (Comp stm1 stm2)       = \c -> (evalStm stm1 c) >>= (evalStm stm2)
 evalStm (PrintRead)            = evalPrintRead
 evalStm (PrintStr str)         = evalPrintStr str
+evalStm (While b stm)          = evalWhile b stm
+evalStm (If b stm elseIfs els) = evalIf b stm elseIfs els

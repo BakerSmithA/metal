@@ -7,19 +7,23 @@ import Test.Hspec
 import Test.HUnit.Lang
 
 -- A configuration used for testing, where the tape is populated with the
--- string "Ab5#", the read/write head is at index 1 (at 'b'), and the
--- empty variable and function environments.
+-- string "Ab5#", the read/write head is at index 1 (at 'b'), the variable
+-- environment is populated with "x" mapped to '#', and the function environment is
+-- empty.
 testConfig :: Config
-testConfig = (tape, 1, initialEnvV, initialEnvF) where
+testConfig = (tape, 1, envv, initialEnvF) where
     tape 0 = 'A'
     tape 1 = 'b'
     tape 2 = '5'
     tape 3 = '#'
     tape _ = ' '
 
+    envv = update "x" (Just '#') initialEnvV
+
 -- A configuration used for testing that is not terminated by a '#' symbol. The
 -- tape is populated with the string "Ab5x", the read/write head is at index 1
--- (at 'b'), and the empty variable and function environments.
+-- (at 'b'), the variable environment is populated with "x" mapped 5, and the
+-- function environment is empty.
 nonTerminatedTestConfig :: Config
 nonTerminatedTestConfig = (tape', pos, envv, envf) where
     tape' = update 3 'x' tape
@@ -66,6 +70,9 @@ derivedSymbolValSpec = do
 
         it "evaluates reading the current symbol" $ do
             derivedSymbolVal Read testConfig `shouldBe` 'b'
+
+        it "evalautes the value of a variable" $ do
+            derivedSymbolVal (Var "x") testConfig `shouldBe` '#'
 
 bexpValSpec :: Spec
 bexpValSpec = do
@@ -180,34 +187,26 @@ evalStmSpec = do
             it "accepts" $ do
                 evalStm Accept `shouldAccept` testConfig
 
-        context "evaluating while loop" $ do
-            it "does not loop if the condition is false" $ do
-                let loop = While FALSE (Write (Literal '1'))
-                evalStm loop testConfig `shouldRead` 'b'
+        context "evaluating variable declarations" $ do
+            it "adds variables to the environment" $ do
+                let decl = VarDecl "y" (Literal '#')
+                let Inter (_, _, envv, _) = evalStm decl initialConfig
+                envv "y" `shouldBe` Just '#'
 
-            it "performs a loop" $ do
-                -- Move left until at '#' character is reached.
-                let cond = Not (Eq Read (Literal '#'))
-                    loop = While cond MoveRight
-                evalStm loop testConfig `shouldBeAt` 3
-
-            it "breaks by rejecting" $ do
-                let loop = While TRUE Reject
-                evalStm loop `shouldReject` testConfig
-
-            it "breaks by accepting" $ do
-                let loop = While TRUE Accept
-                evalStm loop `shouldAccept` testConfig
+            it "overwrites previous variable declarations" $ do
+                let decl = VarDecl "x" (Literal 'a')
+                let Inter (_, _, envv, _) = evalStm decl initialConfig
+                envv "x" `shouldBe` Just 'a'
 
         context "evaluating function declarations" $ do
             it "adds functions to the environment" $ do
-                let decl = Func "f" MoveRight
+                let decl = FuncDecl "f" MoveRight
                 let Inter (_, _, _, envf) = evalStm decl initialConfig
                 envf "f" `shouldBe` (Just MoveRight)
 
         context "evaluating function calls" $ do
             it "performs the function" $ do
-                let decl = Func "f" MoveRight
+                let decl = FuncDecl "f" MoveRight
                     call = Call "f"
                     comp = Comp decl call
                 evalStm comp initialConfig `shouldBeAt` 1
@@ -234,7 +233,7 @@ evalStmSpec = do
                     elseIfClauses = [(b2, Reject)]
                     elseClause    = Just (Comp MoveRight (Call "f"))
                     ifStm         = If b1 Accept elseIfClauses elseClause
-                    funcDecl      = Func "f" ifStm
+                    funcDecl      = FuncDecl "f" ifStm
                     comp          = Comp funcDecl (Call "f")
 
                 evalStm comp `shouldAccept` testConfig
@@ -252,9 +251,9 @@ evalStmSpec = do
                 --  }
                 --  outer
                 let innerBody                     = MoveRight
-                    innerDecl                     = Func "inner" innerBody
+                    innerDecl                     = FuncDecl "inner" innerBody
                     outerBody                     = Comp (Comp (Write (Literal '#')) innerDecl) (Call "inner")
-                    outerDecl                     = Func "outer" outerBody
+                    outerDecl                     = FuncDecl "outer" outerBody
                     comp                          = Comp outerDecl (Call "outer")
                     Inter (tape, pos, envv, envf) = evalStm comp testConfig
 
@@ -275,12 +274,49 @@ evalStmSpec = do
                 --  }
                 --  f
                 let innerBody                     = MoveRight
-                    innerDecl                     = Func "f" innerBody
+                    innerDecl                     = FuncDecl "f" innerBody
                     outerBody                     = Comp (Comp (Write (Literal '#')) innerDecl) (Call "f")
-                    outerDecl                     = Func "f" outerBody
+                    outerDecl                     = FuncDecl "f" outerBody
                     comp                          = Comp outerDecl (Call "f")
                     Inter (tape, pos, envv, envf) = evalStm comp testConfig
 
                 tape 1 `shouldBe` '#'
                 pos `shouldBe` 2
                 envf "f" `shouldBe` (Just outerBody)
+
+            it "restores the values of variables if they are overwritten in a scope" $ do
+                -- The statement used in the teset is shown below.
+                --
+                --  let x = 'a'
+                --  func f {
+                --      let x = 'b'
+                --      write x
+                --  }
+                --  f
+                let body                        = Comp (VarDecl "x" (Literal 'b')) (Write (Var "x"))
+                    funcDecl                    = FuncDecl "f" body
+                    comp1                       = Comp (VarDecl "x" (Literal 'a')) funcDecl
+                    comp2                       = Comp comp1 (Call "f")
+                    Inter (tape, _, envv, envf) = evalStm comp2 initialConfig
+
+                tape 0 `shouldBe` 'b'
+                envv "x" `shouldBe` Just 'a'
+
+        context "evaluating while loop" $ do
+            it "does not loop if the condition is false" $ do
+                let loop = While FALSE (Write (Literal '1'))
+                evalStm loop testConfig `shouldRead` 'b'
+
+            it "performs a loop" $ do
+                -- Move left until at '#' character is reached.
+                let cond = Not (Eq Read (Literal '#'))
+                    loop = While cond MoveRight
+                evalStm loop testConfig `shouldBeAt` 3
+
+            it "breaks by rejecting" $ do
+                let loop = While TRUE Reject
+                evalStm loop `shouldReject` testConfig
+
+            it "breaks by accepting" $ do
+                let loop = While TRUE Accept
+                evalStm loop `shouldAccept` testConfig

@@ -33,11 +33,12 @@ data Stm = MoveLeft
          | Write DerivedSymbol
          | Reject
          | Accept
-         | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
-         | While Bexp Stm
-         | Func FuncName Stm
+         | VarDecl VarName DerivedSymbol
+         | FuncDecl FuncName Stm
          | Call FuncName
          | Comp Stm Stm
          | PrintRead
          | PrintStr String
+         | While Bexp Stm
+         | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          deriving (Eq, Show)

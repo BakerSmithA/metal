@@ -249,6 +249,16 @@ stmSpec = describe "stm" $ do
         it "parses ACCEPT" $ do
             parse stm "" "accept" `shouldParse` Accept
 
+    context "parsing variable declarations" $ do
+        it "parses variable declarations" $ do
+            parse stm "" "let x = read" `shouldParse` VarDecl "x" Read
+
+        it "fails if '=' is missing" $ do
+            parse stm "" `shouldFailOn` "let x read"
+
+        it "fails if a derived symbol is missing" $ do
+            parse stm "" `shouldFailOn` "let x ="
+
     context "parsing WHILE statements" $ do
         it "parses WHILE" $ do
             parse stm "" "while True { right }" `shouldParse` (While TRUE MoveRight)
@@ -267,7 +277,7 @@ stmSpec = describe "stm" $ do
 
     context "parsing function declarations" $ do
         it "parses function delcarations" $ do
-            parse stm "" "func fName { right }" `shouldParse` (Func "fName" MoveRight)
+            parse stm "" "func fName { right }" `shouldParse` (FuncDecl "fName" MoveRight)
 
         it "fails to parse if a function name is missing" $ do
             parse stm "" `shouldFailOn` "func { right }"
