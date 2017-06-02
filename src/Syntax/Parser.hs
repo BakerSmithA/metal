@@ -69,7 +69,10 @@ parens = between (tok "(") (tok ")")
 
 -- Parses a string enclosed in curly braces.
 braces :: Parser a -> Parser a
-braces = between (tok "{") (tok "}")
+braces p = between openBrace closeBrace p' where
+    p'         = p <* whitespace <* optional newline <* whitespace
+    openBrace  = tok "{" <* optional newline
+    closeBrace = tok "}"
 
 -- Parses a string encased in double quotes.
 encasedString :: Parser String
@@ -104,7 +107,6 @@ funcName = identifier
 
 -- Parses a derived symbol, the EBNF syntax of which is:
 --  DerivedSymbol : 'read'
---                | 'space'
 --                | VarName
 --                | \' TapeSymbol \'
 derivedSymbol :: Parser DerivedSymbol
@@ -166,9 +168,11 @@ stm' = MoveLeft <$ tok "left"
    <|> While <$ tok "while" <*> bexp <*> braces stm
    <|> ifStm
 
--- The operators that can work on statements.
-stmOps :: [[Operator Parser Stm]]
-stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
+-- Parses the composition of statements, i.e. statements separated by newlines.
+stmComp :: Parser Stm
+stmComp = do
+    stms <- stm' `sepBy1` (some newline <* whitespace)
+    return (foldl1 Comp stms)
 
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'
@@ -185,4 +189,4 @@ stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
 --      | 'while' Bexp '{' Stm '}'
 --      | If
 stm :: Parser Stm
-stm = whitespace *> makeExprParser stm' stmOps
+stm = whitespace *> (try stmComp <|> stm')

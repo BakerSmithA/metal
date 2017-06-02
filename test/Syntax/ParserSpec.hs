@@ -327,4 +327,10 @@ stmSpec = describe "stm" $ do
             parse stm "" "left   " `shouldParse` MoveLeft
 
         it "ignores newlines at the end of a statement" $ do
-            parse stm "" "left\n\n" `shouldParse` MoveLeft
+            parse stm "" "left \n\n " `shouldParse` MoveLeft
+
+        it "ignores newlines after an opening brace" $ do
+            parse stm "" "while True {\n left }" `shouldParse` (While TRUE MoveLeft)
+
+        it "ignores newlines before a closing brace" $ do
+            parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
