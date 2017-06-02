@@ -50,16 +50,25 @@ reservedKeywords = ["space", "read", "True", "False", "not", "and", "or",
                     "left", "right", "write", "reject", "accept", "let", "if",
                     "else", "while", "call", "print"]
 
--- Consumes whole line and in-line comments. The syntax for both comment types
--- are the same as C, with '//' indicating a whole line comment and '/* ... */'
+-- Produces a whitespace consumer using `sc` as the space consumer. Consumes
+-- whole line and in-line comments. The syntax for both comment types are the
+-- same as C, with '//' indicating a whole line comment and '/* ... */'
 -- indicating an in-line comment.
-whitespace :: Parser ()
-whitespace = L.space (void separatorChar) lineCmnt blockCmnt
+whitespaceConsumer :: Parser Char -> Parser ()
+whitespaceConsumer sc = L.space (void sc) lineCmnt blockCmnt
   where lineCmnt  = L.skipLineComment "//" <* void (many newline)
         blockCmnt = L.skipBlockComment "/*" "*/" <* void (many newline)
 
+-- Comsumes whitespace and comments, but not newlines.
+whitespace :: Parser ()
+whitespace = whitespaceConsumer separatorChar
+
+-- Consumes whitespace, comments, and newlines.
+whitespaceNewline :: Parser ()
+whitespaceNewline = whitespaceConsumer spaceChar
+
 -- Succeeds if the specified string can be parsed, followed by any ignored
--- whitespace.
+-- whitespace or comments.
 tok :: String -> Parser String
 tok s = string s <* whitespace
 
@@ -70,7 +79,7 @@ parens = between (tok "(") (tok ")")
 -- Parses a string enclosed in curly braces.
 braces :: Parser a -> Parser a
 braces p = between openBrace closeBrace p' where
-    p'         = p <* whitespace <* optional newline <* whitespace
+    p'         = p <* whitespaceNewline
     openBrace  = tok "{" <* optional newline
     closeBrace = tok "}"
 
@@ -168,11 +177,9 @@ stm' = MoveLeft <$ tok "left"
    <|> While <$ tok "while" <*> bexp <*> braces stm
    <|> ifStm
 
--- Parses the composition of statements, i.e. statements separated by newlines.
-stmComp :: Parser Stm
-stmComp = do
-    stms <- stm' `sepBy1` (some newline <* whitespace)
-    return (foldl1 Comp stms)
+-- The operators that can work on statements - this is used to parse composition.
+stmOps :: [[Operator Parser Stm]]
+stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
 
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'
@@ -189,4 +196,4 @@ stmComp = do
 --      | 'while' Bexp '{' Stm '}'
 --      | If
 stm :: Parser Stm
-stm = whitespace *> (try stmComp <|> stm')
+stm = whitespaceNewline *> (try (makeExprParser stm' stmOps) <|> stm')

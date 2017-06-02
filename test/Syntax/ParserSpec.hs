@@ -311,6 +311,9 @@ stmSpec = describe "stm" $ do
         it "ignores whitespace at the start of a statement" $ do
             parse stm "" " left" `shouldParse` MoveLeft
 
+        it" ignores newlines at the start of a statement" $ do
+            parse stm "" "\n\nleft" `shouldParse` MoveLeft
+
         it "ignores whole-line comments at the start" $ do
             parse stm "" "//Comment\n left" `shouldParse` MoveLeft
 
@@ -334,3 +337,6 @@ stmSpec = describe "stm" $ do
 
         it "ignores newlines before a closing brace" $ do
             parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
+
+        it "ignores tabs" $ do
+            parse stm "" "\t left" `shouldParse` MoveLeft
