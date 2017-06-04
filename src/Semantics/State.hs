@@ -73,19 +73,19 @@ data ProgState a = Inter a
                  deriving (Eq)
 
 instance Functor ProgState where
-    -- fmap :: (a -> b) -> State a -> State b
+    -- fmap :: (a -> b) -> ProgState a -> ProgState b
     fmap f (Inter x) = Inter (f x)
     fmap f (HaltR)   = HaltR
     fmap f (HaltA)   = HaltA
 
 instance Applicative ProgState where
-    -- pure :: a -> State a
+    -- pure :: a -> ProgState a
     pure = Inter
-    -- (<*>) :: State (a -> b) -> State a -> State b
+    -- (<*>) :: ProgState (a -> b) -> ProgState a -> ProgState b
     (Inter f) <*> s = fmap f s
 
 instance Monad ProgState where
-    -- (>>=) :: State a -> (a -> State b) -> State b
+    -- (>>=) :: ProgState a -> (a -> ProgState b) -> ProgState b
     (Inter x) >>= f = f x
     (HaltR)   >>= f = HaltR
     (HaltA)   >>= f = HaltA
