@@ -22,6 +22,7 @@ executable Turing
   build-depends:       base >=4.9 && <4.10
                      , megaparsec >=5.2 && <5.3
                      , mtl
+                     , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010
 
