@@ -31,14 +31,14 @@ data Bexp = TRUE
 data Stm = MoveLeft
          | MoveRight
          | Write DerivedSymbol
-         | Reject
          | Accept
+         | Reject
+         | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
+         | While Bexp Stm
          | VarDecl VarName DerivedSymbol
          | FuncDecl FuncName Stm
          | Call FuncName
          | Comp Stm Stm
          | PrintRead
          | PrintStr String
-         | While Bexp Stm
-         | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          deriving (Eq, Show)

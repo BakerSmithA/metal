@@ -14,6 +14,10 @@ data Env = Env {
   , funcs :: FuncDefs
 }
 
+-- An empty environment containing no variable or function definitions.
+initial :: Env
+initial = Env [] []
+
 -- Looks up a variable in an environment.
 lookupVar :: VarName -> Env -> Maybe TapeSymbol
 lookupVar name env = lookup name (vars env)
@@ -29,3 +33,11 @@ addVars defs env = env { vars = defs ++ (vars env) }
 -- Adds a list of function definitions to the environment.
 addFuncs :: FuncDefs -> Env -> Env
 addFuncs defs env = env { funcs = defs ++ (funcs env) }
+
+-- Adds a single variable to the environment.
+addVar :: VarName -> TapeSymbol -> Env -> Env
+addVar name sym = addVars [(name, sym)]
+
+-- Adds a single function to the environment.
+addFunc :: FuncName -> Stm -> Env -> Env
+addFunc name body = addFuncs [(name, body)]
