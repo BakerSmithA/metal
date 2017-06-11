@@ -9,4 +9,4 @@ import Control.Monad.Except
 main :: IO ()
 main = do
     let stm = (Comp (PrintStr "STR") Accept)
-    printResult (evalS stm Env.initial Config.initial)
+    return ()
