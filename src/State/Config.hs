@@ -43,17 +43,17 @@ type MachineConfig = Machine Config
 -- Moves the read-write head of the machine left, provided the machine is not
 -- halted.
 left :: MachineConfig -> MachineConfig
-left mach = mach >>= return . leftC
+left = fmap leftC
 
 -- Moves the read-write head of the machine right, provided the machine is not
 -- halted.
 right :: MachineConfig -> MachineConfig
-right mach = mach >>= return . rightC
+right = fmap rightC
 
 -- Retrieves the symbol under the read-write head.
 getCurr :: MachineConfig -> Machine TapeSymbol
-getCurr mach = mach >>= return . getCurrC
+getCurr = fmap getCurrC
 
 -- Writes a symbol at the current position of the read-write head.
 setCurr :: TapeSymbol -> MachineConfig -> MachineConfig
-setCurr sym mach = mach >>= return . (setCurrC sym)
+setCurr sym = fmap (setCurrC sym)

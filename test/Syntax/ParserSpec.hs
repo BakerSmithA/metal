@@ -2,21 +2,21 @@ module Syntax.ParserSpec (parserSpec) where
 
 import Syntax.Tree
 import Syntax.Parser
-
 import Text.Megaparsec
 import Test.Hspec
 import Test.Hspec.Megaparsec
 
 parserSpec :: Spec
 parserSpec = do
-    encasedStringSpec
-    tapeSymbolSpec
-    varNameSpec
-    funcNameSpec
-    derivedSymbolSpec
-    bexpSpec
-    ifStmSpec
-    stmSpec
+    describe "Parser" $ do
+        encasedStringSpec
+        tapeSymbolSpec
+        varNameSpec
+        funcNameSpec
+        derivedSymbolSpec
+        bexpSpec
+        ifStmSpec
+        stmSpec
 
 encasedStringSpec :: Spec
 encasedStringSpec = do

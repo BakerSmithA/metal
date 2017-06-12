@@ -4,6 +4,7 @@ module State.Machine where
 data Machine a = HaltA   -- The machine halted in the accepting state.
                | HaltR   -- The machine halted in the reject state.
                | Inter a -- The machine is running.
+               deriving (Eq)
 
 instance Functor Machine where
     -- fmap :: (a -> b) -> Machine a -> Machine b
