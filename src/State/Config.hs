@@ -1,4 +1,11 @@
-module State.Config where
+module State.Config
+( Config
+, MachineConfig
+, left
+, right
+, getCurr
+, setCurr
+) where
 
 import Syntax.Tree
 import State.Tape

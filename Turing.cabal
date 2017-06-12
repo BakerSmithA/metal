@@ -23,6 +23,7 @@ executable Turing
                      , megaparsec >=5.2 && <5.3
                      , mtl
                      , transformers
+                     , containers
   hs-source-dirs:      src
   default-language:    Haskell2010
 
