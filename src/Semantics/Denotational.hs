@@ -1,15 +1,16 @@
 module Semantics.Denotational where
 
 import Syntax.Tree
-import State.Machine
 import State.Config
 import State.Env
-import Semantics.Helpers
+import State.Error
+import State.Machine
+import State.State
 import Control.Monad.Reader
-import Control.Monad.Except
+import Semantics.Helpers
 import Data.Maybe
 
-type StateM a     = ReaderT Env Machine a
+type StateM a     = ReaderT Env Machine a --ReaderT Env (ExceptT RuntimeError Machine) a
 type StateMConfig = StateM Config
 
 -- The semantic function D[[.]] over tape symbols.
