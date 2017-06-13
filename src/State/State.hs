@@ -25,4 +25,4 @@ instance Applicative ProgState where
 
 instance Monad ProgState where
     -- (>>=) :: ProgState a -> (a -> ProgState b) -> ProgState b
-    (ProgState s) >>= f = undefined
+    (ProgState s) >>= f = ProgState (s >>= (runState . f))
