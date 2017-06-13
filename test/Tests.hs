@@ -2,7 +2,7 @@ module Main where
 
 import Syntax.ParserSpec
 import State.MachineSpec
-import State.StateSpec
+import State.ProgStateSpec
 import Test.Hspec
 
 main :: IO ()
