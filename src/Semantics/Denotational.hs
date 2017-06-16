@@ -5,7 +5,6 @@ import State.Config
 import State.Env
 import State.Error
 import State.Machine
-import State.ProgState
 import Control.Monad.Reader
 import Semantics.Helpers
 import Data.Maybe
