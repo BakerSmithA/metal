@@ -12,6 +12,11 @@ import Data.Maybe
 type StateM a     = ReaderT Env Machine a --ReaderT Env (ExceptT RuntimeError Machine) a
 type StateMConfig = StateM Config
 
+derivedSymbolVal' :: DerivedSymbol -> MachineT (Reader Env) Config -> MachineT (Reader Env) TapeSymbol
+derivedSymbolVal' (Read)        m = fmap getCurrC m
+derivedSymbolVal' (Literal sym) m = return sym
+derivedSymbolVal' (Var name)    m = undefined
+
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> StateMConfig -> StateM TapeSymbol
 derivedSymbolVal (Read)        r = mapReaderT getCurr r

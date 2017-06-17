@@ -10,14 +10,6 @@ data Machine a = HaltA   -- The machine halted in the accepting state.
                | Inter a -- The machine is running.
                deriving (Eq)
 
--- Returns either `acc`, `rej`, or applies f depending on the state of the
--- machine.
-machine :: b -> b -> (a -> b) -> Machine a -> b
-machine acc rej f m = case m of
-    HaltA   -> acc
-    HaltR   -> rej
-    Inter x -> f x
-
 instance Functor Machine where
     -- fmap :: (a -> b) -> Machine a -> Machine b
     fmap f (HaltA)   = HaltA
@@ -44,6 +36,14 @@ instance (Show a) => Show (Machine a) where
     show (HaltR)   = "Rejected"
     show (Inter x) = "Inter: " ++ (show x)
 
+-- Returns either `acc`, `rej`, or applies f depending on the state of the
+-- machine.
+machine :: b -> b -> (a -> b) -> Machine a -> b
+machine acc rej f m = case m of
+    HaltA   -> acc
+    HaltR   -> rej
+    Inter x -> f x
+
 data MachineT m a = MachineT {
     runMachineT :: m (Machine a)
 }
@@ -65,3 +65,7 @@ instance (Monad m) => Monad (MachineT m) where
 instance MonadTrans MachineT where
     -- lift :: m a -> MachineT m a
     lift = MachineT . liftM Inter
+
+-- Transforms the computation inside a `MachineT`.
+mapMachineT :: (m (Machine a) -> n (Machine b)) -> MachineT m a -> MachineT n b
+mapMachineT f = MachineT . f . runMachineT

@@ -3,6 +3,7 @@ module State.Config
 , MachineConfig
 , left
 , right
+, getCurrC
 , getCurr
 , setCurr
 ) where
