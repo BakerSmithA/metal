@@ -1,7 +1,6 @@
 module State.Tape where
 
 import Syntax.Tree
-import Control.Monad.Reader
 
 -- A position on the tape, i.e. the index of a cell.
 type Pos = Integer

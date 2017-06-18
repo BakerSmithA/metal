@@ -2,12 +2,13 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module State.MachineMonad where
+module State.MachineClass where
 
 -- This module was constructed help from looking at MonadError:
 -- https://hackage.haskell.org/package/mtl-2.2.1/docs/src/Control.Monad.Error.Class.html#MonadError
 
 import State.Machine
+import State.Trans.Machine
 import Control.Monad.Except
 import Control.Monad.Reader
 

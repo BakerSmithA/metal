@@ -19,6 +19,7 @@ executable Turing
   main-is:             Main.hs
   -- other-modules:
   -- other-extensions:
+  ghc-options:         -Wall
   build-depends:       base >=4.9 && <4.10
                      , megaparsec >=5.2 && <5.3
                      , mtl
@@ -31,7 +32,7 @@ test-suite spec
   type:                exitcode-stdio-1.0
   main-is:             Tests.hs
   hs-source-dirs:      test, src
-  ghc-options:         -O0
+  ghc-options:         -O0 -Wall
   build-depends:       base == 4.*
                      , hspec == 2.*
                      , hspec-megaparsec

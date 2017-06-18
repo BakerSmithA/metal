@@ -8,7 +8,6 @@ module State.Config
 
 import Syntax.Tree
 import State.Tape
-import State.Machine
 
 -- A configuration of a Turing machine.
 data Config = Config {
@@ -18,7 +17,7 @@ data Config = Config {
 
 instance Show Config where
     -- show :: Config -> String
-    show (Config pos tape) = show pos
+    show c = show (pos c)
 
 -- A configuration in which the read-write head is in the zeroed position.
 initial :: Config
@@ -36,9 +35,9 @@ right c = c { pos = (pos c) + 1 }
 
 -- Reads the symbol under the read-write head.
 getCurr :: Config -> TapeSymbol
-getCurr (Config pos tape) = getSym pos tape
+getCurr (Config p t) = getSym p t
 
 -- Writes a symbol at the current position of the read-write head.
 setCurr :: TapeSymbol -> Config -> Config
-setCurr sym (Config pos tape) = Config pos tape' where
-    tape' = setSym pos sym tape
+setCurr sym (Config p t) = Config p t' where
+    t' = setSym p sym t
