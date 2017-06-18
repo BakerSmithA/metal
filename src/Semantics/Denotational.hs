@@ -2,120 +2,88 @@ module Semantics.Denotational where
 
 import Syntax.Tree
 import State.Config
-import State.Env
-import State.Error
 import State.Machine
-import Control.Monad.Reader
-import Semantics.Helpers
-import Data.Maybe
+import State.Program
 
-type StateM a     = ReaderT Env Machine a --ReaderT Env (ExceptT RuntimeError Machine) a
-type StateMConfig = StateM Config
-
-derivedSymbolVal' :: DerivedSymbol -> MachineT (Reader Env) Config -> MachineT (Reader Env) TapeSymbol
-derivedSymbolVal' (Read)        m = fmap getCurrC m
-derivedSymbolVal' (Literal sym) m = return sym
-derivedSymbolVal' (Var name)    m = undefined
+type ProgConfig = Prog Config
 
 -- The semantic function D[[.]] over tape symbols.
-derivedSymbolVal :: DerivedSymbol -> StateMConfig -> StateM TapeSymbol
-derivedSymbolVal (Read)        r = mapReaderT getCurr r
-derivedSymbolVal (Literal sym) r = return sym
-derivedSymbolVal (Var name)    r = do
-    -- TODO: Error Handling.
-    Just val <- asks (lookupVar name)
-    return val
+derivedSymbolVal :: DerivedSymbol -> Prog TapeSymbol
+derivedSymbolVal (Read)        = undefined
+derivedSymbolVal (Var name)    = undefined
+derivedSymbolVal (Literal sym) = undefined
 
 -- The semantic function B[[.]] over boolean expressions.
-bexpVal :: Bexp -> StateMConfig -> StateM Bool
-bexpVal (TRUE)      r = return True
-bexpVal (FALSE)     r = return False
-bexpVal (Not b)     r = liftM not (bexpVal b r)
-bexpVal (And b1 b2) r = liftM2 (&&) (bexpVal b1 r) (bexpVal b2 r)
-bexpVal (Or b1 b2)  r = liftM2 (||) (bexpVal b1 r) (bexpVal b2 r)
-bexpVal (Eq s1 s2)  r = liftM2 (==) (derivedSymbolVal s1 r) (derivedSymbolVal s2 r)
-bexpVal (Le s1 s2)  r = liftM2 (<=) (derivedSymbolVal s1 r) (derivedSymbolVal s2 r)
+bexpVal :: Bexp -> Prog Bool
+bexpVal = undefined
 
 -- Conditionally chooses to 'execute' a branch if associated predicate
 -- evaluates to true. Returns the branch to execute, or `id` if no predicates
 -- evaluate to true.
-cond :: [(StateMConfig -> StateM Bool, StateMConfig -> StateMConfig)] -> (StateMConfig -> StateMConfig)
-cond []                       r = r
-cond ((predicate, branch):ps) r = do
-    bVal <- predicate r
-    if bVal then branch r
-            else cond ps r
+cond :: [(ProgConfig -> Prog Bool, ProgConfig -> ProgConfig)] -> (ProgConfig -> ProgConfig)
+cond = undefined
 
 -- Evaluates moving the read-write head one cell to the left.
-evalLeft :: StateMConfig -> StateMConfig
-evalLeft = mapReaderT left
+evalLeft :: ProgConfig -> ProgConfig
+evalLeft = fmap left
 
 -- Evaluates moving the read-write head one cell to the right.
-evalRight :: StateMConfig -> StateMConfig
-evalRight = mapReaderT right
+evalRight :: ProgConfig -> ProgConfig
+evalRight = fmap right
 
 -- Evaluates writing to the tape.
-evalWrite :: StateM TapeSymbol -> StateMConfig -> StateMConfig
-evalWrite sym r = do
-    val <- sym
-    mapReaderT (setCurr val) r
+evalWrite :: DerivedSymbol -> ProgConfig -> ProgConfig
+evalWrite sym p = do
+    val <- derivedSymbolVal sym
+    fmap (setCurr val) p
 
 -- Evaluates halting the machine by accepting.
-evalAccept :: StateMConfig
-evalAccept = lift HaltA
+evalAccept :: ProgConfig
+evalAccept = undefined
 
 -- Evaluates halting the machine by rejecting.
-evalReject :: StateMConfig
-evalReject = lift HaltR
+evalReject :: ProgConfig
+evalReject = undefined
 
 -- Evaluates an if-else statement.
-evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> StateMConfig -> StateMConfig
-evalIf b stm elseIfClauses elseStm = cond branches where
-    branches   = map (\(b, stm) -> (bexpVal b, evalStm stm)) allClauses
-    allClauses = ((b, stm):elseIfClauses) ++ (maybeToList elseClause)
-    elseClause = fmap (\stm -> (TRUE, stm)) elseStm
+evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> ProgConfig -> ProgConfig
+evalIf = undefined
 
 -- Evaluates a while loop.
-evalWhile :: Bexp -> Stm -> StateMConfig -> StateMConfig
-evalWhile b stm = fix f where
-    f loop = cond [(bexpVal b, (evalStm stm) . loop)]
+evalWhile :: Bexp -> Stm -> ProgConfig -> ProgConfig
+evalWhile = undefined
 
 -- Evaluates a variable declaration.
-evalVarDecl :: VarName -> DerivedSymbol -> StateMConfig -> StateMConfig
-evalVarDecl name sym r = do
-    val <- derivedSymbolVal sym r
-    local (addVar name val) r
+evalVarDecl :: VarName -> DerivedSymbol -> ProgConfig -> ProgConfig
+evalVarDecl = undefined
 
 -- Evaluates a function declaration.
-evalFuncDecl :: FuncName -> Stm -> StateMConfig -> StateMConfig
-evalFuncDecl name body = local (addFunc name body)
+evalFuncDecl :: FuncName -> Stm -> ProgConfig -> ProgConfig
+evalFuncDecl = undefined
 
 -- Evaluates a function call.
-evalCall :: FuncName -> StateMConfig -> StateMConfig
-evalCall name r = do
-    -- TODO: Error handling.
-    Just body <- asks (lookupFunc name)
-    evalStm body r
+evalCall :: FuncName -> ProgConfig -> ProgConfig
+evalCall = undefined
 
 -- Evaluates the composition of two statements.
-evalComp :: Stm -> Stm -> StateMConfig -> StateMConfig
-evalComp stm1 stm2 = (evalStm stm1) . (evalStm stm2)
+evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig
+evalComp = undefined
 
 -- Evaluates print the symbol under the read-write head.
 -- TODO: Add I/O.
-evalPrintRead :: StateMConfig -> StateMConfig
-evalPrintRead = id
+evalPrintRead :: ProgConfig -> ProgConfig
+evalPrintRead = undefined
 
 -- Evaluates string an arbitrary string.
 -- TODO: Add I/O.
-evalPrintStr :: String -> StateMConfig -> StateMConfig
-evalPrintStr str = id
+evalPrintStr :: String -> ProgConfig -> ProgConfig
+evalPrintStr = undefined
 
 -- Evalautes a statement in a configuration of a Turing machine.
-evalStm :: Stm -> StateMConfig -> StateMConfig
+evalStm :: Stm -> ProgConfig -> ProgConfig
 evalStm (MoveLeft)                = evalLeft
 evalStm (MoveRight)               = evalRight
-evalStm (Write sym)               = both evalWrite (derivedSymbolVal sym)
+evalStm (Write sym)               = evalWrite sym
 evalStm (Accept)                  = const evalAccept
 evalStm (Reject)                  = const evalReject
 evalStm (If b stm elseIf elseStm) = evalIf b stm elseIf elseStm

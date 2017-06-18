@@ -44,6 +44,9 @@ machine acc rej f m = case m of
     HaltR   -> rej
     Inter x -> f x
 
+-- ---------------------------------------------------------------------------
+
+-- A monad transformer which adds Machine semantics to an existing monad.
 data MachineT m a = MachineT {
     runMachineT :: m (Machine a)
 }
@@ -66,6 +69,6 @@ instance MonadTrans MachineT where
     -- lift :: m a -> MachineT m a
     lift = MachineT . liftM Inter
 
--- Transforms the computation inside a `MachineT`.
-mapMachineT :: (m (Machine a) -> n (Machine b)) -> MachineT m a -> MachineT n b
-mapMachineT f = MachineT . f . runMachineT
+instance (MonadIO m) => MonadIO (MachineT m) where
+    -- liftIO :: IO a -> m a
+    liftIO = lift . liftIO
