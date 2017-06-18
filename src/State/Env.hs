@@ -7,8 +7,8 @@ module State.Env
 , addFunc
 ) where
 
-import Syntax.Tree
 import Data.Map as Map
+import Syntax.Tree
 
 -- A list of variable definitions which maps variable names to tape symbols.
 type VarDefs = Map VarName TapeSymbol

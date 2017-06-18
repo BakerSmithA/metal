@@ -1,13 +1,14 @@
 module State.Config
 ( Config
+, initial
 , left
 , right
 , getCurr
 , setCurr
 ) where
 
-import Syntax.Tree
 import State.Tape
+import Syntax.Tree
 
 -- A configuration of a Turing machine.
 data Config = Config {

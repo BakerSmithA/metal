@@ -1,11 +1,11 @@
 module Syntax.Parser where
 
-import Syntax.Tree
 import Control.Monad (void)
+import Syntax.Tree
 import Text.Megaparsec
-import Text.Megaparsec.String
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
+import Text.Megaparsec.String
 
 -- Abstract Grammar
 --

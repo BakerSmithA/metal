@@ -1,17 +1,15 @@
 module Semantics.Denotational where
 
-import Syntax.Tree
+import Control.Monad.Except hiding (fix)
+import Control.Monad.Reader hiding (fix)
+import Data.Maybe (maybeToList)
 import State.Config
 import State.Env
 import State.Error
 import State.MachineClass
+import State.Program
 import State.Trans.Machine
-import Control.Monad.Except hiding (fix)
-import Control.Monad.Reader hiding (fix)
-import Data.Maybe (maybeToList)
-
-type Prog a     = ReaderT Env (ExceptT RuntimeError (MachineT IO)) a
-type ProgConfig = Prog Config
+import Syntax.Tree
 
 -- Fixpoint operator used to defined loops.
 fix :: (a -> a) -> a

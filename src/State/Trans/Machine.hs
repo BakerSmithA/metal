@@ -1,9 +1,9 @@
 module State.Trans.Machine where
 
-import State.Machine
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Trans
+import State.Machine
 
 -- A monad transformer which adds Machine semantics to an existing monad.
 data MachineT m a = MachineT {

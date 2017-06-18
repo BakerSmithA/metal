@@ -13,6 +13,10 @@ type Tape = Pos -> TapeSymbol
 empty :: Tape
 empty = const ' '
 
+-- A tape where the string `str` is placed at the start of the tape.
+fromString :: String -> Tape
+fromString str = foldr (\(p, s) -> setSym p s) empty (zip [0..] str)
+
 -- Returns the tape symbol at the specified position.
 getSym :: Pos -> Tape -> TapeSymbol
 getSym pos tape = tape pos
