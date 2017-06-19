@@ -1,8 +1,11 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module State.Trans.Machine where
 
 import Control.Applicative
-import Control.Monad
-import Control.Monad.Trans
+import Control.Monad.Except
 import State.Machine
 
 -- A monad transformer which adds Machine semantics to an existing monad.
@@ -31,3 +34,11 @@ instance MonadTrans MachineT where
 instance (MonadIO m) => MonadIO (MachineT m) where
     -- liftIO :: IO a -> m a
     liftIO = lift . liftIO
+
+-- This requires UndecidableInstances, because it does not satisfy the coverage
+-- condition.
+instance MonadError e m => MonadError e (MachineT m) where
+    --  throwError :: e -> m a
+    throwError = undefined
+    -- catchError :: m a -> (e -> m a) -> m a
+    catchError = undefined

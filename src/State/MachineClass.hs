@@ -45,11 +45,3 @@ instance (MonadMachine a m) => MonadMachine a (ReaderT r m) where
     reject = lift reject
     -- inter :: a -> ReaderT r a
     inter = lift . inter
-
-instance (MonadMachine a m) => MonadMachine a (ExceptT e m) where
-    -- accept :: ExceptT e a
-    accept = lift accept
-    -- reject :: ExceptT e a
-    reject = lift reject
-    -- inter :: a -> ExceptT e a
-    inter = lift . inter
