@@ -6,6 +6,7 @@ module State.Trans.Machine where
 
 import Control.Applicative
 import Control.Monad.Except
+import Control.Monad.Signatures
 import State.Machine
 
 -- A monad transformer which adds Machine semantics to an existing monad.
@@ -38,7 +39,11 @@ instance (MonadIO m) => MonadIO (MachineT m) where
 -- This requires UndecidableInstances, because it does not satisfy the coverage
 -- condition.
 instance MonadError e m => MonadError e (MachineT m) where
-    --  throwError :: e -> m a
-    throwError = undefined
-    -- catchError :: m a -> (e -> m a) -> m a
-    catchError = undefined
+    --  throwError :: e -> MachineT m a
+    throwError = lift . throwError
+    -- catchError :: MachineT m a -> (e -> MachineT m a) -> MachineT m a
+    catchError = liftCatch catchError
+
+-- Lift a catchE operation to the new monad.
+liftCatch :: Catch e m (Machine a) -> Catch e (MachineT m) a
+liftCatch catch mach errHandler = MachineT $ catch (runMachineT mach) (runMachineT . errHandler)
