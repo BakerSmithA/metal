@@ -1,6 +1,6 @@
 module State.Env
 ( Env
-, initial
+, State.Env.empty
 , lookupVar
 , lookupFunc
 , addVar
@@ -23,8 +23,8 @@ data Env = Env {
 }
 
 -- An empty environment containing no variable or function definitions.
-initial :: Env
-initial = Env Map.empty Map.empty
+empty :: Env
+empty = Env Map.empty Map.empty
 
 -- Looks up a variable in an environment.
 lookupVar :: VarName -> Env -> Maybe TapeSymbol

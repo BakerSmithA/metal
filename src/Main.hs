@@ -47,7 +47,7 @@ parseArgs = do
 evalSemantics :: Stm -> [TapeSymbol] -> IO (Either RuntimeError (Machine Config))
 evalSemantics s syms = do
     let initial = return (Config.fromString syms)
-    runProgram (evalStm s initial) (Env.initial)
+    runProgram (evalStm s initial) (Env.empty)
 
 -- Given a termnated program (this included runtime errors), the end result is
 -- printed.

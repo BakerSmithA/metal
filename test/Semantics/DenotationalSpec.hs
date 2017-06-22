@@ -1,4 +1,7 @@
-module Semantics.DenotationalSpec (denotationalSpec) where
+module Semantics.DenotationalSpec
+( derivedSymbolValSpec
+, denotationalSpec
+) where
 
 import Semantics.Denotational
 import State.Config as Config
@@ -9,56 +12,96 @@ import State.Program
 import State.Tape
 import Syntax.Tree
 import TestHelper
-import Test.Hspec
+import Test.Hspec hiding (shouldThrow)
 import Test.HUnit.Lang
 
-type ProgResult = IO (Either RuntimeError (Machine Config))
+type ProgResult a     = IO (Either RuntimeError (Machine a))
+type ProgResultConfig = ProgResult Config
 
 -- A config where the tape holds the string 'abc' on the first three cells, and
 -- the read-write head is over the second cell, i.e. over 'b'.
 testConfig :: Config
 testConfig = right (Config.fromString "abc")
 
+-- An environment where the variable "x" maps to the tape symbol '1'.
+testEnv :: Env
+testEnv = Env.addVar "x" '1' Env.empty
+
+-- Runs `derivedSymbolVal` with `sym` in the given config and environment.
+evalDerivedSymbolVal :: DerivedSymbol -> Config -> Env -> ProgResult TapeSymbol
+evalDerivedSymbolVal sym config env = runProgram (derivedSymbolVal sym (return config)) env
+
 -- Runs `s` in config with the empty environment.
-evalSemantics :: Stm -> Config -> ProgResult
-evalSemantics s config = runProgram (evalStm s (return config)) Env.initial
+evalSemantics :: Stm -> Config -> ProgResultConfig
+evalSemantics s config = runProgram (evalStm s (return config)) Env.empty
+
+-- Asserts that a runtime error was thrown.
+shouldThrow :: (Show a) => ProgResult a -> RuntimeError -> Expectation
+shouldThrow r expected = do
+    x <- r
+    case x of
+        Left err   -> err `shouldBe` expected
+        Right mach -> assertFailure ("Expected err, got machine: " ++ (show mach))
 
 -- Asserts that when the semantics have finished being evaulated, the predicate
 -- is true.
-machShouldSatify :: ProgResult -> (Machine Config -> Bool) -> Expectation
+machShouldSatify :: (Eq a, Show a) => ProgResult a -> (Machine a -> Bool) -> Expectation
 machShouldSatify r predicate = do
      x <- r
      case x of
-         Left  err  -> assertFailure ("Got error: " ++ (show err))
+         Left  err  -> assertFailure ("Expected machine, got error: " ++ (show err))
          Right mach -> mach `shouldSatisfy` predicate
 
 -- Asserts that when the semantics have finished being evaulated, the machine
--- is in an state with a configuration which statisfied the preciate.
-machShouldHaveConfig :: ProgResult -> (Config -> Bool) -> Expectation
-machShouldHaveConfig r predicate = machShouldSatify r f where
-    f (Inter c) = predicate c
-    f _         = False
+-- is in an state where the wrapped value statisfied the preciate.
+machShouldContain :: (Eq a, Show a) => ProgResult a -> (a -> Bool) -> Expectation
+machShouldContain r predicate = machShouldSatify r f where
+    f = machine False False predicate
+
+-- Asserts that when the semantics have finished being evaulated, the machine
+-- contains the given tape symbol.
+machShouldContainSym :: ProgResult TapeSymbol -> TapeSymbol -> Expectation
+machShouldContainSym r sym = machShouldContain r (== sym)
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
-shouldBeAt :: ProgResult -> Pos -> Expectation
-shouldBeAt r p = machShouldHaveConfig r predicate where
+shouldBeAt :: ProgResultConfig -> Pos -> Expectation
+shouldBeAt r p = machShouldContain r predicate where
     predicate c = pos c == p
     predicate _ = False
 
 -- Asserts that the tape has the string `str` at the start of the tape.
-shouldRead :: ProgResult -> [TapeSymbol] -> Expectation
-shouldRead r syms = machShouldHaveConfig r predicate where
+shouldRead :: ProgResultConfig -> [TapeSymbol] -> Expectation
+shouldRead r syms = machShouldContain r predicate where
     predicate c = tapeShouldRead (tape c) syms
     predicate _ = False
 
 -- Asserts that the machine halted in the accepting state.
-shouldAccept :: ProgResult -> Expectation
+shouldAccept :: ProgResultConfig -> Expectation
 shouldAccept r = machShouldSatify r (== HaltA)
 
 -- Asserts that the machine halted in the rejecting state.
-shouldReject :: ProgResult -> Expectation
+shouldReject :: ProgResultConfig -> Expectation
 shouldReject r = machShouldSatify r (== HaltR)
+
+derivedSymbolValSpec :: Spec
+derivedSymbolValSpec = do
+    describe "derivedSymbolVal" $ do
+        it "reads the symbol under the read-write head" $ do
+            let result = evalDerivedSymbolVal (Read) testConfig testEnv
+            machShouldContainSym result 'b'
+
+        it "returns the literal" $ do
+            let result = evalDerivedSymbolVal (Literal 'm') testConfig testEnv
+            machShouldContainSym result 'm'
+
+        it "returns the value of a variable" $ do
+            let result = evalDerivedSymbolVal (Var "x") testConfig testEnv
+            machShouldContainSym result '1'
+
+        it "fails if the variable is not defined" $ do
+            let result = evalDerivedSymbolVal (Var "undef") testConfig testEnv
+            result `shouldThrow` (UndefVar "undef")
 
 denotationalSpec :: Spec
 denotationalSpec = do
@@ -66,6 +109,8 @@ denotationalSpec = do
         leftSpec
         rightSpec
         writeSpec
+        acceptSpec
+        rejectSpec
 
 leftSpec :: Spec
 leftSpec = do
@@ -88,10 +133,11 @@ writeSpec = do
 acceptSpec :: Spec
 acceptSpec = do
     context "accept" $ do
-        it "immediately accepts after evaluating an accept statement" $ do
+        it "accepts after evaluating an accept statement" $ do
             shouldAccept $ evalSemantics (Accept) testConfig
 
-        it "performs no more statments after accepting" $ do
-            let write = (Write (Literal '2'))
-                comp  = Comp Accept write
-            evalSemantics comp testConfig `shouldRead` "abc"
+rejectSpec :: Spec
+rejectSpec = do
+    context "reject" $ do
+        it "rejects after evaluating an accept statement" $ do
+            shouldReject $ evalSemantics (Reject) testConfig
