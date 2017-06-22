@@ -8,6 +8,7 @@ import State.Machine
 import State.Program
 import State.Tape
 import Syntax.Tree
+import TestHelper
 import Test.Hspec
 import Test.HUnit.Lang
 
@@ -31,20 +32,66 @@ machShouldSatify r predicate = do
          Left  err  -> assertFailure ("Got error: " ++ (show err))
          Right mach -> mach `shouldSatisfy` predicate
 
+-- Asserts that when the semantics have finished being evaulated, the machine
+-- is in an state with a configuration which statisfied the preciate.
+machShouldHaveConfig :: ProgResult -> (Config -> Bool) -> Expectation
+machShouldHaveConfig r predicate = machShouldSatify r f where
+    f (Inter c) = predicate c
+    f _         = False
+
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
 shouldBeAt :: ProgResult -> Pos -> Expectation
-shouldBeAt r p = r `machShouldSatify` predicate where
-    predicate (Inter c) = pos c == p
-    predicate _         = False
+shouldBeAt r p = machShouldHaveConfig r predicate where
+    predicate c = pos c == p
+    predicate _ = False
+
+-- Asserts that the tape has the string `str` at the start of the tape.
+shouldRead :: ProgResult -> [TapeSymbol] -> Expectation
+shouldRead r syms = machShouldHaveConfig r predicate where
+    predicate c = tapeShouldRead (tape c) syms
+    predicate _ = False
+
+-- Asserts that the machine halted in the accepting state.
+shouldAccept :: ProgResult -> Expectation
+shouldAccept r = machShouldSatify r (== HaltA)
+
+-- Asserts that the machine halted in the rejecting state.
+shouldReject :: ProgResult -> Expectation
+shouldReject r = machShouldSatify r (== HaltR)
 
 denotationalSpec :: Spec
 denotationalSpec = do
     describe "evalStm" $ do
         leftSpec
+        rightSpec
+        writeSpec
 
 leftSpec :: Spec
 leftSpec = do
     context "left" $ do
         it "moves the read-write head left" $ do
             evalSemantics (MoveLeft) testConfig `shouldBeAt` 0
+
+rightSpec :: Spec
+rightSpec = do
+    context "right" $ do
+        it "moves the read-write head right" $ do
+            evalSemantics (MoveRight) testConfig `shouldBeAt` 2
+
+writeSpec :: Spec
+writeSpec = do
+    context "right" $ do
+        it "writes to the cell under the read-write head" $ do
+            evalSemantics (Write (Literal '2')) testConfig `shouldRead` "a2c"
+
+acceptSpec :: Spec
+acceptSpec = do
+    context "accept" $ do
+        it "immediately accepts after evaluating an accept statement" $ do
+            shouldAccept $ evalSemantics (Accept) testConfig
+
+        it "performs no more statments after accepting" $ do
+            let write = (Write (Literal '2'))
+                comp  = Comp Accept write
+            evalSemantics comp testConfig `shouldRead` "abc"
