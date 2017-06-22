@@ -7,7 +7,7 @@ import Syntax.Tree
 data Config = Config {
     pos  :: Pos  -- The position the read-write head.
   , tape :: Tape -- The tape of the Turing machine.
-} 
+} deriving (Eq)
 
 instance Show Config where
     -- show :: Config -> String

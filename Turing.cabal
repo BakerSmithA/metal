@@ -40,5 +40,6 @@ test-suite spec
                      , HUnit
                      , containers
                      , mtl
+                     , transformers
   other-modules:       Syntax.ParserSpec
   default-language:    Haskell2010

@@ -12,4 +12,4 @@ main = hspec specs where
         parserSpec
         configSpec
         tapeSpec
-        --denotationalSpec
+        denotationalSpec
