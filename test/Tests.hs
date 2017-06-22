@@ -13,4 +13,5 @@ main = hspec specs where
         configSpec
         tapeSpec
         derivedSymbolValSpec
+        bexpValSpec
         denotationalSpec

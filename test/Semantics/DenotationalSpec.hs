@@ -1,5 +1,6 @@
 module Semantics.DenotationalSpec
 ( derivedSymbolValSpec
+, bexpValSpec
 , denotationalSpec
 ) where
 
@@ -12,7 +13,7 @@ import State.Program
 import State.Tape
 import Syntax.Tree
 import TestHelper
-import Test.Hspec hiding (shouldThrow)
+import Test.Hspec hiding (shouldContain, shouldSatify, shouldThrow)
 import Test.HUnit.Lang
 
 type ProgResult a     = IO (Either RuntimeError (Machine a))
@@ -28,8 +29,12 @@ testEnv :: Env
 testEnv = Env.addVar "x" '1' Env.empty
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
-evalDerivedSymbolVal :: DerivedSymbol -> Config -> Env -> ProgResult TapeSymbol
-evalDerivedSymbolVal sym config env = runProgram (derivedSymbolVal sym (return config)) env
+evalDerivedSymbol :: DerivedSymbol -> Config -> Env -> ProgResult TapeSymbol
+evalDerivedSymbol sym config = runProgram (derivedSymbolVal sym (return config))
+
+-- Runs `bexpVal` with `b` in the given config and environment.
+evalBexp :: Bexp -> Config -> Env -> ProgResult Bool
+evalBexp b config = runProgram (bexpVal b (return config))
 
 -- Runs `s` in config with the empty environment.
 evalSemantics :: Stm -> Config -> ProgResultConfig
@@ -43,8 +48,8 @@ shouldThrow r expected = do
         Left err   -> err `shouldBe` expected
         Right mach -> assertFailure ("Expected err, got machine: " ++ (show mach))
 
--- Asserts that when the semantics have finished being evaulated, the predicate
--- is true.
+-- Asserts that when the semantics have finished being evaulated, the resulting
+-- machine satisfies the given predicate.
 machShouldSatify :: (Eq a, Show a) => ProgResult a -> (Machine a -> Bool) -> Expectation
 machShouldSatify r predicate = do
      x <- r
@@ -52,27 +57,27 @@ machShouldSatify r predicate = do
          Left  err  -> assertFailure ("Expected machine, got error: " ++ (show err))
          Right mach -> mach `shouldSatisfy` predicate
 
--- Asserts that when the semantics have finished being evaulated, the machine
--- is in an state where the wrapped value statisfied the preciate.
-machShouldContain :: (Eq a, Show a) => ProgResult a -> (a -> Bool) -> Expectation
-machShouldContain r predicate = machShouldSatify r f where
+-- Asserts that when the semantics have finished being evaulated, the value
+-- wrapped in the machine satisfies the predicate.
+shouldSatify :: (Eq a, Show a) => ProgResult a -> (a -> Bool) -> Expectation
+shouldSatify r predicate = machShouldSatify r f where
     f = machine False False predicate
 
 -- Asserts that when the semantics have finished being evaulated, the machine
--- contains the given tape symbol.
-machShouldContainSym :: ProgResult TapeSymbol -> TapeSymbol -> Expectation
-machShouldContainSym r sym = machShouldContain r (== sym)
+-- contains the given value.
+shouldContain :: (Eq a, Show a) => ProgResult a -> a -> Expectation
+shouldContain r sym = shouldSatify r (== sym)
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
 shouldBeAt :: ProgResultConfig -> Pos -> Expectation
-shouldBeAt r p = machShouldContain r predicate where
+shouldBeAt r p = shouldSatify r predicate where
     predicate c = pos c == p
     predicate _ = False
 
 -- Asserts that the tape has the string `str` at the start of the tape.
 shouldRead :: ProgResultConfig -> [TapeSymbol] -> Expectation
-shouldRead r syms = machShouldContain r predicate where
+shouldRead r syms = shouldSatify r predicate where
     predicate c = tapeShouldRead (tape c) syms
     predicate _ = False
 
@@ -88,20 +93,71 @@ derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
     describe "derivedSymbolVal" $ do
         it "reads the symbol under the read-write head" $ do
-            let result = evalDerivedSymbolVal (Read) testConfig testEnv
-            machShouldContainSym result 'b'
+            let result = evalDerivedSymbol Read testConfig testEnv
+            result `shouldContain` 'b'
 
         it "returns the literal" $ do
-            let result = evalDerivedSymbolVal (Literal 'm') testConfig testEnv
-            machShouldContainSym result 'm'
+            let result = evalDerivedSymbol (Literal 'm') testConfig testEnv
+            result `shouldContain` 'm'
 
         it "returns the value of a variable" $ do
-            let result = evalDerivedSymbolVal (Var "x") testConfig testEnv
-            machShouldContainSym result '1'
+            let result = evalDerivedSymbol (Var "x") testConfig testEnv
+            result `shouldContain` '1'
 
         it "fails if the variable is not defined" $ do
-            let result = evalDerivedSymbolVal (Var "undef") testConfig testEnv
+            let result = evalDerivedSymbol (Var "undef") testConfig testEnv
             result `shouldThrow` (UndefVar "undef")
+
+bexpValSpec :: Spec
+bexpValSpec = do
+    describe "bexpVal" $ do
+        it "evaluates TRUE" $ do
+            let result = evalBexp TRUE testConfig testEnv
+            result `shouldContain` True
+
+        it "evaluates FALSE" $ do
+            let result = evalBexp FALSE testConfig testEnv
+            result `shouldContain` False
+
+        it "evaluates not" $ do
+            let result = evalBexp (Not TRUE) testConfig testEnv
+            result `shouldContain` False
+
+        it "evaluates and" $ do
+            let ff = evalBexp (And FALSE FALSE) testConfig testEnv
+                ft = evalBexp (And FALSE TRUE) testConfig testEnv
+                tf = evalBexp (And TRUE FALSE) testConfig testEnv
+                tt = evalBexp (And TRUE TRUE) testConfig testEnv
+            ff `shouldContain` False
+            ft `shouldContain` False
+            tf `shouldContain` False
+            tt `shouldContain` True
+
+        it "evaluates or" $ do
+            let ff = evalBexp (Or FALSE FALSE) testConfig testEnv
+                ft = evalBexp (Or FALSE TRUE) testConfig testEnv
+                tf = evalBexp (Or TRUE FALSE) testConfig testEnv
+                tt = evalBexp (Or TRUE TRUE) testConfig testEnv
+            ff `shouldContain` False
+            ft `shouldContain` True
+            tf `shouldContain` True
+            tt `shouldContain` True
+
+        it "evaluates <=" $ do
+            let b1      = Le (Read) (Literal 'c') -- The current symbol is 'b'.
+                b2      = Le (Read) (Literal 'a')
+                result1 = evalBexp b1 testConfig testEnv
+                result2 = evalBexp b2 testConfig testEnv
+            result1 `shouldContain` True
+            result2 `shouldContain` False
+
+        it "evaluates ==" $ do
+            let b1      = Eq (Read) (Literal 'b') -- The current symbol is 'b'.
+                b2      = Eq (Read) (Literal '#')
+                result1 = evalBexp b1 testConfig testEnv
+                result2 = evalBexp b2 testConfig testEnv
+            result1 `shouldContain` True
+            result2 `shouldContain` False
 
 denotationalSpec :: Spec
 denotationalSpec = do
