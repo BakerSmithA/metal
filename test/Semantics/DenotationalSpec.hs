@@ -167,6 +167,8 @@ denotationalSpec = do
         writeSpec
         acceptSpec
         rejectSpec
+        ifSpec
+        funcCallSpec
 
 leftSpec :: Spec
 leftSpec = do
@@ -197,3 +199,48 @@ rejectSpec = do
     context "reject" $ do
         it "rejects after evaluating an accept statement" $ do
             shouldReject $ evalSemantics (Reject) testConfig
+
+ifSpec :: Spec
+ifSpec = do
+    context "evaluating a single if-statement" $ do
+        it "performs the first branch" $ do
+            let ifStm = If TRUE (Write (Literal '1')) [] Nothing
+            evalSemantics ifStm testConfig `shouldRead` "a1c"
+
+        it "performs nothing if predicate is false" $ do
+            let ifStm = If FALSE (Write (Literal '1')) [] Nothing
+            evalSemantics ifStm testConfig `shouldRead` "abc"
+
+    context "evaluating an if-elseif statement" $ do
+        it "performs the first branch" $ do
+            let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] Nothing
+            evalSemantics ifStm testConfig `shouldRead` "a1c"
+
+        it "performs the second branch" $ do
+            let ifStm = If FALSE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] Nothing
+            evalSemantics ifStm testConfig `shouldRead` "a2c"
+
+        it "performs the third branch" $ do
+            let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2')), (TRUE, Write (Literal '3'))] Nothing
+            evalSemantics ifStm testConfig `shouldRead` "a3c"
+
+    context "evaluating an if-elseif-else statement" $ do
+        it "performs the first branch" $ do
+            let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
+            evalSemantics ifStm testConfig `shouldRead` "a1c"
+
+        it "performs the second branch" $ do
+            let ifStm = If FALSE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
+            evalSemantics ifStm testConfig `shouldRead` "a2c"
+
+        it "performs the else branch" $ do
+            let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2'))] (Just (Write (Literal '3')))
+            evalSemantics ifStm testConfig `shouldRead` "a3c"
+
+funcCallSpec :: Spec
+funcCallSpec = do
+    it "performs the function" $ do
+        let decl = FuncDecl "f" MoveRight
+            call = Call "f"
+            comp = Comp decl call
+        evalSemantics comp Config.initial `shouldBeAt` 1
