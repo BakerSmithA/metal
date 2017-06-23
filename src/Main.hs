@@ -39,7 +39,7 @@ parseFile path = do
 parseArgs :: ExceptT String IO (Stm, [TapeSymbol])
 parseArgs = do
     (path, syms) <- getProgArgs
-    stm <- parseFile path
+    liftIO $ putStrLn (show stm)
     return (stm, syms)
 
 -- Given a program statement, the program is run with an initially

@@ -115,6 +115,7 @@ derivedSymbolSpec = do
             parse derivedSymbol "" "'b'" `shouldParse` Literal 'b'
             parse derivedSymbol "" "'B'" `shouldParse` Literal 'B'
             parse derivedSymbol "" "'1'" `shouldParse` Literal '1'
+            parse derivedSymbol "" "' '" `shouldParse` Literal ' '
 
 bexpSpec :: Spec
 bexpSpec = describe "bexp" $ do

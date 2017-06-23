@@ -164,6 +164,7 @@ denotationalSpec = do
         rejectSpec
         ifSpec
         whileSpec
+        varDeclSpec
         funcCallSpec
         compSpec
 
@@ -254,28 +255,40 @@ whileSpec = do
                 loop = While cond MoveRight
             evalSemantics loop testConfig `shouldBeAt` 3
 
-        it "breaks by rejecting" $ do
-            let loop = While TRUE Reject
-            shouldReject (evalSemantics loop testConfig)
+        -- it "breaks by rejecting" $ do
+        --     let loop = While TRUE Reject
+        --     shouldReject (evalSemantics loop testConfig)
 
         -- it "breaks by accepting" $ do
         --     let loop = While TRUE Accept
         --     shouldAccept (evalSemantics loop testConfig)
 
+varDeclSpec :: Spec
+varDeclSpec = do
+    let testConfig = Config.fromString "abc"
+    context "evaluating a variable declaration" $ do
+        it "it adds the variable to the environment" $ do
+            let decl   = VarDecl "y" (Literal '1')
+                ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#')) [] Nothing
+                comp   = Comp decl ifStm
+            evalSemantics comp testConfig `shouldRead` "#bc"
+
 funcCallSpec :: Spec
 funcCallSpec = do
-    it "performs the function" $ do
-        pending
-        -- let decl = FuncDecl "f" MoveRight
-        --     call = Call "f"
-        --     comp = Comp decl call
-        -- evalSemantics comp Config.initial `shouldBeAt` 1
+    let testConfig = Config.fromString "abc"
+    context "evaluating a function call" $ do
+        it "performs the function" $ do
+            let decl = FuncDecl "f" MoveRight
+                call = Call "f"
+                comp = Comp decl call
+            evalSemantics comp testConfig `shouldBeAt` 1
 
 compSpec :: Spec
 compSpec = do
     let testConfig = Config.fromString "012"
-    it "composes two statements" $ do
-        let comp   = Comp MoveRight (Write (Literal '#'))
-            result = evalSemantics comp testConfig
-        result `shouldBeAt` 1
-        result `shouldRead` "0#2"
+    context "evaluating a function composition" $ do
+        it "composes two statements" $ do
+            let comp   = Comp MoveRight (Write (Literal '#'))
+                result = evalSemantics comp testConfig
+            result `shouldBeAt` 1
+            result `shouldRead` "0#2"
