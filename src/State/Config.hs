@@ -11,7 +11,7 @@ data Config = Config {
 
 instance Show Config where
     -- show :: Config -> String
-    show c = show (pos c)
+    show (Config p t) = "pos: " ++ (show p) ++ ", tape: " ++ (show t)
 
 -- A configuration in which the read-writ head is in the zeroed position, and
 -- the tape is empty.

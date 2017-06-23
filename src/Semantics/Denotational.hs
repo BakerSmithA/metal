@@ -72,7 +72,7 @@ evalIf bexp ifStm elseIfClauses elseStm = cond branches where
 -- Evaluates a while loop.
 evalWhile :: Bexp -> Stm -> ProgConfig -> ProgConfig
 evalWhile b body = fix f where
-    f loop = cond [(bexpVal b, (evalStm body) . loop)]
+    f loop = cond [(bexpVal b, loop . (evalStm body))]
 
 -- Evaluates a variable declaration.
 evalVarDecl :: VarName -> DerivedSymbol -> ProgConfig -> ProgConfig
@@ -94,7 +94,7 @@ evalCall name p = do
 
 -- Evaluates the composition of two statements.
 evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig
-evalComp stm1 stm2 = (evalStm stm1) . (evalStm stm2)
+evalComp stm1 stm2 = (evalStm stm2) . (evalStm stm1)
 
 -- Evaluates print the symbol under the read-write head.
 evalPrintRead :: ProgConfig -> Prog ()
