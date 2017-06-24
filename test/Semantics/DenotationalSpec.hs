@@ -4,7 +4,8 @@ module Semantics.DenotationalSpec
 , denotationalSpec
 ) where
 
-import Semantics.Denotational()
+import Semantics.Denotational
+import State.Program
 import State.Config as Config
 import State.Env as Env
 import State.Error
@@ -17,6 +18,7 @@ derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
     let testConfig = right (Config.fromString "abc")
         testEnv    = Env.addVar "x" '1' Env.empty
+
     describe "derivedSymbolVal" $ do
         it "reads the symbol under the read-write head" $ do
             let result = evalDerivedSymbol Read testConfig testEnv
@@ -200,7 +202,13 @@ varDeclSpec :: Spec
 varDeclSpec = do
     let testConfig = Config.fromString "abc"
     context "evaluating a variable declaration" $ do
-        it "it adds the variable to the environment" $ do
+        -- it "adds the variable to the environment" $ do
+        --     let decl   = VarDecl "y" (Literal '1')
+        --         prog   = evalStm decl (return testConfig)
+        --         result = runProgram (derivedSymbolVal (Var "y") prog) Env.empty
+        --     result `shouldContain` '1'
+
+        it "adds the variable to the environment" $ do
             let decl   = VarDecl "y" (Literal '1')
                 ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#')) [] Nothing
                 comp   = Comp decl ifStm
@@ -218,10 +226,15 @@ funcCallSpec = do
 
 compSpec :: Spec
 compSpec = do
-    let testConfig = Config.fromString "012"
+    let testConfig = Config.fromString "abc"
     context "evaluating a function composition" $ do
-        it "composes two statements" $ do
+        it "composes two statements 1" $ do
             let comp   = Comp MoveRight (Write (Literal '#'))
                 result = evalSemantics comp testConfig
             result `shouldBeAt` 1
-            result `shouldRead` "0#2"
+            result `shouldRead` "a#c"
+
+        it "composes two statements 2" $ do
+            let ifStm = If (Eq (Read) (Literal 'b')) (Write (Literal '#')) [] Nothing
+                comp  = Comp MoveRight ifStm
+            evalSemantics comp testConfig `shouldRead` "a#c"

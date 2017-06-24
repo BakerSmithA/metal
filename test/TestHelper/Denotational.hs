@@ -1,24 +1,20 @@
 module TestHelper.Denotational where
 
-import Control.Monad
+import Control.Monad.Reader
 import State.Tape
 import Syntax.Tree
-import Test.Hspec hiding (shouldContain, shouldSatify, shouldThrow)
-import Test.HUnit.Lang
 import State.Config as Config
 import State.Env as Env
 import State.Error
 import State.Machine
 import State.Program
 import Semantics.Denotational
+import Test.Hspec hiding (shouldContain, shouldSatify, shouldThrow)
+import Test.HUnit.Lang
+import TestHelper.Tape
 
 type ProgResult a     = IO (Either RuntimeError (Machine a))
 type ProgResultConfig = ProgResult Config
-
--- Returns whether the tape should contain the string `syms` at its start.
-tapeShouldRead :: Tape -> [TapeSymbol] -> Bool
-tapeShouldRead tape syms = tape == expected where
-    expected = fromList (zip [0..] syms)
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
 evalDerivedSymbol :: DerivedSymbol -> Config -> Env -> ProgResult TapeSymbol

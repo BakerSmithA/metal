@@ -11,9 +11,10 @@ shouldRead tape syms = tapeShouldRead tape syms `shouldBe` True
 
 tapeSpec :: Spec
 tapeSpec = do
-    fromStringSpec
-    getSymSpec
-    setSymSpec
+    describe "Tape" $ do
+        fromStringSpec
+        getSymSpec
+        setSymSpec
 
 fromStringSpec :: Spec
 fromStringSpec = do

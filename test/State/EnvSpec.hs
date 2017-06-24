@@ -6,8 +6,9 @@ import Test.Hspec
 
 envSpec :: Spec
 envSpec = do
-    varSpec
-    funcSpec
+    describe "Env" $ do
+        varSpec
+        funcSpec
 
 varSpec :: Spec
 varSpec = do

@@ -6,10 +6,11 @@ import Test.Hspec
 
 configSpec :: Spec
 configSpec = do
-    leftSpec
-    rightSpec
-    getCurrSpec
-    setCurrSpec
+    describe "Config" $ do
+        leftSpec
+        rightSpec
+        getCurrSpec
+        setCurrSpec
 
 leftSpec :: Spec
 leftSpec = do
