@@ -5,7 +5,6 @@ import Control.Monad.Trans.Except
 import Control.Monad.Reader
 import Semantics.Denotational
 import State.Config as Config
-import State.Env as Env
 import State.Error
 import State.Machine
 import State.Program
@@ -39,7 +38,7 @@ parseFile path = do
 parseArgs :: ExceptT String IO (Stm, [TapeSymbol])
 parseArgs = do
     (path, syms) <- getProgArgs
-    liftIO $ putStrLn (show stm)
+    stm <- parseFile path
     return (stm, syms)
 
 -- Given a program statement, the program is run with an initially
@@ -47,7 +46,7 @@ parseArgs = do
 evalSemantics :: Stm -> [TapeSymbol] -> IO (Either RuntimeError (Machine Config))
 evalSemantics s syms = do
     let initial = return (Config.fromString syms)
-    runProgram (evalStm s initial) (Env.empty)
+    runProgram (evalStm s initial)
 
 -- Given a termnated program (this included runtime errors), the end result is
 -- printed.
