@@ -1,11 +1,8 @@
-module TestHelper where
+module TestHelper.Tape where
 
 import Data.Map
-import Control.Monad
 import State.Tape
 import Syntax.Tree
-import Test.Hspec
-import Test.HUnit.Lang
 
 -- Returns whether the tape should contain the string `syms` at its start.
 tapeShouldRead :: Tape -> [TapeSymbol] -> Bool

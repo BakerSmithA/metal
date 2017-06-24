@@ -12,9 +12,6 @@ import Control.Monad.Reader
 import State.Machine
 import State.Trans.Machine
 
--- A small aside on the language, below m -> a is read as the monad `m`
--- determines `a` type.
-
 -- By being an instance of the type, the functions can be used anywhere in a
 -- monad stack.
 class (Monad m) => MonadMachine a m where
