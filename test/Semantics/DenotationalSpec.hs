@@ -185,10 +185,14 @@ whileSpec = do
             evalSemantics loop testConfig `shouldRead` "Ab5#"
 
         it "performs a loop" $ do
-            -- Move right until a '#' character is reached.
-            let cond = Not (Eq Read (Literal '#'))
-                loop = While cond MoveRight
-            evalSemantics loop testConfig `shouldBeAt` 3
+            -- Move right until a '#' character is reached, overwriting each
+            -- character with 'X'.
+            let cond   = Not (Eq Read (Literal '#'))
+                comp   = Comp (Write (Literal 'X')) MoveRight
+                loop   = While cond comp
+                result = evalSemantics loop testConfig
+            result `shouldBeAt` 3
+            result `shouldRead` "XXX#"
 
         -- it "breaks by rejecting" $ do
         --     let loop = While TRUE Reject
