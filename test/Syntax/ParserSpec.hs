@@ -308,6 +308,12 @@ stmSpec = describe "stm" $ do
             parse stm "" "left \n\n right" `shouldParse` (Comp MoveLeft MoveRight)
             parse stm "" "left \n\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
 
+        it "fails if parsing the first statements fails to parse" $ do
+            parse stm "" `shouldFailOn` "left \n if"
+
+        it "fails if parsing the second statements fails to parse" $ do
+            parse stm "" `shouldFailOn `"if \n left"
+
     context "parsing printing" $ do
         it "parses printing a string" $ do
             parse stm "" "print \"This is a string\"" `shouldParse` (PrintStr "This is a string")
@@ -316,41 +322,51 @@ stmSpec = describe "stm" $ do
             parse stm "" "print" `shouldParse` PrintRead
 
     context "removing whitespace and comments" $ do
-        it "ignores whitespace at the start of a statement" $ do
-            parse stm "" " left" `shouldParse` MoveLeft
-
-        it" ignores newlines at the start of a statement" $ do
-            parse stm "" "\n\nleft" `shouldParse` MoveLeft
-
-        it "ignores whole-line comments at the start" $ do
-            parse stm "" "//Comment\n left" `shouldParse` MoveLeft
-
-        it "ignores in-line comments at the start" $ do
-            parse stm "" "/* Comment */\n left" `shouldParse` MoveLeft
-
-        it "ignores whole line comments" $ do
-            parse stm "" "left\n//Comment\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
-
-        it "ignores in-line comments" $ do
-            parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [] Nothing)
-
-        it "ignores whitespace at the end of a statement" $ do
-            parse stm "" "left   " `shouldParse` MoveLeft
-
-        it "ignores newlines at the end of a statement" $ do
-            parse stm "" "left \n\n " `shouldParse` MoveLeft
-
-        it "ignores newlines after an opening brace" $ do
-            parse stm "" "while True {\n left }" `shouldParse` (While TRUE MoveLeft)
-
-        it "ignores newlines before a closing brace" $ do
-            parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
-
-        it "ignores newlines before and after braces" $ do
-            parse stm "" "while True { \n left \n }" `shouldParse` (While TRUE MoveLeft)
-
-        it "parses composed statements inside a WHILE" $ do
-            parse stm "" "while True { \n print \n right \n }" `shouldParse` (While TRUE (Comp PrintRead MoveRight))
-
         it "ignores tabs" $ do
             parse stm "" "\t left" `shouldParse` MoveLeft
+
+        context "before statements" $ do
+            it "ignores whitespace at the start of a statement" $ do
+                parse stm "" " left" `shouldParse` MoveLeft
+
+            it "ignores newlines at the start of a statement" $ do
+                parse stm "" "\n\nleft" `shouldParse` MoveLeft
+
+            it "ignores whole-line comments at the start" $ do
+                parse stm "" "//Comment\n left" `shouldParse` MoveLeft
+
+            it "ignores in-line comments at the start" $ do
+                parse stm "" "/* Comment */\n left" `shouldParse` MoveLeft
+
+        context "interspersed with statements" $ do
+            it "ignores whole line comments" $ do
+                parse stm "" "left\n//Comment\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
+
+            it "ignores in-line comments" $ do
+                parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [] Nothing)
+
+        context "after of statements" $ do
+            it "ignores whitespace at the end of a statement" $ do
+                parse stm "" "left   " `shouldParse` MoveLeft
+
+            it "ignores newlines at the end of a statement" $ do
+                parse stm "" "left \n\n " `shouldParse` MoveLeft
+
+        context "whitespace nested in statements" $ do
+            it "ignores newlines after an opening brace" $ do
+                parse stm "" "while True {\n left }" `shouldParse` (While TRUE MoveLeft)
+
+            it "ignores newlines before a closing brace" $ do
+                parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
+
+            it "ignores newlines before and after braces" $ do
+                parse stm "" "while True { \n left \n }" `shouldParse` (While TRUE MoveLeft)
+
+            it "ignores newlines after an opening brace when composing" $ do
+                parse stm "" "while True {\n left \n right }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+
+            it "ignores newlines after a closing brace when composing" $ do
+                parse stm "" "while True { left \n right \n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+
+            it "ignores newlines before and after braces when composing" $ do
+                parse stm "" "while True { \n left \n right \n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))

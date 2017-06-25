@@ -196,4 +196,5 @@ stmOps = [[InfixR (Comp <$ some newline <* whitespace)]]
 --      | 'while' Bexp '{' Stm '}'
 --      | If
 stm :: Parser Stm
-stm = whitespaceNewline *> (try (makeExprParser stm' stmOps) <|> stm')
+stm = whitespaceNewline *> (try stms <|> stm') where
+    stms = makeExprParser stm' stmOps

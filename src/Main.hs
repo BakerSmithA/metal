@@ -3,6 +3,7 @@ module Main where
 import Control.Monad.Except
 import Control.Monad.Trans.Except
 import Control.Monad.Reader
+import Data.Typeable
 import Semantics.Denotational
 import State.Config as Config
 import State.Error
@@ -11,57 +12,59 @@ import State.Program
 import Syntax.Tree
 import Syntax.Parser
 import System.Environment
-import Text.Megaparsec
+import qualified Text.Megaparsec as M
 import Text.Megaparsec.String
 
--- From arguments supplied to the program, retrieves the file name
--- containing the source code, and any symbols to put on the tape.
--- If no tape is supplied, a default tape containing nothing will
--- be used.
-getProgArgs :: ExceptT String IO (FilePath, [TapeSymbol])
-getProgArgs = do
-    args <- liftIO $ getArgs
-    case args of
-        [path]       -> return (path, [])
-        [path, syms] -> return (path, syms)
-        _            -> throwError "Incorrect arguments, expected <source_file> <tape>"
+-- Errors that can occur during parsing or runtime.
+data ProgError = ArgError String
+               | ParseError (M.ParseError (M.Token String) M.Dec)
+               | SemanticError RuntimeError
+               deriving (Typeable)
 
--- Parses a source file.
-parseFile :: FilePath -> ExceptT String IO Stm
-parseFile path = do
-    contents <- liftIO (readFile path)
-    let parsed = runParser stm "" contents
-    either (throwError . show) return parsed
+instance Show ProgError where
+    show (ArgError err)      = err
+    show (ParseError err)    = show err
+    show (SemanticError err) = show err
 
--- Retrieves the arguments from the command line for the source file path and
--- tape symbols. Then parses the source file.
-parseArgs :: ExceptT String IO (Stm, [TapeSymbol])
-parseArgs = do
-    (path, syms) <- getProgArgs
-    stm <- parseFile path
-    return (stm, syms)
+-- The arguments we want to parse from the command line is the path of the
+-- source code file, and any symbols to be placed at the start of the tape.
+type Args = (FilePath, [TapeSymbol])
+
+-- Takes in arguments to the program, and returns the parsed arguments, or
+-- an error if the arguments were not parsed correctly.
+parseArgs :: [String] -> Either ProgError Args
+parseArgs [path, tape] = return (path, tape)
+parseArgs _            = throwError (ArgError "Incorrect number of arguments, expected <source_file> <tape>")
+
+-- Parses the contents of source file, returning either the parsed program, or
+-- the parse error.
+parseContents :: String -> Either ProgError Stm
+parseContents contents = do
+    let result = M.runParser stm "" contents
+    either (throwError . ParseError) return result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Stm -> [TapeSymbol] -> Either RuntimeError (Machine Config)
+evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine Config)
 evalSemantics s syms = do
-    let initial = return (Config.fromString syms)
-    runProgram (evalStm s initial)
+    let config = return (Config.fromString syms)
+        result = runProgram (evalStm s config)
+    either (throwError . SemanticError) return result
 
--- Given a termnated program (this included runtime errors), the end result is
--- printed.
-printHalt :: Either RuntimeError (Machine Config) -> IO ()
-printHalt = putStrLn . (either (showMsg "Error: ") (showMsg "Halted: ")) where
-    showMsg msg x = msg ++ (show x)
-
--- Evaulates the semantics of the specified statement, with the specified tape.
--- Upton halting, it is printed whether the machine rejected or accepted.
-run :: (Stm, [TapeSymbol]) -> IO ()
-run (s, syms) = do
-    let result = evalSemantics s syms
-    printHalt result
+-- Parses `contents`, and runs the parsed statement with `syms` at the start of
+-- the tape. If parsing is unsuccessful, or a runtime error occurs, an error
+-- is returned.
+run ::  String -> [TapeSymbol] -> Either ProgError (Machine Config)
+run contents syms = do
+    s <- parseContents contents
+    evalSemantics s syms
 
 main :: IO ()
 main = do
-    parsed <- runExceptT parseArgs
-    either (putStrLn . show) run parsed
+    args <- getArgs
+    either printErr printResult (parseArgs args) where
+        printErr = putStrLn . show
+        printResult (path, syms) = do
+            contents <- readFile path
+            let result = run contents syms
+            putStrLn (show result)
