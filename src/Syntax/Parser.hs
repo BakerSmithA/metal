@@ -90,7 +90,7 @@ encasedString = between (tok "\"") (tok "\"") (many (noneOf "\""))
 -- Parses a tape symbol, the EBNF syntax of which is:
 --  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
 tapeSymbol :: Parser TapeSymbol
-tapeSymbol = asciiChar <* whitespace
+tapeSymbol = noneOf "\'"
 
 -- Parses an identifier, i.e. variable or function name, the EBNF syntax for
 -- both being:
@@ -121,7 +121,7 @@ funcName = identifier
 derivedSymbol :: Parser DerivedSymbol
 derivedSymbol = Read <$ tok "read"
             <|> Var <$> varName
-            <|> Literal <$ tok "'" <*> tapeSymbol <* tok "'"
+            <|> Literal <$> between (char '\'') (tok "\'") tapeSymbol
 
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.

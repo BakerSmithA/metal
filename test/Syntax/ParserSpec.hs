@@ -54,6 +54,9 @@ tapeSymbolSpec = do
             parse tapeSymbol "" "<" `shouldParse` '<'
             parse tapeSymbol "" "{" `shouldParse` '{'
 
+        it "does not parse single quotes" $ do
+            parse tapeSymbol "" `shouldFailOn` "\'"
+
 varNameSpec :: Spec
 varNameSpec = do
     describe "varName" $ do
@@ -342,6 +345,9 @@ stmSpec = describe "stm" $ do
 
         it "ignores newlines before a closing brace" $ do
             parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
+
+        it "ignores newlines before and after braces" $ do
+            parse stm "" "while True { \n left \n }" `shouldParse` (While TRUE MoveLeft)
 
         it "parses composed statements inside a WHILE" $ do
             parse stm "" "while True { \n print \n right \n }" `shouldParse` (While TRUE (Comp PrintRead MoveRight))
