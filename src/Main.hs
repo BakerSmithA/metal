@@ -3,7 +3,6 @@ module Main where
 import Control.Monad.Except
 import Control.Monad.Trans.Except
 import Control.Monad.Reader
-import Data.Typeable
 import Semantics.Denotational
 import State.Config as Config
 import State.Error
@@ -19,7 +18,6 @@ import Text.Megaparsec.String
 data ProgError = ArgError String
                | ParseError (M.ParseError (M.Token String) M.Dec)
                | SemanticError RuntimeError
-               deriving (Typeable)
 
 instance Show ProgError where
     show (ArgError err)      = err
