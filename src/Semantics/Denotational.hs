@@ -33,6 +33,10 @@ getVarVal name p = do
     let val = lookupVar name config
     maybe (throwError (UndefVar name)) return val
 
+-- getVarVal name p = do
+--     val <- asks (lookupVar name)
+--     maybe (throwError (UndefVar name)) return val
+
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> ProgConfig -> Prog TapeSymbol
 derivedSymbolVal (Read)        = fmap getCurr

@@ -343,5 +343,8 @@ stmSpec = describe "stm" $ do
         it "ignores newlines before a closing brace" $ do
             parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
 
+        it "parses composed statements inside a WHILE" $ do
+            parse stm "" "while True { \n print \n right \n }" `shouldParse` (While TRUE (Comp PrintRead MoveRight))
+
         it "ignores tabs" $ do
             parse stm "" "\t left" `shouldParse` MoveLeft

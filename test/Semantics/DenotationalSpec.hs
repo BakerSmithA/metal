@@ -183,10 +183,14 @@ whileSpec = do
             evalSemantics loop testConfig `shouldRead` "Ab5#"
 
         it "performs a loop" $ do
-            -- Move right until a '#' character is reached.
-            let cond = Not (Eq Read (Literal '#'))
-                loop = While cond MoveRight
-            evalSemantics loop testConfig `shouldBeAt` 3
+            -- Move right until a '#' character is reached, overwriting each
+            -- character with 'X'.
+            let cond   = Not (Eq Read (Literal '#'))
+                comp   = Comp (Write (Literal 'X')) MoveRight
+                loop   = While cond comp
+                result = evalSemantics loop testConfig
+            result `shouldBeAt` 3
+            result `shouldRead` "XXX#"
 
         -- it "breaks by rejecting" $ do
         --     let loop = While TRUE Reject
@@ -200,12 +204,6 @@ varDeclSpec :: Spec
 varDeclSpec = do
     let testConfig = Config.fromString "abc"
     context "evaluating a variable declaration" $ do
-        -- it "adds the variable to the environment" $ do
-        --     let decl   = VarDecl "y" (Literal '1')
-        --         prog   = evalStm decl (return testConfig)
-        --         result = runProgram (derivedSymbolVal (Var "y") prog) Env.empty
-        --     result `shouldContain` '1'
-
         it "adds the variable to the environment" $ do
             let decl   = VarDecl "y" (Literal '1')
                 ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#')) [] Nothing
