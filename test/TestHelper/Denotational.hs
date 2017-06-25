@@ -13,7 +13,7 @@ import Test.Hspec hiding (shouldContain, shouldSatify, shouldThrow)
 import Test.HUnit.Lang
 import TestHelper.Tape
 
-type ProgResult a     = IO (Either RuntimeError (Machine a))
+type ProgResult a     = Either RuntimeError (Machine a)
 type ProgResultConfig = ProgResult Config
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
@@ -30,20 +30,16 @@ evalSemantics s config = runProgram (evalStm s (return config)) Env.empty
 
 -- Asserts that a runtime error was thrown.
 shouldThrow :: (Show a) => ProgResult a -> RuntimeError -> Expectation
-shouldThrow r expected = do
-    x <- r
-    case x of
-        Left err   -> err `shouldBe` expected
-        Right mach -> assertFailure ("Expected err, got machine: " ++ (show mach))
+shouldThrow r expected = either handleErr success r where
+    handleErr err = err `shouldBe` expected
+    success mach  = assertFailure ("Expected err, got machine: " ++ (show mach))
 
 -- Asserts that when the semantics have finished being evaulated, the resulting
 -- machine satisfies the given predicate.
 machShouldSatify :: (Eq a, Show a) => ProgResult a -> (Machine a -> Bool) -> Expectation
-machShouldSatify r predicate = do
-     x <- r
-     case x of
-         Left  err  -> assertFailure ("Expected machine, got error: " ++ (show err))
-         Right mach -> mach `shouldSatisfy` predicate
+machShouldSatify r predicate = either handleErr success r where
+    handleErr err = assertFailure ("Expected machine, got error: " ++ (show err))
+    success mach  = mach `shouldSatisfy` predicate
 
 -- Asserts that when the semantics have finished being evaulated, the value
 -- wrapped in the machine satisfies the predicate.

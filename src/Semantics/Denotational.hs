@@ -31,7 +31,7 @@ cond ((predicate, branch):ps) p = do
 getVarVal :: VarName -> Prog TapeSymbol
 getVarVal name = do
     val <- asks (lookupVar name)
-    maybe undefined return val
+    maybe (throwError (UndefVar name)) return val
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> ProgConfig -> Prog TapeSymbol
@@ -90,7 +90,7 @@ evalCall :: FuncName -> ProgConfig -> ProgConfig
 evalCall name p = do
     body <- asks (lookupFunc name)
     maybe err eval body where
-        err      = undefined--throwError (UndefFunc name)
+        err      = throwError (UndefFunc name)
         eval stm = evalStm stm p
 
 -- Evaluates the composition of two statements.

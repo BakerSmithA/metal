@@ -12,11 +12,10 @@ import State.MachineClass
 import State.Trans.Machine
 
 newtype Prog a = Prog {
-    runProg :: ReaderT Env (MachineT (Either RuntimeError a))
+    runProg :: ReaderT Env (MachineT (Either RuntimeError)) a
 } deriving (Functor
           , Applicative
           , Monad
-          , MonadIO
           , MonadReader Env
           , MonadError RuntimeError
           , MonadMachine a)
@@ -24,5 +23,5 @@ newtype Prog a = Prog {
 type ProgConfig = Prog Config
 
 -- Runs the program in the given environment.
-runProgram :: Prog a -> Env -> IO (Either RuntimeError (Machine a))
-runProgram p env = runExceptT (runMachineT (runReaderT (runProg p) env))
+runProgram :: Prog a -> Env -> Either RuntimeError (Machine a)
+runProgram p env = runMachineT (runReaderT (runProg p) env)
