@@ -5,7 +5,6 @@ import Control.Monad.Trans.Except
 import Control.Monad.Reader
 import Semantics.Denotational
 import State.Config as Config
-import State.Env as Env
 import State.Error
 import State.Machine
 import State.Program
@@ -47,7 +46,7 @@ parseArgs = do
 evalSemantics :: Stm -> [TapeSymbol] -> Either RuntimeError (Machine Config)
 evalSemantics s syms = do
     let initial = return (Config.fromString syms)
-    runProgram (evalStm s initial) (Env.empty)
+    runProgram (evalStm s initial)
 
 -- Given a termnated program (this included runtime errors), the end result is
 -- printed.

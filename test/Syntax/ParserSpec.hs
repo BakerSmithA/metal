@@ -297,6 +297,10 @@ stmSpec = describe "stm" $ do
         it "parses composition" $ do
             parse stm "" "left\n right" `shouldParse` (Comp MoveLeft MoveRight)
 
+        it "parses composition to be right associative" $ do
+            let expected = Comp MoveLeft (Comp MoveRight (Write (Literal 'x')))
+            parse stm "" "left \n right \n write 'x'" `shouldParse` expected
+
         it "allows for multiple newlines between statements" $ do
             parse stm "" "left \n\n right" `shouldParse` (Comp MoveLeft MoveRight)
             parse stm "" "left \n\n\n right" `shouldParse` (Comp MoveLeft MoveRight)

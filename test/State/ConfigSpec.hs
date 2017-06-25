@@ -19,7 +19,7 @@ leftSpec = do
             pos (left initial) `shouldBe` 0
 
         it "moves the read-write head left if it is not zeroed" $ do
-            let config = Config 2 empty
+            let config = initial { pos = 2 }
             pos (left config) `shouldBe` 1
 
 rightSpec :: Spec

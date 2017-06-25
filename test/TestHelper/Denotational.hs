@@ -4,7 +4,6 @@ import Control.Monad.Reader
 import State.Tape
 import Syntax.Tree
 import State.Config as Config
-import State.Env as Env
 import State.Error
 import State.Machine
 import State.Program
@@ -17,16 +16,16 @@ type ProgResult a     = Either RuntimeError (Machine a)
 type ProgResultConfig = ProgResult Config
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
-evalDerivedSymbol :: DerivedSymbol -> Config -> Env -> ProgResult TapeSymbol
+evalDerivedSymbol :: DerivedSymbol -> Config -> ProgResult TapeSymbol
 evalDerivedSymbol sym config = runProgram (derivedSymbolVal sym (return config))
 
 -- Runs `bexpVal` with `b` in the given config and environment.
-evalBexp :: Bexp -> Config -> Env -> ProgResult Bool
+evalBexp :: Bexp -> Config -> ProgResult Bool
 evalBexp b config = runProgram (bexpVal b (return config))
 
 -- Runs `s` in config with the empty environment.
 evalSemantics :: Stm -> Config -> ProgResultConfig
-evalSemantics s config = runProgram (evalStm s (return config)) Env.empty
+evalSemantics s config = runProgram (evalStm s (return config))
 
 -- Asserts that a runtime error was thrown.
 shouldThrow :: (Show a) => ProgResult a -> RuntimeError -> Expectation

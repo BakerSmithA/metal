@@ -179,7 +179,7 @@ stm' = MoveLeft <$ tok "left"
 
 -- The operators that can work on statements - this is used to parse composition.
 stmOps :: [[Operator Parser Stm]]
-stmOps = [[InfixL (Comp <$ some newline <* whitespace)]]
+stmOps = [[InfixR (Comp <$ some newline <* whitespace)]]
 
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'

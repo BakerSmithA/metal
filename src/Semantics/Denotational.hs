@@ -4,7 +4,6 @@ import Control.Monad.Except hiding (fix)
 import Control.Monad.Reader hiding (fix)
 import Data.Maybe (maybeToList)
 import State.Config
-import State.Env
 import State.Error
 import State.MachineClass
 import State.Program
@@ -28,16 +27,17 @@ cond ((predicate, branch):ps) p = do
 
 -- Retrieves the value of a variable, throwing an undefined variable error if
 -- the variable has not be defined.
-getVarVal :: VarName -> Prog TapeSymbol
-getVarVal name = do
-    val <- asks (lookupVar name)
+getVarVal :: VarName -> ProgConfig -> Prog TapeSymbol
+getVarVal name p = do
+    config <- p
+    let val = lookupVar name config
     maybe (throwError (UndefVar name)) return val
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> ProgConfig -> Prog TapeSymbol
-derivedSymbolVal (Read)        p = fmap getCurr p
-derivedSymbolVal (Literal sym) _ = return sym
-derivedSymbolVal (Var name)    _ = getVarVal name
+derivedSymbolVal (Read)        = fmap getCurr
+derivedSymbolVal (Var name)    = getVarVal name
+derivedSymbolVal (Literal sym) = const (return sym)
 
 -- The semantic function B[[.]] over boolean expressions.
 bexpVal :: Bexp -> ProgConfig -> Prog Bool
@@ -79,16 +79,17 @@ evalWhile b body = fix f where
 evalVarDecl :: VarName -> DerivedSymbol -> ProgConfig -> ProgConfig
 evalVarDecl name sym p = do
     val <- derivedSymbolVal sym p
-    local (addVar name val) p
+    fmap (addVar name val) p
 
 -- Evaluates a function declaration.
 evalFuncDecl :: FuncName -> Stm -> ProgConfig -> ProgConfig
-evalFuncDecl name body = local (addFunc name body)
+evalFuncDecl name body = fmap (addFunc name body)
 
 -- Evaluates a function call.
 evalCall :: FuncName -> ProgConfig -> ProgConfig
 evalCall name p = do
-    body <- asks (lookupFunc name)
+    config <- p
+    let body = lookupFunc name config
     maybe err eval body where
         err      = throwError (UndefFunc name)
         eval stm = evalStm stm p
@@ -96,18 +97,6 @@ evalCall name p = do
 -- Evaluates the composition of two statements.
 evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig
 evalComp stm1 stm2 = (evalStm stm2) . (evalStm stm1)
-
--- Evaluates print the symbol under the read-write head.
-evalPrintRead :: ProgConfig -> ProgConfig
-evalPrintRead = id
-
--- evalPrintRead p = do
---     config <- p
---     (liftIO . putStrLn . show . getCurr) config
-
--- Evaluates string an arbitrary string.
--- evalPrintStr :: String -> Prog ()
--- evalPrintStr str = liftIO (putStrLn str)
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: Stm -> ProgConfig -> ProgConfig
