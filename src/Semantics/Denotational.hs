@@ -10,6 +10,7 @@ import State.MachineClass
 import State.Program
 import State.Trans.Machine
 import Syntax.Tree
+import System.IO
 
 -- Fixpoint operator used to defined loops.
 fix :: (a -> a) -> a
@@ -30,7 +31,7 @@ cond ((predicate, branch):ps) p = do
 getVarVal :: VarName -> Prog TapeSymbol
 getVarVal name = do
     val <- asks (lookupVar name)
-    maybe (throwError (UndefVar name)) return val
+    maybe undefined return val
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> ProgConfig -> Prog TapeSymbol
@@ -89,7 +90,7 @@ evalCall :: FuncName -> ProgConfig -> ProgConfig
 evalCall name p = do
     body <- asks (lookupFunc name)
     maybe err eval body where
-        err      = throwError (UndefFunc name)
+        err      = undefined--throwError (UndefFunc name)
         eval stm = evalStm stm p
 
 -- Evaluates the composition of two statements.
@@ -97,14 +98,16 @@ evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig
 evalComp stm1 stm2 = (evalStm stm2) . (evalStm stm1)
 
 -- Evaluates print the symbol under the read-write head.
-evalPrintRead :: ProgConfig -> Prog ()
-evalPrintRead p = do
-    config <- p
-    (liftIO . putStrLn . show . getCurr) config
+evalPrintRead :: ProgConfig -> ProgConfig
+evalPrintRead = id
+
+-- evalPrintRead p = do
+--     config <- p
+--     (liftIO . putStrLn . show . getCurr) config
 
 -- Evaluates string an arbitrary string.
-evalPrintStr :: String -> Prog ()
-evalPrintStr str = liftIO (putStrLn str)
+-- evalPrintStr :: String -> Prog ()
+-- evalPrintStr str = liftIO (putStrLn str)
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: Stm -> ProgConfig -> ProgConfig
@@ -119,5 +122,5 @@ evalStm (VarDecl name sym)        = evalVarDecl name sym
 evalStm (FuncDecl name body)      = evalFuncDecl name body
 evalStm (Call name)               = evalCall name
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
-evalStm (PrintRead)               = \p -> evalPrintRead p >> p
-evalStm (PrintStr str)            = (>>) (evalPrintStr str)
+evalStm (PrintRead)               = id
+evalStm (PrintStr str)            = id

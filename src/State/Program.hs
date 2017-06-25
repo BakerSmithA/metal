@@ -12,7 +12,7 @@ import State.MachineClass
 import State.Trans.Machine
 
 newtype Prog a = Prog {
-    runProg :: ReaderT Env (MachineT (ExceptT RuntimeError IO)) a
+    runProg :: ReaderT Env (MachineT (Either RuntimeError a))
 } deriving (Functor
           , Applicative
           , Monad
