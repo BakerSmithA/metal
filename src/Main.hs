@@ -31,6 +31,7 @@ type Args = (FilePath, [TapeSymbol])
 -- Takes in arguments to the program, and returns the parsed arguments, or
 -- an error if the arguments were not parsed correctly.
 parseArgs :: [String] -> Either ProgError Args
+parseArgs [path]       = return (path, [])
 parseArgs [path, tape] = return (path, tape)
 parseArgs _            = throwError (ArgError "Incorrect number of arguments, expected <source_file> <tape>")
 
