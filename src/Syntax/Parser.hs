@@ -15,6 +15,7 @@ import Text.Megaparsec.String
 --  String        : " (LowerChar | UpperChar | Digit)* "
 --  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
+--  ArgName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
 --  DerivedSymbol : 'read'
 --                | VarName
@@ -29,13 +30,15 @@ import Text.Megaparsec.String
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
+--  FuncArgs      : ArgName (',' ArgName)*
+--  FuncDecl      : 'func' FuncName FuncArgs '{' Stm '}'
 --  Stm           : 'left'
 --                | 'right'
 --                | 'write' DerivedSymbol
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
---                | 'func' FuncName '{' Stm '}'
+--                | FuncDecl
 --                | FuncName
 --                | Stm '\n' Stm
 --                | 'print'
@@ -114,6 +117,11 @@ varName = identifier
 funcName :: Parser FuncName
 funcName = identifier
 
+-- Parses a function argument, the EBNF syntax of which is:
+--  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
+argName :: Parser ArgName
+argName = identifier
+
 -- Parses a derived symbol, the EBNF syntax of which is:
 --  DerivedSymbol : 'read'
 --                | VarName
@@ -162,6 +170,14 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseCla
         return (b, stm)
     elseClause = optional (tok "else" *> braces stm)
 
+-- Parses function arguments, the EBNF syntax of which is:
+--  FuncArgs : ArgName (',' ArgName)*
+-- TODO
+
+-- Parses a function declaration, the EBNF syntax of which is:
+--  FuncDecl : 'func' FuncName FuncArgs '{' Stm '}'
+-- TODO
+
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = MoveLeft <$ tok "left"
@@ -196,7 +212,7 @@ stmComp = stms >>= compose where
 --      | 'reject'
 --      | 'accept'
 --      | 'let' VarName '=' DerivedSymbol
---      | 'func' FuncName '{' Stm '}'
+--      | FuncDecl
 --      | FuncName
 --      | Stm '\n' Stm
 --      | 'print'

@@ -10,6 +10,9 @@ type VarName = String
 -- The type representing a function name.
 type FuncName = String
 
+-- The type representing a function argument name.
+type ArgName = String
+
 -- The type represented a derived symbol, i.e. either a literal tape symbol, or
 -- a symbol read from under the read/write head.
 data DerivedSymbol = Read

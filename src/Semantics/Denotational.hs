@@ -11,6 +11,8 @@ import State.Trans.Machine
 import Syntax.Tree
 import System.IO
 
+type ProgConfig = Prog Config
+
 -- Fixpoint operator used to defined loops.
 fix :: (a -> a) -> a
 fix f = let x = f x in x
@@ -25,6 +27,16 @@ cond ((predicate, branch):ps) p = do
     if bVal then branch p
             else cond ps p
 
+-- Executes `stm` in a block such that any changes to the variable or function
+-- environment are not persisted outside the block. I.e. after finishing
+-- executing the statement, the variable and function environments return to
+-- how they were before the statement.
+evalBlock :: Stm -> ProgConfig -> ProgConfig
+evalBlock s p = do
+    oldConfig <- p
+    newConfig <- evalStm s p
+    return (resetEnv oldConfig newConfig)
+
 -- Retrieves the value of a variable, throwing an undefined variable error if
 -- the variable has not be defined.
 getVarVal :: VarName -> ProgConfig -> Prog TapeSymbol
@@ -32,10 +44,6 @@ getVarVal name p = do
     config <- p
     let val = lookupVar name config
     maybe (throwError (UndefVar name)) return val
-
--- getVarVal name p = do
---     val <- asks (lookupVar name)
---     maybe (throwError (UndefVar name)) return val
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> ProgConfig -> Prog TapeSymbol
@@ -96,7 +104,7 @@ evalCall name p = do
     let body = lookupFunc name config
     maybe err eval body where
         err      = throwError (UndefFunc name)
-        eval stm = evalStm stm p
+        eval stm = evalBlock stm p
 
 -- Evaluates the composition of two statements.
 evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig

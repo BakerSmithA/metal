@@ -18,8 +18,6 @@ newtype Prog a = Prog {
           , MonadError RuntimeError
           , MonadMachine a)
 
-type ProgConfig = Prog Config
-
 -- Runs the program in the given environment.
 runProgram :: Prog a -> Either RuntimeError (Machine a)
 runProgram p = runMachineT (runProg p)

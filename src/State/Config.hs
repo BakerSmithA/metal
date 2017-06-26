@@ -63,3 +63,8 @@ addVar name sym config = config { vars = insert name sym (vars config) }
 -- Adds a single function to the environment.
 addFunc :: FuncName -> Stm -> Config -> Config
 addFunc name body config = config { funcs = insert name body (funcs config) }
+
+-- Resets the variable and function environment of `cNew` to that provided
+-- by `cOld`.
+resetEnv :: Config -> Config -> Config
+resetEnv cOld cNew = cNew { vars = vars cOld, funcs = funcs cOld }
