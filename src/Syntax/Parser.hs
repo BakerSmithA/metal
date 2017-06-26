@@ -181,6 +181,18 @@ stm' = MoveLeft <$ tok "left"
 stmOps :: [[Operator Parser Stm]]
 stmOps = [[InfixR (Comp <$ some newline <* whitespace)]]
 
+-- Parses statements separated by newlines into a composition of statements.
+stmComp :: Parser Stm
+stmComp = stms >>= compose where
+    stms :: Parser [Stm]
+    stms = try ((:) <$> (stm' <* some newline <* whitespace) <*> stms)
+        <|> (:) <$> stm' <*> pure []
+
+    compose :: [Stm] -> Parser Stm
+    compose []  = fail "Expected a statement"
+    compose [x] = return x
+    compose xs  = return (foldr1 Comp xs)
+
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'
 --      | 'right'
@@ -196,5 +208,4 @@ stmOps = [[InfixR (Comp <$ some newline <* whitespace)]]
 --      | 'while' Bexp '{' Stm '}'
 --      | If
 stm :: Parser Stm
-stm = whitespaceNewline *> (try stms <|> stm') where
-    stms = makeExprParser stm' stmOps
+stm = whitespaceNewline *> stmComp
