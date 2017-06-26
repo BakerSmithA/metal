@@ -61,7 +61,7 @@ whitespaceConsumer sc = L.space (void sc) lineCmnt blockCmnt
 
 -- Comsumes whitespace and comments, but not newlines.
 whitespace :: Parser ()
-whitespace = whitespaceConsumer separatorChar
+whitespace = whitespaceConsumer (oneOf "\t ")
 
 -- Consumes whitespace, comments, and newlines.
 whitespaceNewline :: Parser ()
@@ -177,15 +177,11 @@ stm' = MoveLeft <$ tok "left"
    <|> While <$ tok "while" <*> bexp <*> braces stm
    <|> ifStm
 
--- The operators that can work on statements - this is used to parse composition.
-stmOps :: [[Operator Parser Stm]]
-stmOps = [[InfixR (Comp <$ some newline <* whitespace)]]
-
 -- Parses statements separated by newlines into a composition of statements.
 stmComp :: Parser Stm
 stmComp = stms >>= compose where
     stms :: Parser [Stm]
-    stms = try ((:) <$> (stm' <* some newline <* whitespace) <*> stms)
+    stms = try ((:) <$> (stm' <* some (newline <* whitespace)) <*> stms)
         <|> (:) <$> stm' <*> pure []
 
     compose :: [Stm] -> Parser Stm

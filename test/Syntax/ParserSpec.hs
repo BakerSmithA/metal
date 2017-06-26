@@ -362,6 +362,12 @@ stmSpec = describe "stm" $ do
             it "ignores tabs before the newline" $ do
                 parse stm "" "left\t\nright" `shouldParse` (Comp MoveLeft MoveRight)
 
+            it "ignores tabs alone on lines inbetween statements" $ do
+                parse stm "" "left\n\t\nright" `shouldParse` (Comp MoveLeft MoveRight)
+
+            it "ignores spaces alone on lines inbetween statements" $ do
+                parse stm "" "left\n \nright" `shouldParse` (Comp MoveLeft MoveRight)
+
         context "whitespace nested in statements" $ do
             it "ignores newlines after an opening brace" $ do
                 parse stm "" "while True {\n left }" `shouldParse` (While TRUE MoveLeft)
