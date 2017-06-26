@@ -13,10 +13,70 @@ import Syntax.Tree
 import TestHelper.Denotational
 import Test.Hspec hiding (shouldContain, shouldThrow)
 
+-- Takes a function to construct a control structure (e.g. function, while-loop,
+-- if-statement), given the body of the structure. Also takes an optional
+-- statement to invoke the construct. The code below is executed and it is
+-- checked the variable x if reset to have the value '1' after executing the
+-- container.
+--
+--  let x = '1'
+--  control_struct {
+--      let x = '2'
+--      write '#'
+--  }
+--  invoke
+testResetVarEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
+testResetVarEnv makeControlStruct invoke = do
+    let outerVarDecl = VarDecl "x" (Literal '1')
+        innerVarDecl = VarDecl "x" (Literal '2')
+        write        = Write (Literal '#')
+        structBody   = Comp innerVarDecl write
+        structDecl   = makeControlStruct structBody
+        invoke'      = maybe structDecl (Comp structDecl) invoke
+        comp         = Comp outerVarDecl invoke'
+        testConfig   = Config.fromString "abc"
+        result       = evalSemantics comp testConfig
+    result `shouldRead` "#bc"
+    shouldContainVar result "x" '1'
+
+-- Takes a function to construct a control structure (e.g. function, while-loop,
+-- if-statement), given the body of the structure. Also takes an
+-- optional statement to invoke the construct. The code below is executed and
+-- it is checked the function f is reset to have the body `right` after
+-- executing the container.
+--
+--  func f {
+--      right
+--  }
+--  control_struct {
+--      func f {
+--          write '#'
+--      }
+--      f
+--  }
+--  invoke
+testResetFuncEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
+testResetFuncEnv makeControlStruct invoke = do
+    let outerFBody = MoveRight
+        outerFDecl = FuncDecl "f" outerFBody
+        innerFBody = Write (Literal '#')
+        innerFDecl = FuncDecl "f" innerFBody
+        fCall      = Call "f"
+        structBody = Comp innerFDecl fCall
+        structDecl = makeControlStruct structBody
+        invoke'    = maybe structDecl (Comp structDecl) invoke
+        comp       = Comp outerFDecl invoke'
+        testConfig = Config.fromString "abc"
+        result     = evalSemantics comp testConfig
+    result `shouldBeAt` 0
+    result `shouldRead` "#bc"
+    shouldContainFunc result "f" outerFBody
+
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
     let testConfig  = right (Config.fromString "abc")
         testConfig' = addVar "x" '1' testConfig
+
     describe "derivedSymbolVal" $ do
         it "reads the symbol under the read-write head" $ do
             let result = evalDerivedSymbol Read testConfig'
@@ -38,6 +98,7 @@ bexpValSpec :: Spec
 bexpValSpec = do
     let testConfig  = right (Config.fromString "abc")
         testConfig' = addVar "x" '1' testConfig
+
     describe "bexpVal" $ do
         it "evaluates TRUE" $ do
             let result = evalBexp TRUE testConfig'
@@ -104,6 +165,7 @@ denotationalSpec = do
 leftSpec :: Spec
 leftSpec = do
     let testConfig = right (Config.fromString "abc")
+
     context "left" $ do
         it "moves the read-write head left" $ do
             evalSemantics (MoveLeft) testConfig `shouldBeAt` 0
@@ -111,6 +173,7 @@ leftSpec = do
 rightSpec :: Spec
 rightSpec = do
     let testConfig = right (Config.fromString "abc")
+
     context "right" $ do
         it "moves the read-write head right" $ do
             evalSemantics (MoveRight) testConfig `shouldBeAt` 2
@@ -118,6 +181,7 @@ rightSpec = do
 writeSpec :: Spec
 writeSpec = do
     let testConfig = right (Config.fromString "abc")
+
     context "right" $ do
         it "writes to the cell under the read-write head" $ do
             evalSemantics (Write (Literal '2')) testConfig `shouldRead` "a2c"
@@ -125,6 +189,7 @@ writeSpec = do
 acceptSpec :: Spec
 acceptSpec = do
     let testConfig = right (Config.fromString "abc")
+
     context "accept" $ do
         it "accepts after evaluating an accept statement" $ do
             shouldAccept $ evalSemantics (Accept) testConfig
@@ -132,6 +197,7 @@ acceptSpec = do
 rejectSpec :: Spec
 rejectSpec = do
     let testConfig = right (Config.fromString "abc")
+
     context "reject" $ do
         it "rejects after evaluating an accept statement" $ do
             shouldReject $ evalSemantics (Reject) testConfig
@@ -139,6 +205,7 @@ rejectSpec = do
 ifSpec :: Spec
 ifSpec = do
     let testConfig = right (Config.fromString "abc")
+
     context "evaluating a single if-statement" $ do
         it "performs the first branch" $ do
             let ifStm = If TRUE (Write (Literal '1')) [] Nothing
@@ -147,6 +214,14 @@ ifSpec = do
         it "performs nothing if predicate is false" $ do
             let ifStm = If FALSE (Write (Literal '1')) [] Nothing
             evalSemantics ifStm testConfig `shouldRead` "abc"
+
+        it "resets the variable environment after executing a branch" $ do
+            let makeIf body = If TRUE body [] Nothing
+            testResetVarEnv makeIf Nothing
+
+        it "resets the function environment after executing a branch" $ do
+            let makeIf body = If TRUE body [] Nothing
+            testResetFuncEnv makeIf Nothing
 
     context "evaluating an if-elseif statement" $ do
         it "performs the first branch" $ do
@@ -161,6 +236,14 @@ ifSpec = do
             let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2')), (TRUE, Write (Literal '3'))] Nothing
             evalSemantics ifStm testConfig `shouldRead` "a3c"
 
+        it "resets the variable environment after executing a branch" $ do
+            let makeIf body = If FALSE (Write (Literal '1')) [(TRUE, body)] Nothing
+            testResetVarEnv makeIf Nothing
+
+        it "resets the function environment after executing a branch" $ do
+            let makeIf body = If FALSE (Write (Literal '1')) [(TRUE, body)] Nothing
+            testResetFuncEnv makeIf Nothing
+
     context "evaluating an if-elseif-else statement" $ do
         it "performs the first branch" $ do
             let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
@@ -174,9 +257,18 @@ ifSpec = do
             let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2'))] (Just (Write (Literal '3')))
             evalSemantics ifStm testConfig `shouldRead` "a3c"
 
+        it "resets the variable environment after executing a branch" $ do
+            let makeIf body = If FALSE (Write (Literal '1')) [] (Just body)
+            testResetVarEnv makeIf Nothing
+
+        it "resets the function environment after executing a branch" $ do
+            let makeIf body = If FALSE (Write (Literal '1')) [] (Just body)
+            testResetFuncEnv makeIf Nothing
+
 whileSpec :: Spec
 whileSpec = do
     let testConfig = Config.fromString "Ab5#"
+
     context "evaluating while loop" $ do
         it "does not loop if the condition is false" $ do
             let loop = While FALSE (Write (Literal '1'))
@@ -203,6 +295,7 @@ whileSpec = do
 varDeclSpec :: Spec
 varDeclSpec = do
     let testConfig = Config.fromString "abc"
+
     context "evaluating a variable declaration" $ do
         it "adds the variable to the environment" $ do
             let decl   = VarDecl "y" (Literal '1')
@@ -213,6 +306,7 @@ varDeclSpec = do
 funcCallSpec :: Spec
 funcCallSpec = do
     let testConfig = Config.fromString "abc"
+
     context "evaluating a function call" $ do
         it "performs the function" $ do
             let decl = FuncDecl "f" MoveRight
@@ -220,9 +314,16 @@ funcCallSpec = do
                 comp = Comp decl call
             evalSemantics comp testConfig `shouldBeAt` 1
 
+        it "resets the variable environment after executing a function" $ do
+            testResetVarEnv (FuncDecl "g") (Just (Call "g"))
+
+        it "resets the function environment after executing a function" $ do
+            testResetFuncEnv (FuncDecl "g") (Just (Call "g"))
+
 compSpec :: Spec
 compSpec = do
     let testConfig = Config.fromString "abc"
+
     context "evaluating a function composition" $ do
         it "composes two statements 1" $ do
             let comp   = Comp MoveRight (Write (Literal '#'))

@@ -76,7 +76,7 @@ funcSpec = do
             let env = addFunc "f" MoveRight initial
             lookupFunc "f" env `shouldBe` Just MoveRight
 
-        it "overrides previous variable declarations" $ do
+        it "overrides previous function declarations" $ do
             let env  = addFunc "f" MoveRight initial
                 env' = addFunc "f" MoveLeft env
             lookupFunc "f" env' `shouldBe` Just MoveLeft

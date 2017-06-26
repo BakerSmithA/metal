@@ -78,7 +78,7 @@ evalWrite sym p = do
 -- Evaluates an if-else statement.
 evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> ProgConfig -> ProgConfig
 evalIf bexp ifStm elseIfClauses elseStm = cond branches where
-    branches   = map (\(b, stm) -> (bexpVal b, evalStm stm)) allClauses
+    branches   = map (\(b, stm) -> (bexpVal b, evalBlock stm)) allClauses
     allClauses = ((bexp, ifStm):elseIfClauses) ++ (maybeToList elseClause)
     elseClause = fmap (\stm -> (TRUE, stm)) elseStm
 

@@ -51,6 +51,18 @@ shouldSatify r predicate = machShouldSatify r f where
 shouldContain :: (Eq a, Show a) => ProgResult a -> a -> Expectation
 shouldContain r sym = shouldSatify r (== sym)
 
+-- Asserts that the variable environment contains the given value for the
+-- variable name.
+shouldContainVar :: ProgResultConfig -> VarName -> TapeSymbol -> Expectation
+shouldContainVar r name sym = shouldSatify r predicate where
+    predicate config = lookupVar name config == Just sym
+
+-- Asserts that the function environment contains the given function body for
+-- the function name.
+shouldContainFunc :: ProgResultConfig -> FuncName -> Stm -> Expectation
+shouldContainFunc r name body = shouldSatify r predicate where
+    predicate config = lookupFunc name config == Just body
+
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
 shouldBeAt :: ProgResultConfig -> Pos -> Expectation
