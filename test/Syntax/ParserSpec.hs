@@ -322,21 +322,21 @@ stmSpec = describe "stm" $ do
             parse stm "" "print" `shouldParse` PrintRead
 
     context "removing whitespace and comments" $ do
-        it "ignores tabs" $ do
-            parse stm "" "\t left" `shouldParse` MoveLeft
-
         context "before statements" $ do
-            it "ignores whitespace at the start of a statement" $ do
+            it "ignores spaces" $ do
                 parse stm "" " left" `shouldParse` MoveLeft
 
-            it "ignores newlines at the start of a statement" $ do
+            it "ignores newlines" $ do
                 parse stm "" "\n\nleft" `shouldParse` MoveLeft
 
-            it "ignores whole-line comments at the start" $ do
+            it "ignores whole-line comments" $ do
                 parse stm "" "//Comment\n left" `shouldParse` MoveLeft
 
-            it "ignores in-line comments at the start" $ do
+            it "ignores in-line" $ do
                 parse stm "" "/* Comment */\n left" `shouldParse` MoveLeft
+
+            it "ignores tabs" $ do
+                parse stm "" "\tleft" `shouldParse` MoveLeft
 
         context "interspersed with statements" $ do
             it "ignores whole line comments" $ do
@@ -345,12 +345,22 @@ stmSpec = describe "stm" $ do
             it "ignores in-line comments" $ do
                 parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [] Nothing)
 
-        context "after of statements" $ do
+        context "ignores whitespace after of statements" $ do
             it "ignores whitespace at the end of a statement" $ do
                 parse stm "" "left   " `shouldParse` MoveLeft
 
             it "ignores newlines at the end of a statement" $ do
-                parse stm "" "left \n\n " `shouldParse` MoveLeft
+                parse stm "" "left\n\n " `shouldParse` MoveLeft
+
+            it "ignores tabs" $ do
+                parse stm "" "left\t" `shouldParse` MoveLeft
+
+        context "composition" $ do
+            it "ignores tabs after the newline" $ do
+                parse stm "" "left\n\tright" `shouldParse` (Comp MoveLeft MoveRight)
+
+            it "ignores tabs before the newline" $ do
+                parse stm "" "left\t\nright" `shouldParse` (Comp MoveLeft MoveRight)
 
         context "whitespace nested in statements" $ do
             it "ignores newlines after an opening brace" $ do
