@@ -367,6 +367,12 @@ funcCallSpec = do
             evalSemantics call1 config `shouldBeAt` 0
             evalSemantics call2 config `shouldBeAt` 2
 
+        it "throws an error if the number of arguments is incorrect" $ do
+            let funcDecl = FuncDecl "f" ["a", "b"] Accept
+                comp     = Comp funcDecl (Call "f" [Literal '1'])
+                expected = WrongNumArgs "f" ["a", "b"] [Literal '1']
+            evalSemantics comp testConfig `shouldThrow` expected
+
         it "evaluates a recursive function" $ do
             -- The statement used in the test is shown below. This function
             -- moves right until a '#' is encountered. When a '#' is found,
