@@ -57,9 +57,9 @@ testResetVarEnv makeControlStruct invoke = do
 testResetFuncEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetFuncEnv makeControlStruct invoke = do
     let outerFBody = MoveRight
-        outerFDecl = FuncDecl "f" outerFBody
+        outerFDecl = FuncDecl "f" [] outerFBody
         innerFBody = Write (Literal '#')
-        innerFDecl = FuncDecl "f" innerFBody
+        innerFDecl = FuncDecl "f" [] innerFBody
         fCall      = Call "f"
         structBody = Comp innerFDecl fCall
         structDecl = makeControlStruct structBody
@@ -316,7 +316,7 @@ funcCallSpec = do
 
     context "evaluating a function call" $ do
         it "performs the function" $ do
-            let decl = FuncDecl "f" MoveRight
+            let decl = FuncDecl "f" [] MoveRight
                 call = Call "f"
                 comp = Comp decl call
             evalSemantics comp testConfig `shouldBeAt` 1
@@ -326,10 +326,10 @@ funcCallSpec = do
             evalSemantics call testConfig `shouldThrow` (UndefFunc "f")
 
         it "resets the variable environment after executing a function" $ do
-            testResetVarEnv (FuncDecl "g") (Just (Call "g"))
+            testResetVarEnv (FuncDecl "g" []) (Just (Call "g"))
 
         it "resets the function environment after executing a function" $ do
-            testResetFuncEnv (FuncDecl "g") (Just (Call "g"))
+            testResetFuncEnv (FuncDecl "g" []) (Just (Call "g"))
 
 compSpec :: Spec
 compSpec = do

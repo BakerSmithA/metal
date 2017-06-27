@@ -278,7 +278,7 @@ stmSpec = describe "stm" $ do
 
     context "parsing function declarations" $ do
         it "parses function delcarations" $ do
-            parse stm "" "func fName { right }" `shouldParse` (FuncDecl "fName" MoveRight)
+            parse stm "" "func fName { right }" `shouldParse` (FuncDecl "fName" [] MoveRight)
 
         it "fails to parse if a function name is missing" $ do
             parse stm "" `shouldFailOn` "func { right }"
@@ -370,19 +370,19 @@ stmSpec = describe "stm" $ do
 
         context "whitespace nested in statements" $ do
             it "ignores newlines after an opening brace" $ do
-                parse stm "" "while True {\n left }" `shouldParse` (While TRUE MoveLeft)
+                parse stm "" "while True {\n\n left }" `shouldParse` (While TRUE MoveLeft)
 
             it "ignores newlines before a closing brace" $ do
-                parse stm "" "while True { left \n }" `shouldParse` (While TRUE MoveLeft)
+                parse stm "" "while True { left \n\n }" `shouldParse` (While TRUE MoveLeft)
 
             it "ignores newlines before and after braces" $ do
-                parse stm "" "while True { \n left \n }" `shouldParse` (While TRUE MoveLeft)
+                parse stm "" "while True { \n\n left \n\n }" `shouldParse` (While TRUE MoveLeft)
 
             it "ignores newlines after an opening brace when composing" $ do
-                parse stm "" "while True {\n left \n right }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+                parse stm "" "while True {\n\n left \n\n right }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
 
             it "ignores newlines after a closing brace when composing" $ do
-                parse stm "" "while True { left \n right \n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+                parse stm "" "while True { left \n\n right \n\n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
 
             it "ignores newlines before and after braces when composing" $ do
-                parse stm "" "while True { \n left \n right \n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+                parse stm "" "while True { \n\n left \n\n right \n\n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))

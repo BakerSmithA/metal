@@ -30,7 +30,7 @@ import Text.Megaparsec.String
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
---  FuncArgs      : ArgName (',' ArgName)*
+--  FuncArgs      : ArgName (',' ArgName)* | ε
 --  FuncDecl      : 'func' FuncName FuncArgs '{' Stm '}'
 --  Stm           : 'left'
 --                | 'right'
@@ -81,10 +81,12 @@ parens = between (tok "(") (tok ")")
 
 -- Parses a string enclosed in curly braces.
 braces :: Parser a -> Parser a
-braces p = between openBrace closeBrace p' where
-    p'         = p <* whitespaceNewline
-    openBrace  = tok "{" <* optional newline
-    closeBrace = tok "}"
+braces = between (tok "{") (tok "}")
+
+-- braces p = between openBrace closeBrace p' where
+--     p'         = p <* whitespaceNewline
+--     openBrace  = tok "{" <* optional newline
+--     closeBrace = tok "}"
 
 -- Parses a string encased in double quotes.
 encasedString :: Parser String
@@ -171,12 +173,14 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseCla
     elseClause = optional (tok "else" *> braces stm)
 
 -- Parses function arguments, the EBNF syntax of which is:
---  FuncArgs : ArgName (',' ArgName)*
--- TODO
+--  FuncArgs : ArgName (',' ArgName)* | ε
+funcArgs :: Parser FuncArgs
+funcArgs = argName `sepBy` (tok ",")
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncArgs '{' Stm '}'
--- TODO
+funcDecl :: Parser Stm
+funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcArgs <*> braces stm
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
@@ -186,7 +190,7 @@ stm' = MoveLeft <$ tok "left"
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
-   <|> FuncDecl <$ tok "func" <*> funcName <*> braces stm
+   <|> funcDecl
    <|> try (Call <$> funcName)
    <|> try (PrintStr <$ tok "print" <*> encasedString)
    <|> try (PrintRead <$ tok "print")
@@ -195,15 +199,21 @@ stm' = MoveLeft <$ tok "left"
 
 -- Parses statements separated by newlines into a composition of statements.
 stmComp :: Parser Stm
-stmComp = stms >>= compose where
+stmComp = (stms <* whitespaceNewline) >>= compose where
     stms :: Parser [Stm]
     stms = try ((:) <$> (stm' <* some (newline <* whitespace)) <*> stms)
-        <|> (:) <$> stm' <*> pure []
+       <|> (:) <$> stm' <*> pure []
 
     compose :: [Stm] -> Parser Stm
     compose []  = fail "Expected a statement"
     compose [x] = return x
     compose xs  = return (foldr1 Comp xs)
+
+-- braces :: Parser a -> Parser a
+-- braces p = between openBrace closeBrace p' where
+--     p'         = p <* whitespaceNewline
+--     openBrace  = tok "{" <* optional newline
+--     closeBrace = tok "}"
 
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'
