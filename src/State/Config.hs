@@ -1,15 +1,16 @@
 module State.Config where
 
 import Data.Map as Map
+import Data.List as List
 import State.Tape as Tape
 import Syntax.Tree
 
 -- A configuration of a Turing machine.
 data Config = Config {
-    pos   :: Pos                    -- The position the read-write head.
-  , tape  :: Tape                   -- The tape of the Turing machine.
-  , vars  :: Map VarName TapeSymbol -- The environment of variable declarations.
-  , funcs :: Map FuncName Stm       -- The environment of function declarations.
+    pos   :: Pos                              -- The position the read-write head.
+  , tape  :: Tape                             -- The tape of the Turing machine.
+  , vars  :: Map VarName TapeSymbol           -- The environment of variable declarations.
+  , funcs :: Map FuncName (FuncDeclArgs, Stm) -- The environment of function declarations.
 } deriving (Eq)
 
 instance Show Config where
@@ -53,16 +54,20 @@ lookupVar :: VarName -> Config -> Maybe TapeSymbol
 lookupVar name config = Map.lookup name (vars config)
 
 -- Looks up a function in an environment.
-lookupFunc :: FuncName -> Config -> Maybe Stm
+lookupFunc :: FuncName -> Config -> Maybe (FuncDeclArgs, Stm)
 lookupFunc name config = Map.lookup name (funcs config)
 
 -- Adds a single variable to the environment.
 addVar :: VarName -> TapeSymbol -> Config -> Config
-addVar name sym config = config { vars = insert name sym (vars config) }
+addVar name sym config = config { vars = Map.insert name sym (vars config) }
+
+-- Adds multiple variables to the environment.
+addVars :: [(VarName, TapeSymbol)] -> Config -> Config
+addVars decls config = List.foldr (uncurry addVar) config decls where
 
 -- Adds a single function to the environment.
-addFunc :: FuncName -> Stm -> Config -> Config
-addFunc name body config = config { funcs = insert name body (funcs config) }
+addFunc :: FuncName -> FuncDeclArgs -> Stm -> Config -> Config
+addFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }
 
 -- Resets the variable and function environment of `cNew` to that provided
 -- by `cOld`.

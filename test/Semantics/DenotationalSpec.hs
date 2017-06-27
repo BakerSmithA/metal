@@ -36,6 +36,7 @@ testResetVarEnv makeControlStruct invoke = do
         comp         = Comp outerVarDecl invoke'
         testConfig   = Config.fromString "abc"
         result       = evalSemantics comp testConfig
+
     shouldContainVar result "x" '1'
 
 -- Takes a function to construct a control structure (e.g. function, while-loop,
@@ -44,7 +45,7 @@ testResetVarEnv makeControlStruct invoke = do
 -- it is checked the function f is reset to have the body `right` after
 -- executing the container.
 --
---  func f {
+--  func f x {
 --      right
 --  }
 --  control_struct {
@@ -57,17 +58,18 @@ testResetVarEnv makeControlStruct invoke = do
 testResetFuncEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetFuncEnv makeControlStruct invoke = do
     let outerFBody = MoveRight
-        outerFDecl = FuncDecl "f" [] outerFBody
+        outerFDecl = FuncDecl "f" ["x"] outerFBody
         innerFBody = Write (Literal '#')
         innerFDecl = FuncDecl "f" [] innerFBody
-        fCall      = Call "f"
+        fCall      = Call "f" []
         structBody = Comp innerFDecl fCall
         structDecl = makeControlStruct structBody
         invoke'    = maybe structDecl (Comp structDecl) invoke
         comp       = Comp outerFDecl invoke'
         testConfig = Config.fromString "abc"
         result     = evalSemantics comp testConfig
-    shouldContainFunc result "f" outerFBody
+
+    shouldContainFunc result "f" ["x"] outerFBody
 
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
@@ -114,6 +116,7 @@ bexpValSpec = do
                 ft = evalBexp (And FALSE TRUE) testConfig'
                 tf = evalBexp (And TRUE FALSE) testConfig'
                 tt = evalBexp (And TRUE TRUE) testConfig'
+
             ff `shouldContain` False
             ft `shouldContain` False
             tf `shouldContain` False
@@ -124,6 +127,7 @@ bexpValSpec = do
                 ft = evalBexp (Or FALSE TRUE) testConfig'
                 tf = evalBexp (Or TRUE FALSE) testConfig'
                 tt = evalBexp (Or TRUE TRUE) testConfig'
+
             ff `shouldContain` False
             ft `shouldContain` True
             tf `shouldContain` True
@@ -134,6 +138,7 @@ bexpValSpec = do
                 b2      = Le (Read) (Literal 'a')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
+
             result1 `shouldContain` True
             result2 `shouldContain` False
 
@@ -142,6 +147,7 @@ bexpValSpec = do
                 b2      = Eq (Read) (Literal '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
+
             result1 `shouldContain` True
             result2 `shouldContain` False
 
@@ -278,17 +284,20 @@ whileSpec = do
                 comp   = Comp (Write (Literal 'X')) MoveRight
                 loop   = While cond comp
                 result = evalSemantics loop testConfig
+
             result `shouldBeAt` 3
             result `shouldRead` "XXX#"
 
         it "resets the variable environment after executing a branch" $ do
             let cond        = Not (Eq Read (Literal '#'))
                 makeIf body = While cond (Comp MoveRight body)
+
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
             let cond        = Not (Eq Read (Literal '#'))
                 makeIf body = While cond (Comp MoveRight body)
+
             testResetFuncEnv makeIf Nothing
 
         -- it "breaks by rejecting" $ do
@@ -308,6 +317,7 @@ varDeclSpec = do
             let decl   = VarDecl "y" (Literal '1')
                 ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#')) [] Nothing
                 comp   = Comp decl ifStm
+
             evalSemantics comp testConfig `shouldRead` "#bc"
 
 funcCallSpec :: Spec
@@ -317,19 +327,75 @@ funcCallSpec = do
     context "evaluating a function call" $ do
         it "performs the function" $ do
             let decl = FuncDecl "f" [] MoveRight
-                call = Call "f"
+                call = Call "f" []
                 comp = Comp decl call
             evalSemantics comp testConfig `shouldBeAt` 1
 
         it "fails if the function has not been defined" $ do
-            let call = Call "f"
+            let call = Call "f" []
             evalSemantics call testConfig `shouldThrow` (UndefFunc "f")
 
         it "resets the variable environment after executing a function" $ do
-            testResetVarEnv (FuncDecl "g" []) (Just (Call "g"))
+            testResetVarEnv (FuncDecl "g" []) (Just (Call "g" []))
 
         it "resets the function environment after executing a function" $ do
-            testResetFuncEnv (FuncDecl "g" []) (Just (Call "g"))
+            testResetFuncEnv (FuncDecl "g" []) (Just (Call "g" []))
+
+        it "evalutes a function with arguments" $ do
+            -- The statement used in the test is:
+            --
+            --  func x y {
+            --      if (x == '1') and (y == '2') {
+            --          left
+            --      } else {
+            --          right
+            --      }
+            --  }
+            --
+            -- The function is then called with the following arguments:
+            --  f '1' '2'
+            --  f '1' '3'
+            let boolX    = Eq (Var "x") (Literal '1')
+                boolY    = Eq (Var "y") (Literal '2')
+                boolAnd  = And boolX boolY
+                ifStm    = If boolAnd MoveLeft [] (Just MoveRight)
+                funcDecl = FuncDecl "f" ["x", "y"] ifStm
+                call1    = Comp funcDecl (Call "f" [Literal '1', Literal '2'])
+                call2    = Comp funcDecl (Call "f" [Literal '1', Literal '3'])
+                config   = right (Config.fromString "abc")
+
+            evalSemantics call1 config `shouldBeAt` 0
+            evalSemantics call2 config `shouldBeAt` 2
+
+        it "evaluates a recursive function" $ do
+            -- The statement used in the test is shown below. This function
+            -- moves right until a '#' is encountered. When a '#' is found,
+            -- the program accepts. If the end of the input is found
+            -- (i.e. ' ') the program rejects.
+            --
+            --  func f {
+            --      if read == '#' {
+            --          accept
+            --      } else if read == ' ' {
+            --          reject
+            --      } else {
+            --          right
+            --          f
+            --      }
+            --  }
+            --  f
+            let b1            = Eq Read (Literal '#')
+                b2            = Eq Read (Literal ' ')
+                elseIfClauses = [(b2, Reject)]
+                elseClause    = Just (Comp MoveRight (Call "f" []))
+                ifStm         = If b1 Accept elseIfClauses elseClause
+                funcDecl      = FuncDecl "f" [] ifStm
+                termConfig    = Config.fromString "abc#"
+                nonTermConfig = Config.fromString "abc"
+                comp          = Comp funcDecl (Call "f" [])
+
+            shouldAccept (evalSemantics comp termConfig)
+            shouldReject (evalSemantics comp nonTermConfig)
 
 compSpec :: Spec
 compSpec = do

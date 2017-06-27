@@ -73,10 +73,14 @@ funcSpec = do
             lookupFunc "f" initial `shouldBe` Nothing
 
         it "allows functions to be added and retrieved" $ do
-            let env = addFunc "f" MoveRight initial
-            lookupFunc "f" env `shouldBe` Just MoveRight
+            let env = addFunc "f" [] MoveRight initial
+            lookupFunc "f" env `shouldBe` Just ([], MoveRight)
+
+        it "allows functions with arguments to be added and retrieved" $ do
+            let env = addFunc "f" ["a", "b"] MoveRight initial
+            lookupFunc "f" env `shouldBe` Just (["a", "b"], MoveRight)
 
         it "overrides previous function declarations" $ do
-            let env  = addFunc "f" MoveRight initial
-                env' = addFunc "f" MoveLeft env
-            lookupFunc "f" env' `shouldBe` Just MoveLeft
+            let env  = addFunc "f" [] MoveRight initial
+                env' = addFunc "f" [] MoveLeft env
+            lookupFunc "f" env' `shouldBe` Just ([], MoveLeft)

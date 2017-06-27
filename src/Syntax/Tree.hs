@@ -13,8 +13,11 @@ type FuncName = String
 -- The type representing a function argument name.
 type ArgName = String
 
--- A type that represents all the arguments to a function.
-type FuncArgs = [ArgName]
+-- A type that represents all the declared arguments to a function.
+type FuncDeclArgs = [ArgName]
+
+-- A type that represents all the arguments passed to a function call.
+type FuncCallArgs = [DerivedSymbol]
 
 -- The type represented a derived symbol, i.e. either a literal tape symbol, or
 -- a symbol read from under the read/write head.
@@ -42,8 +45,8 @@ data Stm = MoveLeft
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
          | VarDecl VarName DerivedSymbol
-         | FuncDecl FuncName FuncArgs Stm
-         | Call FuncName
+         | FuncDecl FuncName FuncDeclArgs Stm
+         | Call FuncName FuncCallArgs
          | Comp Stm Stm
          | PrintRead
          | PrintStr String

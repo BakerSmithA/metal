@@ -59,9 +59,9 @@ shouldContainVar r name sym = shouldSatify r predicate where
 
 -- Asserts that the function environment contains the given function body for
 -- the function name.
-shouldContainFunc :: ProgResultConfig -> FuncName -> Stm -> Expectation
-shouldContainFunc r name body = shouldSatify r predicate where
-    predicate config = lookupFunc name config == Just body
+shouldContainFunc :: ProgResultConfig -> FuncName -> FuncDeclArgs -> Stm -> Expectation
+shouldContainFunc r name args body = shouldSatify r predicate where
+    predicate config = lookupFunc name config == Just (args, body)
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.

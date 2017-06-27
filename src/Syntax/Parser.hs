@@ -30,8 +30,10 @@ import Text.Megaparsec.String
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
---  FuncArgs      : ArgName (',' ArgName)* | ε
---  FuncDecl      : 'func' FuncName FuncArgs '{' Stm '}'
+--  FuncDeclArgs  : ArgName (',' ArgName)* | ε
+--  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
+--  FuncCallArgs  : DerivedSymbol (',' DerivedSymbol) | ε
+--  Call          : FuncName FuncCallArgs
 --  Stm           : 'left'
 --                | 'right'
 --                | 'write' DerivedSymbol
@@ -39,7 +41,7 @@ import Text.Megaparsec.String
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
 --                | FuncDecl
---                | FuncName
+--                | Call
 --                | Stm '\n' Stm
 --                | 'print'
 --                | 'print' String
@@ -172,15 +174,25 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseCla
         return (b, stm)
     elseClause = optional (tok "else" *> braces stm)
 
--- Parses function arguments, the EBNF syntax of which is:
---  FuncArgs : ArgName (',' ArgName)* | ε
-funcArgs :: Parser FuncArgs
-funcArgs = argName `sepBy` (tok ",")
+-- Parses argument names of a function declaration, the EBNF syntax of which is:
+--  FuncDeclArgs : ArgName (',' ArgName)* | ε
+funcDeclArgs :: Parser FuncDeclArgs
+funcDeclArgs = argName `sepBy` whitespaceNewline
 
 -- Parses a function declaration, the EBNF syntax of which is:
---  FuncDecl : 'func' FuncName FuncArgs '{' Stm '}'
+--  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcArgs <*> braces stm
+funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stm
+
+-- Parses the arguments supplied to a function call, the EBNF syntax of which is:
+--  FuncCallArgs : DerivedSymbol (',' DerivedSymbol) | ε
+funcCallArgs :: Parser FuncCallArgs
+funcCallArgs = derivedSymbol `sepBy` whitespaceNewline
+
+-- Parses a function call, the EBNF syntax of which is:
+--  Call : FuncName FuncCallArgs
+funcCall :: Parser Stm
+funcCall = Call <$> funcName <*> funcCallArgs
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
@@ -191,7 +203,7 @@ stm' = MoveLeft <$ tok "left"
    <|> Accept <$ tok "accept"
    <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
    <|> funcDecl
-   <|> try (Call <$> funcName)
+   <|> try funcCall
    <|> try (PrintStr <$ tok "print" <*> encasedString)
    <|> try (PrintRead <$ tok "print")
    <|> While <$ tok "while" <*> bexp <*> braces stm
@@ -208,12 +220,6 @@ stmComp = (stms <* whitespaceNewline) >>= compose where
     compose []  = fail "Expected a statement"
     compose [x] = return x
     compose xs  = return (foldr1 Comp xs)
-
--- braces :: Parser a -> Parser a
--- braces p = between openBrace closeBrace p' where
---     p'         = p <* whitespaceNewline
---     openBrace  = tok "{" <* optional newline
---     closeBrace = tok "}"
 
 -- Parses a statement, the EBNF syntax of statements being:
 --  Stm : 'left'

@@ -278,7 +278,12 @@ stmSpec = describe "stm" $ do
 
     context "parsing function declarations" $ do
         it "parses function delcarations" $ do
-            parse stm "" "func fName { right }" `shouldParse` (FuncDecl "fName" [] MoveRight)
+            let expected = FuncDecl "fName" [] MoveRight
+            parse stm "" "func fName { right }" `shouldParse` expected
+
+        it "parses function declarations with arguments" $ do
+            let expected = FuncDecl "fName" ["a", "bb", "ccc"] MoveRight
+            parse stm "" "func fName a bb ccc { right }" `shouldParse` expected
 
         it "fails to parse if a function name is missing" $ do
             parse stm "" `shouldFailOn` "func { right }"
@@ -294,7 +299,11 @@ stmSpec = describe "stm" $ do
 
     context "parsing function calls" $ do
         it "parses function calls" $ do
-            parse stm "" "fName" `shouldParse` (Call "fName")
+            parse stm "" "fName" `shouldParse` (Call "fName" [])
+
+        it "parses function calls with arguments" $ do
+            let expected = Call "fName" [Read, Var "x", Literal '#']
+            parse stm "" "fName read x '#'" `shouldParse` expected
 
     context "parsing composition" $ do
         it "parses composition" $ do

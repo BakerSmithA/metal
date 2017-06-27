@@ -27,14 +27,14 @@ cond ((predicate, branch):ps) p = do
     if bVal then branch p
             else cond ps p
 
--- Executes `stm` in a block such that any changes to the variable or function
--- environment are not persisted outside the block. I.e. after finishing
+-- Performs `f` on the program ensuing changes to the variable or function
+-- environment are not persistented outside the block. I.e. after finishing
 -- executing the statement, the variable and function environments return to
 -- how they were before the statement.
-evalBlock :: Stm -> ProgConfig -> ProgConfig
-evalBlock s p = do
+block :: (ProgConfig -> ProgConfig) -> ProgConfig -> ProgConfig
+block f p = do
     oldConfig <- p
-    newConfig <- evalStm s p
+    newConfig <- f p
     return (resetEnv oldConfig newConfig)
 
 -- Retrieves the value of a variable, throwing an undefined variable error if
@@ -78,14 +78,14 @@ evalWrite sym p = do
 -- Evaluates an if-else statement.
 evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> ProgConfig -> ProgConfig
 evalIf bexp ifStm elseIfClauses elseStm = cond branches where
-    branches   = map (\(b, stm) -> (bexpVal b, evalBlock stm)) allClauses
+    branches   = map (\(b, stm) -> (bexpVal b, block (evalStm stm))) allClauses
     allClauses = ((bexp, ifStm):elseIfClauses) ++ (maybeToList elseClause)
     elseClause = fmap (\stm -> (TRUE, stm)) elseStm
 
 -- Evaluates a while loop.
 evalWhile :: Bexp -> Stm -> ProgConfig -> ProgConfig
 evalWhile b body = fix f where
-    f loop = cond [(bexpVal b, loop . (evalBlock body))]
+    f loop = cond [(bexpVal b, loop . (block (evalStm body)))]
 
 -- Evaluates a variable declaration.
 evalVarDecl :: VarName -> DerivedSymbol -> ProgConfig -> ProgConfig
@@ -94,17 +94,21 @@ evalVarDecl name sym p = do
     fmap (addVar name val) p
 
 -- Evaluates a function declaration.
-evalFuncDecl :: FuncName -> Stm -> ProgConfig -> ProgConfig
-evalFuncDecl name body = fmap (addFunc name body)
+evalFuncDecl :: FuncName -> FuncDeclArgs -> Stm -> ProgConfig -> ProgConfig
+evalFuncDecl name args body = fmap (addFunc name args body)
 
 -- Evaluates a function call.
-evalCall :: FuncName -> ProgConfig -> ProgConfig
-evalCall name p = do
+evalCall :: FuncName -> FuncCallArgs -> ProgConfig -> ProgConfig
+evalCall name args p = do
     config <- p
-    let body = lookupFunc name config
-    maybe err eval body where
-        err      = throwError (UndefFunc name)
-        eval stm = evalBlock stm p
+    let fMaybe = lookupFunc name config
+    maybe err eval fMaybe where
+        err                   = throwError (UndefFunc name)
+        eval (argNames, body) = block ((evalStm body) . addedVarsP) p where
+            -- A `ProgConfig` where the arguments to the function have been
+            -- added to the variable environment of `p`.
+            addedVarsP p' = foldr (uncurry evalVarDecl) p' zippedArgs
+            zippedArgs    = zip argNames args
 
 -- Evaluates the composition of two statements.
 evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig
@@ -120,8 +124,8 @@ evalStm (Reject)                  = const reject
 evalStm (If b stm elseIf elseStm) = evalIf b stm elseIf elseStm
 evalStm (While b stm)             = evalWhile b stm
 evalStm (VarDecl name sym)        = evalVarDecl name sym
-evalStm (FuncDecl name args body) = evalFuncDecl name body
-evalStm (Call name)               = evalCall name
+evalStm (FuncDecl name args body) = evalFuncDecl name args body
+evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
 evalStm (PrintRead)               = id
 evalStm (PrintStr str)            = id
