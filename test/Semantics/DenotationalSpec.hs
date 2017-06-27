@@ -36,7 +36,6 @@ testResetVarEnv makeControlStruct invoke = do
         comp         = Comp outerVarDecl invoke'
         testConfig   = Config.fromString "abc"
         result       = evalSemantics comp testConfig
-    result `shouldRead` "#bc"
     shouldContainVar result "x" '1'
 
 -- Takes a function to construct a control structure (e.g. function, while-loop,
@@ -68,8 +67,6 @@ testResetFuncEnv makeControlStruct invoke = do
         comp       = Comp outerFDecl invoke'
         testConfig = Config.fromString "abc"
         result     = evalSemantics comp testConfig
-    result `shouldBeAt` 0
-    result `shouldRead` "#bc"
     shouldContainFunc result "f" outerFBody
 
 derivedSymbolValSpec :: Spec
@@ -284,6 +281,16 @@ whileSpec = do
             result `shouldBeAt` 3
             result `shouldRead` "XXX#"
 
+        it "resets the variable environment after executing a branch" $ do
+            let cond        = Not (Eq Read (Literal '#'))
+                makeIf body = While cond (Comp MoveRight body)
+            testResetVarEnv makeIf Nothing
+
+        it "resets the function environment after executing a branch" $ do
+            let cond        = Not (Eq Read (Literal '#'))
+                makeIf body = While cond (Comp MoveRight body)
+            testResetFuncEnv makeIf Nothing
+
         -- it "breaks by rejecting" $ do
         --     let loop = While TRUE Reject
         --     shouldReject (evalSemantics loop testConfig)
@@ -313,6 +320,10 @@ funcCallSpec = do
                 call = Call "f"
                 comp = Comp decl call
             evalSemantics comp testConfig `shouldBeAt` 1
+
+        it "fails if the function has not been defined" $ do
+            let call = Call "f"
+            evalSemantics call testConfig `shouldThrow` (UndefFunc "f")
 
         it "resets the variable environment after executing a function" $ do
             testResetVarEnv (FuncDecl "g") (Just (Call "g"))

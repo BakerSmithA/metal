@@ -85,7 +85,7 @@ evalIf bexp ifStm elseIfClauses elseStm = cond branches where
 -- Evaluates a while loop.
 evalWhile :: Bexp -> Stm -> ProgConfig -> ProgConfig
 evalWhile b body = fix f where
-    f loop = cond [(bexpVal b, loop . (evalStm body))]
+    f loop = cond [(bexpVal b, loop . (evalBlock body))]
 
 -- Evaluates a variable declaration.
 evalVarDecl :: VarName -> DerivedSymbol -> ProgConfig -> ProgConfig
