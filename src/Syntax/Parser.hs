@@ -106,7 +106,7 @@ tapeSymbol = noneOf "\'"
 -- A practical consideration when parsing identifiers is that they do not
 -- conflict with reserved keywords.
 identifier :: Parser String
-identifier = (str >>= check) where
+identifier = (str >>= check) <* whitespace where
     str        = (:) <$> lowerChar <*> many alphaNumChar
     check word = if word `elem` reservedKeywords
                     then fail $ "keyword " ++ show word ++ " cannot be an identifier"
@@ -115,7 +115,7 @@ identifier = (str >>= check) where
 -- Parses a variable name, the EBNF syntax of which is:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 varName :: Parser VarName
-varName = identifier <* whitespace
+varName = identifier
 
 -- Parses a function name, the EBNF syntax of which is:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
@@ -125,7 +125,7 @@ funcName = identifier
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
 argName :: Parser ArgName
-argName = identifier <* whitespace
+argName = identifier
 
 -- Parses a derived symbol, the EBNF syntax of which is:
 --  DerivedSymbol : 'read'
@@ -183,7 +183,7 @@ funcDeclArgs = argName `sepBy` whitespace
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ tok "func" <*> funcName <* whitespace <*> funcDeclArgs <*> braces stm
+funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stm
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : DerivedSymbol (',' DerivedSymbol) | ε
@@ -193,11 +193,7 @@ funcCallArgs = derivedSymbol `sepBy` whitespace
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
 funcCall :: Parser Stm
-funcCall = do
-    name <- funcName
-    args <- optional (tok " " *> funcCallArgs)
-    let x = maybe [] id args
-    return (Call name x)
+funcCall = Call <$> funcName <*> funcCallArgs
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm

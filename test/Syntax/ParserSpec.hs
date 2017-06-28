@@ -343,10 +343,6 @@ stmSpec = describe "stm" $ do
                 comp = Comp call (MoveLeft)
             parse stm "" "fName read \n left" `shouldParse` comp
 
-        it "fails to parse if there is no space between the function name and arguments" $ do
-            -- TODO: Check this test is correct.
-            parse stm "" "fName'#' read" `shouldParse` (Call "fName" [])
-
     context "parsing composition" $ do
         it "parses composition" $ do
             parse stm "" "left\n right" `shouldParse` (Comp MoveLeft MoveRight)
