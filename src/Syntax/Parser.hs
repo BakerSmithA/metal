@@ -84,7 +84,7 @@ parens = between (tok "(") (tok ")")
 
 -- Parses a string enclosed in curly braces.
 braces :: Parser a -> Parser a
-braces = between (tok "{") (tok "}")
+braces = between (tok "{" <* whitespaceNewline) (tok "}")
 
 -- braces p = between openBrace closeBrace p' where
 --     p'         = p <* whitespaceNewline
@@ -168,12 +168,12 @@ bexp = makeExprParser bexp' bexpOps
 --  ElseIf : 'else if' { Stm } ElseIf | Else
 --  Else   : 'else' { Stm } | ε
 ifStm :: Parser Stm
-ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseClause where
+ifStm = If <$ tok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> elseClause where
     elseIfClause = do
         b <- tok "else if" *> bexp
-        stm <- braces stm
-        return (b, stm)
-    elseClause = optional (tok "else" *> braces stm)
+        stmComp <- braces stmComp
+        return (b, stmComp)
+    elseClause = optional (tok "else" *> braces stmComp)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs : ArgName (',' ArgName)* | ε
@@ -183,7 +183,7 @@ funcDeclArgs = argName `sepBy` whitespace
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stm
+funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stmComp
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : DerivedSymbol (',' DerivedSymbol) | ε
@@ -207,7 +207,7 @@ stm' = MoveLeft <$ tok "left"
    <|> try funcCall
    <|> try (PrintStr <$ tok "print" <*> encasedString)
    <|> try (PrintRead <$ tok "print")
-   <|> While <$ tok "while" <*> bexp <*> braces stm
+   <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 
 -- Parses statements separated by newlines into a composition of statements.
@@ -222,7 +222,8 @@ stmComp = (stms <* whitespaceNewline) >>= compose where
     compose [x] = return x
     compose xs  = return (foldr1 Comp xs)
 
--- Parses a statement, the EBNF syntax of statements being:
+-- Parses a statement, the EBNF syntax of which is given below. The parser will
+-- fail if not all input is consumed.
 --  Stm : 'left'
 --      | 'right'
 --      | 'write' DerivedSymbol
@@ -237,4 +238,4 @@ stmComp = (stms <* whitespaceNewline) >>= compose where
 --      | 'while' Bexp '{' Stm '}'
 --      | If
 stm :: Parser Stm
-stm = whitespaceNewline *> stmComp
+stm = whitespaceNewline *> stmComp <* whitespaceNewline <* eof
