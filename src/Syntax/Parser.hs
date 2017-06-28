@@ -1,6 +1,7 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
+import Data.Maybe
 import Syntax.Tree
 import Text.Megaparsec
 import Text.Megaparsec.Expr
@@ -105,7 +106,7 @@ tapeSymbol = noneOf "\'"
 -- A practical consideration when parsing identifiers is that they do not
 -- conflict with reserved keywords.
 identifier :: Parser String
-identifier = (str >>= check) <* whitespace where
+identifier = (str >>= check) where
     str        = (:) <$> lowerChar <*> many alphaNumChar
     check word = if word `elem` reservedKeywords
                     then fail $ "keyword " ++ show word ++ " cannot be an identifier"
@@ -114,7 +115,7 @@ identifier = (str >>= check) <* whitespace where
 -- Parses a variable name, the EBNF syntax of which is:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 varName :: Parser VarName
-varName = identifier
+varName = identifier <* whitespace
 
 -- Parses a function name, the EBNF syntax of which is:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
@@ -124,7 +125,7 @@ funcName = identifier
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
 argName :: Parser ArgName
-argName = identifier
+argName = identifier <* whitespace
 
 -- Parses a derived symbol, the EBNF syntax of which is:
 --  DerivedSymbol : 'read'
@@ -177,22 +178,26 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stm <*> many elseIfClause <*> elseCla
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs : ArgName (',' ArgName)* | ε
 funcDeclArgs :: Parser FuncDeclArgs
-funcDeclArgs = argName `sepBy` whitespaceNewline
+funcDeclArgs = argName `sepBy` whitespace
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stm
+funcDecl = FuncDecl <$ tok "func" <*> funcName <* whitespace <*> funcDeclArgs <*> braces stm
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : DerivedSymbol (',' DerivedSymbol) | ε
 funcCallArgs :: Parser FuncCallArgs
-funcCallArgs = derivedSymbol `sepBy` whitespaceNewline
+funcCallArgs = derivedSymbol `sepBy` whitespace
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
 funcCall :: Parser Stm
-funcCall = Call <$> funcName <*> funcCallArgs
+funcCall = do
+    name <- funcName
+    args <- optional (tok " " *> funcCallArgs)
+    let x = maybe [] id args
+    return (Call name x)
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm

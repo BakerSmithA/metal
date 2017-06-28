@@ -13,6 +13,7 @@ parserSpec = do
         tapeSymbolSpec
         varNameSpec
         funcNameSpec
+        argNameSpec
         derivedSymbolSpec
         bexpSpec
         ifStmSpec
@@ -101,6 +102,30 @@ funcNameSpec = do
 
         it "fails if the start character is a digit" $ do
             parse funcName "" `shouldFailOn` "1fName"
+
+        it "fails if the function name is a reserved keyword" $ do
+            parse funcName "" `shouldFailOn` "True"
+
+argNameSpec :: Spec
+argNameSpec = do
+    describe "argName" $ do
+        it "parses names beginning with a lower char" $ do
+            parse funcName "" "argname" `shouldParse` "argname"
+
+        it "parses names containing uppcase characters" $ do
+            parse funcName "" "argNAME" `shouldParse` "argNAME"
+
+        it "parses names containing digits" $ do
+            parse funcName "" "a1234" `shouldParse` "a1234"
+
+        it "parses if the function name is a superset of a reserved word" $ do
+            parse funcName "" "trueA" `shouldParse` "trueA"
+
+        it "fails if the start character is uppercase" $ do
+            parse funcName "" `shouldFailOn` "Aname"
+
+        it "fails if the start character is a digit" $ do
+            parse funcName "" `shouldFailOn` "1AName"
 
         it "fails if the function name is a reserved keyword" $ do
             parse funcName "" `shouldFailOn` "True"
@@ -304,6 +329,23 @@ stmSpec = describe "stm" $ do
         it "parses function calls with arguments" $ do
             let expected = Call "fName" [Read, Var "x", Literal '#']
             parse stm "" "fName read x '#'" `shouldParse` expected
+
+        it "parses function calls with multiple spaces between arguments" $ do
+            let expected = Call "fName" [Read, Var "x", Literal '#']
+            parse stm "" "fName   read  x  '#'" `shouldParse` expected
+
+        it "parses function calls with tabs between arguments" $ do
+            let expected = Call "fName" [Read, Var "x", Literal '#']
+            parse stm "" "fName \tread\tx\t'#'" `shouldParse` expected
+
+        it "parses function calls followed by another statement" $ do
+            let call = Call "fName" [Read]
+                comp = Comp call (MoveLeft)
+            parse stm "" "fName read \n left" `shouldParse` comp
+
+        it "fails to parse if there is no space between the function name and arguments" $ do
+            -- TODO: Check this test is correct.
+            parse stm "" "fName'#' read" `shouldParse` (Call "fName" [])
 
     context "parsing composition" $ do
         it "parses composition" $ do

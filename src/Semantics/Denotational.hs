@@ -97,6 +97,24 @@ evalVarDecl name sym p = do
 evalFuncDecl :: FuncName -> FuncDeclArgs -> Stm -> ProgConfig -> ProgConfig
 evalFuncDecl name args body = fmap (addFunc name args body)
 
+-- Checks that the number of arguments to a function is the same as the number
+-- of arguments the function declaration specified.
+checkNumArgs :: FuncName -> FuncDeclArgs -> FuncCallArgs -> ProgConfig -> ProgConfig
+checkNumArgs name ds cs p | (length ds) == (length cs) = p
+                          | otherwise                  = throwError err where
+                              err = WrongNumArgs name ds cs
+
+-- Evaluates the body of a function, after adding any arguments to the variable
+-- environment. The variable and function environments are reset after executing
+-- the body.
+evalFuncBody :: FuncName -> FuncDeclArgs -> FuncCallArgs -> Stm -> ProgConfig -> ProgConfig
+evalFuncBody name ds cs body = (block evalBody) . check where
+    check    = checkNumArgs name ds cs
+    evalBody = (evalStm body) . addedVarsP
+    -- A `ProgConfig` where the arguments have been added to the environment.
+    addedVarsP p' = foldr (uncurry evalVarDecl) p' zippedArgs
+    zippedArgs    = zip ds cs
+
 -- Evaluates a function call.
 evalCall :: FuncName -> FuncCallArgs -> ProgConfig -> ProgConfig
 evalCall name args p = do
@@ -104,11 +122,8 @@ evalCall name args p = do
     let fMaybe = lookupFunc name config
     maybe err eval fMaybe where
         err                   = throwError (UndefFunc name)
-        eval (argNames, body) = block ((evalStm body) . addedVarsP) p where
-            -- A `ProgConfig` where the arguments to the function have been
-            -- added to the variable environment of `p`.
-            addedVarsP p' = foldr (uncurry evalVarDecl) p' zippedArgs
-            zippedArgs    = zip argNames args
+        eval (argNames, body) = evalFuncBody name argNames args body p
+
 
 -- Evaluates the composition of two statements.
 evalComp :: Stm -> Stm -> ProgConfig -> ProgConfig
