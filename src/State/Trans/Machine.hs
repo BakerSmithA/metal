@@ -8,6 +8,7 @@ import Control.Applicative
 import Control.Monad.Except
 import Control.Monad.Signatures
 import State.Machine
+import State.MachineClass
 
 -- A monad transformer which adds Machine semantics to an existing monad.
 data MachineT m a = MachineT {
@@ -47,3 +48,14 @@ instance MonadError e m => MonadError e (MachineT m) where
 -- Lift a catchE operation to the new monad.
 liftCatch :: Catch e m (Machine a) -> Catch e (MachineT m) a
 liftCatch catch mach errHandler = MachineT $ catch (runMachineT mach) (runMachineT . errHandler)
+
+-- This requires FlexibleInstances, because it does not satisfy the coverage
+-- condition. For more information see:
+-- https://stackoverflow.com/questions/5941701/why-can-i-not-make-string-an-instance-of-a-typeclass
+instance (Monad m) => MonadMachine a (MachineT m) where
+    -- accept :: MachineT a
+    accept = MachineT (return HaltA)
+    -- reject :: MachineT a
+    reject = MachineT (return HaltR)
+    -- inter :: a -> MachineT a
+    inter c = MachineT (return (Inter c))
