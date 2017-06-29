@@ -1,4 +1,5 @@
 dependencies:
   pre:
-    - rm -rf ~/.ghc ~/.cabal
+    - cabal update
+    - cabal sandbox init
     - cabal install --enable-tests
