@@ -1,0 +1,4 @@
+dependencies:
+  pre:
+    - rm -rf ~/.ghc ~/.cabal
+    - cabal install --enable-tests
