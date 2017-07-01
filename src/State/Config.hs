@@ -18,7 +18,7 @@ instance Show Config where
     show (Config p t vs fs) = "pos: "     ++ (show p)
                            ++ ", tape: "  ++ (show t)
                            ++ ", vars: "  ++ (show vs)
-                           ++ ", funcs: " ++ (show fs)
+                           ++ ", funcs: " ++ (show (keys fs))
 
 -- A configuration in which the read-write head is in the zeroed position, and
 -- `str` is at the start of the tape.
