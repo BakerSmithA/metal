@@ -19,6 +19,16 @@ type FuncDeclArgs = [ArgName]
 -- A type that represents all the arguments passed to a function call.
 type FuncCallArgs = [DerivedSymbol]
 
+-- The type that represents a section of a path to a Metal file. For example,
+-- in the path "Directory.SubDirectory.FileName" the three path components
+-- "Directory", "SubDirectory", and "FileName".
+type ImportPathComponent = String
+
+-- The type that represents each component the path of a Metal file to be
+-- imported. For example, the path "Directory.SubDirectory.FileName" is
+-- represented as ["Directory", "SubDirectory", "FileName"].
+type ImportPath = [ImportPathComponent]
+
 -- The type represented a derived symbol, i.e. either a literal tape symbol, or
 -- a symbol read from under the read/write head.
 data DerivedSymbol = Read
@@ -51,4 +61,5 @@ data Stm = MoveLeft
          | Comp Stm Stm
          | PrintRead
          | PrintStr String
+         | Import ImportPath
          deriving (Eq, Show)

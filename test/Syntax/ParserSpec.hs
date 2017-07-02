@@ -18,6 +18,7 @@ parserSpec = do
         bexpSpec
         ifStmSpec
         stmSpec
+        importStmSpec
 
 encasedStringSpec :: Spec
 encasedStringSpec = do
@@ -263,6 +264,28 @@ ifStmSpec = describe "ifStm" $ do
 
         it "fails to parse if both braces are missing" $ do
             parse stm "" `shouldFailOn` "if True { right } else right"
+importStmSpec :: Spec
+importStmSpec = describe "importStm" $ do
+    it "parses just a file name" $ do
+        parse importStm "" "import FileName" `shouldParse` Import ["FileName"]
+
+    it "parses a file path" $ do
+        parse importStm "" "import Dir.SubDir.FileName" `shouldParse` Import ["Dir", "SubDir", "FileName"]
+
+    it "fails if the file name begins with a lowercase letter" $ do
+        parse importStm "" `shouldFailOn` "import fileName"
+
+    it "fails if the directory name begins with a lowercase letter" $ do
+        parse importStm "" `shouldFailOn` "import Dir.subDir.FileName"
+
+    it "fails if the file name begins with a number" $ do
+        parse importStm "" `shouldFailOn` "import 1FileName"
+
+    it "fails if the directory name begins with a number letter" $ do
+        parse importStm "" `shouldFailOn` "import Dir.1SubDir.FileName"
+
+    it "fails if the keyword 'import' is missing" $ do
+        parse importStm "" `shouldFailOn` "Dir.SubDir.FileName"
 
 stmSpec :: Spec
 stmSpec = describe "stm" $ do

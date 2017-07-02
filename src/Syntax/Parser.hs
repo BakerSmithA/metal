@@ -36,26 +36,28 @@ import Text.Megaparsec.String
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
 --  FuncCallArgs  : DerivedSymbol (',' DerivedSymbol) | ε
 --  Call          : FuncName FuncCallArgs
+--  Import        : 'import ' UpperChar ((LowerChar | UpperChar | Digit)* [.])*
 --  Stm           : 'left'
 --                | 'right'
 --                | 'write' DerivedSymbol
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
+--                | If
+--                | 'while' Bexp '{' Stm '}'
 --                | FuncDecl
 --                | Call
 --                | Stm '\n' Stm
 --                | 'print'
 --                | 'print' String
---                | 'while' Bexp '{' Stm '}'
---                | If
+--                | Import
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
 reservedKeywords :: [String]
 reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
                     "right", "write", "reject", "accept", "let", "if", "else",
-                    "while", "print", "func"]
+                    "while", "print", "func", "import"]
 
 -- Produces a whitespace consumer using `sc` as the space consumer. Consumes
 -- whole line and in-line comments. The syntax for both comment types are the
@@ -197,6 +199,14 @@ funcCallArgs = derivedSymbol `sepBy` whitespace
 funcCall :: Parser Stm
 funcCall = Call <$> funcName <*> funcCallArgs
 
+-- Parses a filepath, the EBNF syntax of which is given below. An example of a
+-- valid file path is: Directory.SubDirectory.File
+--  Import : 'import ' UpperChar ((LowerChar | UpperChar | Digit)* [.])*
+importStm :: Parser Stm
+importStm = Import <$ tok "import" <*> importPath where
+    importPath  = pathSection `sepBy1` string "."
+    pathSection = (:) <$> upperChar <*> many alphaNumChar
+
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = try funcCall
@@ -211,6 +221,7 @@ stm' = try funcCall
    <|> try (PrintRead <$ tok "print")
    <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm
+   <|> importStm
 
 -- Parses statements separated by newlines into a composition of statements.
 stmComp :: Parser Stm
@@ -232,12 +243,13 @@ stmComp = (stms <* whitespaceNewline) >>= compose where
 --      | 'reject'
 --      | 'accept'
 --      | 'let' VarName '=' DerivedSymbol
+--      | If
+--      | 'while' Bexp '{' Stm '}'
 --      | FuncDecl
---      | FuncName
+--      | Call
 --      | Stm '\n' Stm
 --      | 'print'
 --      | 'print' String
---      | 'while' Bexp '{' Stm '}'
---      | If
+--      | Import
 stm :: Parser Stm
 stm = whitespaceNewline *> stmComp <* whitespaceNewline <* eof
