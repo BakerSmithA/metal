@@ -55,7 +55,7 @@ import Text.Megaparsec.String
 reservedKeywords :: [String]
 reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
                     "right", "write", "reject", "accept", "let", "if", "else",
-                    "while", "print"]
+                    "while", "print", "func"]
 
 -- Produces a whitespace consumer using `sc` as the space consumer. Consumes
 -- whole line and in-line comments. The syntax for both comment types are the
@@ -199,14 +199,14 @@ funcCall = Call <$> funcName <*> funcCallArgs
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
-stm' = MoveLeft <$ tok "left"
+stm' = try funcCall
+   <|> MoveLeft <$ tok "left"
    <|> MoveRight <$ tok "right"
    <|> Write <$ tok "write" <*> derivedSymbol
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
    <|> funcDecl
-   <|> try funcCall
    <|> try (PrintStr <$ tok "print" <*> encasedString)
    <|> try (PrintRead <$ tok "print")
    <|> While <$ tok "while" <*> bexp <*> braces stmComp

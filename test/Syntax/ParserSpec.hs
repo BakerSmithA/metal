@@ -317,6 +317,10 @@ stmSpec = describe "stm" $ do
             let expected = FuncDecl "fName" ["a", "bb", "ccc"] MoveRight
             parse stm "" "func fName a bb ccc { right }" `shouldParse` expected
 
+        it "parses function declarations where the name contains a keyword" $ do
+            let expected = FuncDecl "leftUntil" [] MoveRight
+            parse stm "" "func leftUntil { right }" `shouldParse` expected
+
         it "fails to parse if a function name is missing" $ do
             parse stm "" `shouldFailOn` "func { right }"
 
@@ -347,8 +351,12 @@ stmSpec = describe "stm" $ do
 
         it "parses function calls followed by another statement" $ do
             let call = Call "fName" [Read]
-                comp = Comp call (MoveLeft)
-            parse stm "" "fName read \n left" `shouldParse` comp
+                expected = Comp call (MoveLeft)
+            parse stm "" "fName read \n left" `shouldParse` expected
+
+        it "parses function calls where the name contains a keyword" $ do
+            let expected = Call "leftUntil" []
+            parse stm "" "leftUntil" `shouldParse` expected
 
     context "parsing composition" $ do
         it "parses composition" $ do

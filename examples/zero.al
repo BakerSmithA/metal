@@ -16,6 +16,7 @@ func zero {
 	if read == mark {
 		// The head is zeroed.
 		write saved
+
 	} else {
 		// The head is not zeroed, therefore go back
 		// and put the saved character back.
