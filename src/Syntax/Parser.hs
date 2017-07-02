@@ -52,9 +52,9 @@ import Text.Megaparsec.String
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
 reservedKeywords :: [String]
-reservedKeywords = ["space", "read", "True", "False", "not", "and", "or",
-                    "left", "right", "write", "reject", "accept", "let", "if",
-                    "else", "while", "call", "print"]
+reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
+                    "right", "write", "reject", "accept", "let", "if", "else",
+                    "while", "print"]
 
 -- Produces a whitespace consumer using `sc` as the space consumer. Consumes
 -- whole line and in-line comments. The syntax for both comment types are the
