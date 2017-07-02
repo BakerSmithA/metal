@@ -1,4 +1,4 @@
-# Netal
+# Metal
 
 [![CircleCI](https://circleci.com/gh/BakerSmithA/Turing/tree/master.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/BakerSmithA/Turing/tree/master)
 
