@@ -34,6 +34,7 @@ data Bexp = TRUE
           | Or Bexp Bexp
           | Eq DerivedSymbol DerivedSymbol
           | Le DerivedSymbol DerivedSymbol
+          | Ne DerivedSymbol DerivedSymbol
           deriving (Eq, Show)
 
 -- The type that represents the syntax tree for statements.

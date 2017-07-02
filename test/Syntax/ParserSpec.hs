@@ -186,6 +186,13 @@ bexpSpec = describe "bexp" $ do
         it "fails to parse chains" $ do
             parse bexp "" "x <= y <= z" `shouldParse` (Le (Var "x") (Var "y"))
 
+    context "parsing NE operator" $ do
+        it "parses NE" $ do
+            parse bexp "" "x != read" `shouldParse` (Ne (Var "x") Read)
+
+        it "fails to parse chains" $ do
+            parse bexp "" "x != y != z" `shouldParse` (Ne (Var "x") (Var "y"))
+
     context "parsing boolean expressions with parenthesis" $ do
         it "gives precedence to bracketed expressions" $ do
             parse bexp "" "True and (False or False)" `shouldParse` (And TRUE (Or FALSE FALSE))

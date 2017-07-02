@@ -28,6 +28,7 @@ import Text.Megaparsec.String
 --                | Bexp 'or' Bexp
 --                | DerivedSymbol '==' DerivedSymbol
 --                | DerivedSymbol '<=' DerivedSymbol
+--                | DerivedSymbol '!=' DerivedSymbol
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
@@ -144,6 +145,7 @@ bexp' = try (parens bexp)
     <|> FALSE <$ tok "False"
     <|> try (Eq <$> derivedSymbol <* tok "==" <*> derivedSymbol)
     <|> try (Le <$> derivedSymbol <* tok "<=" <*> derivedSymbol)
+    <|> try (Ne <$> derivedSymbol <* tok "!=" <*> derivedSymbol)
 
 -- The operators that can work on boolean expressions. There is no precedence,
 -- instead the expression is evaualted from left to right.

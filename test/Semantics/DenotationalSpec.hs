@@ -151,6 +151,15 @@ bexpValSpec = do
             result1 `shouldContain` True
             result2 `shouldContain` False
 
+        it "evaluates !=" $ do
+            let b1      = Ne (Read) (Literal 'b') -- The current symbol is 'b'.
+                b2      = Ne (Read) (Literal '#')
+                result1 = evalBexp b1 testConfig'
+                result2 = evalBexp b2 testConfig'
+
+            result1 `shouldContain` False
+            result2 `shouldContain` True
+
 denotationalSpec :: Spec
 denotationalSpec = do
     describe "evalStm" $ do
