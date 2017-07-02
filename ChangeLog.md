@@ -1,4 +1,4 @@
-# Revision history for Turing
+# Revision history for Metal
 
 ## 0.1.0.0  -- YYYY-mm-dd
 
