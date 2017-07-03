@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad.Except
 import Semantics.Stm
+import Semantics.Program
 import State.Config as Config
 import State.Error
 import State.Machine
@@ -12,11 +13,11 @@ import System.Environment
 import qualified Text.Megaparsec as M
 
 -- Errors that can occur during parsing or runtime.
-data StateError = ArgError String
-              | ParseError (M.ParseError (M.Token String) M.Dec)
-              | SemanticError RuntimeError
+data ProgError = ArgError String
+               | ParseError (M.ParseError (M.Token String) M.Dec)
+               | SemanticError RuntimeError
 
-instance Show StateError where
+instance Show ProgError where
     show (ArgError err)      = err
     show (ParseError err)    = show err
     show (SemanticError err) = show err
@@ -27,21 +28,21 @@ type Args = (FilePath, [TapeSymbol])
 
 -- Takes in arguments to the program, and returns the parsed arguments, or
 -- an error if the arguments were not parsed correctly.
-parseArgs :: [String] -> Either StateError Args
+parseArgs :: [String] -> Either ProgError Args
 parseArgs [path]       = return (path, [])
 parseArgs [path, syms] = return (path, syms)
 parseArgs _            = throwError (ArgError "Incorrect number of arguments, expected <source_file> <tape>")
 
 -- Parses the contents of source file, returning either the parsed program, or
 -- the parse error.
-parseContents :: String -> Either StateError Stm
+parseContents :: String -> Either ProgError Stm
 parseContents contents = do
     let result = M.runParser stm "" contents
     either (throwError . ParseError) return result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Stm -> [TapeSymbol] -> Either StateError (Machine Config)
+evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine Config)
 evalSemantics s syms = do
     let config = return (Config.fromString syms)
         result = runState' (evalStm s config)
@@ -50,7 +51,7 @@ evalSemantics s syms = do
 -- Parses `contents`, and runs the parsed statement with `syms` at the start of
 -- the tape. If parsing is unsuccessful, or a runtime error occurs, an error
 -- is returned.
-run ::  String -> [TapeSymbol] -> Either StateError (Machine Config)
+run ::  String -> [TapeSymbol] -> Either ProgError (Machine Config)
 run contents syms = do
     s <- parseContents contents
     evalSemantics s syms

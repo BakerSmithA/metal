@@ -1,4 +1,4 @@
-module Semantics.StmSpec (denotationalSpec) where
+module Semantics.StmSpec (stmSpec) where
 
 import State.Config as Config
 import State.Error
@@ -65,8 +65,8 @@ testResetFuncEnv makeControlStruct invoke = do
 
     shouldContainFunc result "f" ["x"] outerFBody
 
-denotationalSpec :: Spec
-denotationalSpec = do
+stmSpec :: Spec
+stmSpec = do
     describe "evalStm" $ do
         leftSpec
         rightSpec

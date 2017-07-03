@@ -6,6 +6,7 @@ import State.TapeSpec
 import Semantics.BexpSpec
 import Semantics.DerivedSymbolSpec
 import Semantics.StmSpec
+import Semantics.ProgramSpec
 import Test.Hspec
 
 main :: IO ()
@@ -16,4 +17,5 @@ main = hspec specs where
         tapeSpec
         derivedSymbolValSpec
         bexpValSpec
-        denotationalSpec
+        stmSpec
+        programSpec

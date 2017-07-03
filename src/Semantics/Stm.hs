@@ -1,4 +1,4 @@
-module Semantics.Stm where
+module Semantics.Stm (evalStm) where
 
 import Control.Monad.Except hiding (fix)
 import Data.Maybe (maybeToList)
