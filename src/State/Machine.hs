@@ -1,7 +1,5 @@
 module State.Machine where
 
-import Control.Applicative
-
 -- A representation of the configuration of a Turing machine.
 data Machine a = HaltA   -- The machine halted in the accepting state.
                | HaltR   -- The machine halted in the reject state.
@@ -10,22 +8,22 @@ data Machine a = HaltA   -- The machine halted in the accepting state.
 
 instance Functor Machine where
     -- fmap :: (a -> b) -> Machine a -> Machine b
-    fmap f (HaltA)   = HaltA
-    fmap f (HaltR)   = HaltR
+    fmap _ (HaltA)   = HaltA
+    fmap _ (HaltR)   = HaltR
     fmap f (Inter x) = Inter (f x)
 
 instance Applicative Machine where
     -- pure :: a -> Machine a
     pure = Inter
     -- (<*>) :: Machine (a -> b) -> Machine a -> Machine b
-    (HaltA)   <*> mach = HaltA
-    (HaltR)   <*> mach = HaltR
+    (HaltA)   <*> _    = HaltA
+    (HaltR)   <*> _    = HaltR
     (Inter f) <*> mach = fmap f mach
 
 instance Monad Machine where
     -- (>>=) :: Machine a -> (a -> Machine b) -> Machine b
-    (HaltA)   >>= f = HaltA
-    (HaltR)   >>= f = HaltR
+    (HaltA)   >>= _ = HaltA
+    (HaltR)   >>= _ = HaltR
     (Inter x) >>= f = f x
 
 instance (Show a) => Show (Machine a) where

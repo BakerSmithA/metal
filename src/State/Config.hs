@@ -42,7 +42,7 @@ right c = c { pos = (pos c) + 1 }
 
 -- Reads the symbol under the read-write head.
 getCurr :: Config -> TapeSymbol
-getCurr (Config p t vs fs) = getSym p t
+getCurr (Config p t _ _) = getSym p t
 
 -- Writes a symbol at the current position of the read-write head.
 setCurr :: TapeSymbol -> Config -> Config

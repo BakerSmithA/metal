@@ -64,7 +64,4 @@ type ImportPathComponent = String
 type ImportPath = [ImportPathComponent]
 
 -- A type that represents a parsed program.
-data Program = Program {
-    imports  :: [ImportPath],
-    progBody ::  Stm
-} deriving (Eq, Show)
+data Program = Program [ImportPath] Stm deriving (Eq, Show)

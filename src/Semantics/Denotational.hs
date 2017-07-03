@@ -1,15 +1,12 @@
 module Semantics.Denotational where
 
 import Control.Monad.Except hiding (fix)
-import Control.Monad.Reader hiding (fix)
 import Data.Maybe (maybeToList)
 import State.Config
 import State.Error
 import State.MachineClass
 import State.Program
-import State.Trans.Machine
 import Syntax.Tree
-import System.IO
 
 type ProgConfig = Prog Config
 
@@ -144,4 +141,4 @@ evalStm (FuncDecl name args body) = evalFuncDecl name args body
 evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
 evalStm (PrintRead)               = id
-evalStm (PrintStr str)            = id
+evalStm (PrintStr _)              = id

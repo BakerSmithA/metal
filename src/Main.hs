@@ -1,8 +1,6 @@
 module Main where
 
 import Control.Monad.Except
-import Control.Monad.Trans.Except
-import Control.Monad.Reader
 import Semantics.Denotational
 import State.Config as Config
 import State.Error
@@ -12,7 +10,6 @@ import Syntax.Tree
 import Syntax.Parser
 import System.Environment
 import qualified Text.Megaparsec as M
-import Text.Megaparsec.String
 
 -- Errors that can occur during parsing or runtime.
 data ProgError = ArgError String
@@ -32,7 +29,7 @@ type Args = (FilePath, [TapeSymbol])
 -- an error if the arguments were not parsed correctly.
 parseArgs :: [String] -> Either ProgError Args
 parseArgs [path]       = return (path, [])
-parseArgs [path, tape] = return (path, tape)
+parseArgs [path, syms] = return (path, syms)
 parseArgs _            = throwError (ArgError "Incorrect number of arguments, expected <source_file> <tape>")
 
 -- Parses the contents of source file, returning either the parsed program, or

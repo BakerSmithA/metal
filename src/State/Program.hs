@@ -5,8 +5,6 @@
 module State.Program where
 
 import Control.Monad.Except
-import Control.Monad.Reader
-import State.Config
 import State.Error
 import State.Machine
 import State.MachineClass

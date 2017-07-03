@@ -1,6 +1,5 @@
 module TestHelper.Denotational where
 
-import Control.Monad.Reader
 import State.Tape
 import Syntax.Tree
 import State.Config as Config
@@ -8,7 +7,7 @@ import State.Error
 import State.Machine
 import State.Program
 import Semantics.Denotational
-import Test.Hspec hiding (shouldContain, shouldSatify, shouldThrow)
+import Test.Hspec hiding (shouldContain, shouldThrow)
 import Test.HUnit.Lang
 import TestHelper.Tape
 
@@ -68,13 +67,11 @@ shouldContainFunc r name args body = shouldSatify r predicate where
 shouldBeAt :: ProgResultConfig -> Pos -> Expectation
 shouldBeAt r p = shouldSatify r predicate where
     predicate c = pos c == p
-    predicate _ = False
 
 -- Asserts that the tape has the string `str` at the start of the tape.
 shouldRead :: ProgResultConfig -> [TapeSymbol] -> Expectation
 shouldRead r syms = shouldSatify r predicate where
     predicate c = tapeShouldRead (tape c) syms
-    predicate _ = False
 
 -- Asserts that the machine halted in the accepting state.
 shouldAccept :: ProgResultConfig -> Expectation

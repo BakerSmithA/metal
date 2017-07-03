@@ -4,8 +4,6 @@ module Semantics.DenotationalSpec
 , denotationalSpec
 ) where
 
-import Semantics.Denotational
-import State.Program
 import State.Config as Config
 import State.Error
 import State.Tape()

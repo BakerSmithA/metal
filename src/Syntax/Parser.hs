@@ -1,7 +1,6 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
-import Data.Maybe
 import Syntax.Tree
 import Text.Megaparsec
 import Text.Megaparsec.Expr
@@ -174,9 +173,9 @@ bexp = makeExprParser bexp' bexpOps
 ifStm :: Parser Stm
 ifStm = If <$ tok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> elseClause where
     elseIfClause = do
-        b <- tok "else if" *> bexp
-        stmComp <- braces stmComp
-        return (b, stmComp)
+        bool <- tok "else if" *> bexp
+        statement <- braces stmComp
+        return (bool, statement)
     elseClause = optional (tok "else" *> braces stmComp)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
