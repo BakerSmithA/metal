@@ -3,11 +3,11 @@ module Semantics.Bexp where
 import Control.Monad.Except hiding (fix)
 import Semantics.DerivedSymbol
 import Semantics.Helpers
-import State.App
+import State.State
 import Syntax.Tree
 
 -- The semantic function B[[.]] over boolean expressions.
-bexpVal :: Bexp -> AppConfig -> App Bool
+bexpVal :: Bexp -> StateConfig -> State Bool
 bexpVal (TRUE)      _ = return True
 bexpVal (FALSE)     _ = return False
 bexpVal (Not b)     p = liftM not (bexpVal b p)
