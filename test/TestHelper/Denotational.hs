@@ -6,7 +6,9 @@ import State.Config as Config
 import State.Error
 import State.Machine
 import State.App
-import Semantics.Denotational
+import Semantics.Bexp
+import Semantics.DerivedSymbol
+import Semantics.Stm
 import Test.Hspec hiding (shouldContain, shouldThrow)
 import Test.HUnit.Lang
 import TestHelper.Tape
@@ -16,15 +18,15 @@ type AppResultConfig = AppResult Config
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
 evalDerivedSymbol :: DerivedSymbol -> Config -> AppResult TapeSymbol
-evalDerivedSymbol sym config = runAppram (derivedSymbolVal sym (return config))
+evalDerivedSymbol sym config = runApplication (derivedSymbolVal sym (return config))
 
 -- Runs `bexpVal` with `b` in the given config and environment.
 evalBexp :: Bexp -> Config -> AppResult Bool
-evalBexp b config = runAppram (bexpVal b (return config))
+evalBexp b config = runApplication (bexpVal b (return config))
 
 -- Runs `s` in config with the empty environment.
 evalSemantics :: Stm -> Config -> AppResultConfig
-evalSemantics s config = runAppram (evalStm s (return config))
+evalSemantics s config = runApplication (evalStm s (return config))
 
 -- Asserts that a runtime error was thrown.
 shouldThrow :: (Show a) => AppResult a -> RuntimeError -> Expectation

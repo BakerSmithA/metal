@@ -1,63 +1,14 @@
-module Semantics.Denotational where
+module Semantics.Stm where
 
 import Control.Monad.Except hiding (fix)
 import Data.Maybe (maybeToList)
+import Semantics.Bexp
+import Semantics.DerivedSymbol
+import Semantics.Helpers
 import State.Config
 import State.Error
 import State.MachineClass
-import State.App
 import Syntax.Tree
-
-type AppConfig = App Config
-
--- Fixpoint operator used to defined loops.
-fix :: (a -> a) -> a
-fix f = let x = f x in x
-
--- Conditionally chooses to 'execute' a branch if associated predicate
--- evaluates to true. Returns the branch to execute, or `id` if no predicates
--- evaluate to true.
-cond :: [(AppConfig -> App Bool, AppConfig -> AppConfig)] -> (AppConfig -> AppConfig)
-cond []                       p = p
-cond ((predicate, branch):ps) p = do
-    bVal <- predicate p
-    if bVal then branch p
-            else cond ps p
-
--- Performs `f` on the program ensuing changes to the variable or function
--- environment are not persistented outside the block. I.e. after finishing
--- executing the statement, the variable and function environments return to
--- how they were before the statement.
-block :: (AppConfig -> AppConfig) -> AppConfig -> AppConfig
-block f p = do
-    oldConfig <- p
-    newConfig <- f p
-    return (resetEnv oldConfig newConfig)
-
--- Retrieves the value of a variable, throwing an undefined variable error if
--- the variable has not be defined.
-getVarVal :: VarName -> AppConfig -> App TapeSymbol
-getVarVal name p = do
-    config <- p
-    let val = lookupVar name config
-    maybe (throwError (UndefVar name)) return val
-
--- The semantic function D[[.]] over tape symbols.
-derivedSymbolVal :: DerivedSymbol -> AppConfig -> App TapeSymbol
-derivedSymbolVal (Read)        = fmap getCurr
-derivedSymbolVal (Var name)    = getVarVal name
-derivedSymbolVal (Literal sym) = const (return sym)
-
--- The semantic function B[[.]] over boolean expressions.
-bexpVal :: Bexp -> AppConfig -> App Bool
-bexpVal (TRUE)      _ = return True
-bexpVal (FALSE)     _ = return False
-bexpVal (Not b)     p = liftM not (bexpVal b p)
-bexpVal (And b1 b2) p = liftM2 (&&) (bexpVal b1 p) (bexpVal b2 p)
-bexpVal (Or b1 b2)  p = liftM2 (||) (bexpVal b1 p) (bexpVal b2 p)
-bexpVal (Eq s1 s2)  p = liftM2 (==) (derivedSymbolVal s1 p) (derivedSymbolVal s2 p)
-bexpVal (Le s1 s2)  p = liftM2 (<=) (derivedSymbolVal s1 p) (derivedSymbolVal s2 p)
-bexpVal (Ne s1 s2)  p = liftM2 (/=) (derivedSymbolVal s1 p) (derivedSymbolVal s2 p)
 
 -- Evaluates moving the read-write head one cell to the left.
 evalLeft :: AppConfig -> AppConfig
@@ -142,7 +93,3 @@ evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
 evalStm (PrintRead)               = id
 evalStm (PrintStr _)              = id
-
--- Evaluates a program by importing any files, then evaluating the statement.
-evalProgram :: Program -> AppConfig -> AppConfig
-evalProgram (Program imports stm) = evalStm stm

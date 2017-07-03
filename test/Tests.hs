@@ -3,7 +3,9 @@ module Main where
 import Syntax.ParserSpec
 import State.ConfigSpec
 import State.TapeSpec
-import Semantics.DenotationalSpec
+import Semantics.BexpSpec
+import Semantics.DerivedSymbolSpec
+import Semantics.StmSpec
 import Test.Hspec
 
 main :: IO ()

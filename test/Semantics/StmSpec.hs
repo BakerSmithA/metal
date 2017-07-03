@@ -1,8 +1,4 @@
-module Semantics.DenotationalSpec
-( derivedSymbolValSpec
-, bexpValSpec
-, denotationalSpec
-) where
+module Semantics.StmSpec (denotationalSpec) where
 
 import State.Config as Config
 import State.Error
@@ -68,95 +64,6 @@ testResetFuncEnv makeControlStruct invoke = do
         result     = evalSemantics comp testConfig
 
     shouldContainFunc result "f" ["x"] outerFBody
-
-derivedSymbolValSpec :: Spec
-derivedSymbolValSpec = do
-    let testConfig  = right (Config.fromString "abc")
-        testConfig' = addVar "x" '1' testConfig
-
-    describe "derivedSymbolVal" $ do
-        it "reads the symbol under the read-write head" $ do
-            let result = evalDerivedSymbol Read testConfig'
-            result `shouldContain` 'b'
-
-        it "returns the literal" $ do
-            let result = evalDerivedSymbol (Literal 'm') testConfig'
-            result `shouldContain` 'm'
-
-        it "returns the value of a variable" $ do
-            let result = evalDerivedSymbol (Var "x") testConfig'
-            result `shouldContain` '1'
-
-        it "fails if the variable is not defined" $ do
-            let result = evalDerivedSymbol (Var "undef") testConfig'
-            result `shouldThrow` (UndefVar "undef")
-
-bexpValSpec :: Spec
-bexpValSpec = do
-    let testConfig  = right (Config.fromString "abc")
-        testConfig' = addVar "x" '1' testConfig
-
-    describe "bexpVal" $ do
-        it "evaluates TRUE" $ do
-            let result = evalBexp TRUE testConfig'
-            result `shouldContain` True
-
-        it "evaluates FALSE" $ do
-            let result = evalBexp FALSE testConfig'
-            result `shouldContain` False
-
-        it "evaluates not" $ do
-            let result = evalBexp (Not TRUE) testConfig'
-            result `shouldContain` False
-
-        it "evaluates and" $ do
-            let ff = evalBexp (And FALSE FALSE) testConfig'
-                ft = evalBexp (And FALSE TRUE) testConfig'
-                tf = evalBexp (And TRUE FALSE) testConfig'
-                tt = evalBexp (And TRUE TRUE) testConfig'
-
-            ff `shouldContain` False
-            ft `shouldContain` False
-            tf `shouldContain` False
-            tt `shouldContain` True
-
-        it "evaluates or" $ do
-            let ff = evalBexp (Or FALSE FALSE) testConfig'
-                ft = evalBexp (Or FALSE TRUE) testConfig'
-                tf = evalBexp (Or TRUE FALSE) testConfig'
-                tt = evalBexp (Or TRUE TRUE) testConfig'
-
-            ff `shouldContain` False
-            ft `shouldContain` True
-            tf `shouldContain` True
-            tt `shouldContain` True
-
-        it "evaluates <=" $ do
-            let b1      = Le (Read) (Literal 'c') -- The current symbol is 'b'.
-                b2      = Le (Read) (Literal 'a')
-                result1 = evalBexp b1 testConfig'
-                result2 = evalBexp b2 testConfig'
-
-            result1 `shouldContain` True
-            result2 `shouldContain` False
-
-        it "evaluates ==" $ do
-            let b1      = Eq (Read) (Literal 'b') -- The current symbol is 'b'.
-                b2      = Eq (Read) (Literal '#')
-                result1 = evalBexp b1 testConfig'
-                result2 = evalBexp b2 testConfig'
-
-            result1 `shouldContain` True
-            result2 `shouldContain` False
-
-        it "evaluates !=" $ do
-            let b1      = Ne (Read) (Literal 'b') -- The current symbol is 'b'.
-                b2      = Ne (Read) (Literal '#')
-                result1 = evalBexp b1 testConfig'
-                result2 = evalBexp b2 testConfig'
-
-            result1 `shouldContain` False
-            result2 `shouldContain` True
 
 denotationalSpec :: Spec
 denotationalSpec = do

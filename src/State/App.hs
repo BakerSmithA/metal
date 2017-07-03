@@ -26,5 +26,5 @@ instance MonadMachine a App where
     inter = return
 
 -- Runs the program in the given environment.
-runAppram :: App a -> Either RuntimeError (Machine a)
-runAppram p = runMachineT (runApp p)
+runApplication :: App a -> Either RuntimeError (Machine a)
+runApplication p = runMachineT (runApp p)
