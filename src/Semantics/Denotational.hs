@@ -142,3 +142,7 @@ evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
 evalStm (PrintRead)               = id
 evalStm (PrintStr _)              = id
+
+-- Evaluates a program by importing any files, then evaluating the statement.
+evalProgram :: Program -> AppConfig -> AppConfig
+evalProgram (Program imports stm) = evalStm stm

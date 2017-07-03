@@ -6,7 +6,7 @@ import Test.Hspec
 import Test.HUnit.Lang
 
 -- Asserts that the parse of a program should contain the given statement.
-shouldParseStm :: (Show t, Show e) => Either (ParseError t e) Appram -> Stm -> Expectation
+shouldParseStm :: (Show t, Show e) => Either (ParseError t e) Program -> Stm -> Expectation
 shouldParseStm result stm = either handleErr success result where
     handleErr err  = assertFailure ("Expected program, got error: " ++ (show err))
-    success (Appram _ body) = body `shouldBe` stm
+    success (Program _ body) = body `shouldBe` stm

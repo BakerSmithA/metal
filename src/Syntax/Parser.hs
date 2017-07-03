@@ -254,6 +254,6 @@ importStm = tok "import" *> importPath where
 
 -- Parses a program, the EBNF syntax of which is:
 --  Appram : Import* Stm
-program :: Parser Appram
-program = Appram <$ whitespaceNewline <*> imports <*> stm <* eof where
+program :: Parser Program
+program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline
