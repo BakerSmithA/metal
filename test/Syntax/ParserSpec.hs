@@ -410,7 +410,7 @@ programSpec = describe "program" $ do
 
     context "imports" $ do
         it "parses imports followed by a statement" $ do
-            let expected = Program [["A", "B"], ["C"]] MoveRight
+            let expected = Appram [["A", "B"], ["C"]] MoveRight
             parse program "" "import A.B\nimport C\nright" `shouldParse` expected
 
         it "fails if there is more than one newline between imports" $ do
@@ -435,19 +435,19 @@ programSpec = describe "program" $ do
 
         context "before imports" $ do
             it "ignores spaces" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Appram [["A"]] MoveLeft
                 parse program "" " import A\nleft" `shouldParse` expected
 
             it "ignores newlines" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Appram [["A"]] MoveLeft
                 parse program "" "\n\nimport A\nleft" `shouldParse` expected
 
             it "ignores whole-line comments" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Appram [["A"]] MoveLeft
                 parse program "" "//Comment\nimportA\nleft" `shouldParse` expected
 
             it "ignores in-line" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Appram [["A"]] MoveLeft
                 parse program "" "/* Comment */\nimportA\nleft" `shouldParse` expected
 
         context "interspersed with statements" $ do

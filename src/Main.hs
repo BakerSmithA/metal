@@ -5,18 +5,18 @@ import Semantics.Denotational
 import State.Config as Config
 import State.Error
 import State.Machine
-import State.Program
+import State.App
 import Syntax.Tree
 import Syntax.Parser
 import System.Environment
 import qualified Text.Megaparsec as M
 
 -- Errors that can occur during parsing or runtime.
-data ProgError = ArgError String
-               | ParseError (M.ParseError (M.Token String) M.Dec)
-               | SemanticError RuntimeError
+data AppError = ArgError String
+              | ParseError (M.ParseError (M.Token String) M.Dec)
+              | SemanticError RuntimeError
 
-instance Show ProgError where
+instance Show AppError where
     show (ArgError err)      = err
     show (ParseError err)    = show err
     show (SemanticError err) = show err
@@ -27,30 +27,30 @@ type Args = (FilePath, [TapeSymbol])
 
 -- Takes in arguments to the program, and returns the parsed arguments, or
 -- an error if the arguments were not parsed correctly.
-parseArgs :: [String] -> Either ProgError Args
+parseArgs :: [String] -> Either AppError Args
 parseArgs [path]       = return (path, [])
 parseArgs [path, syms] = return (path, syms)
 parseArgs _            = throwError (ArgError "Incorrect number of arguments, expected <source_file> <tape>")
 
 -- Parses the contents of source file, returning either the parsed program, or
 -- the parse error.
-parseContents :: String -> Either ProgError Stm
+parseContents :: String -> Either AppError Stm
 parseContents contents = do
     let result = M.runParser stm "" contents
     either (throwError . ParseError) return result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine Config)
+evalSemantics :: Stm -> [TapeSymbol] -> Either AppError (Machine Config)
 evalSemantics s syms = do
     let config = return (Config.fromString syms)
-        result = runProgram (evalStm s config)
+        result = runAppram (evalStm s config)
     either (throwError . SemanticError) return result
 
 -- Parses `contents`, and runs the parsed statement with `syms` at the start of
 -- the tape. If parsing is unsuccessful, or a runtime error occurs, an error
 -- is returned.
-run ::  String -> [TapeSymbol] -> Either ProgError (Machine Config)
+run ::  String -> [TapeSymbol] -> Either AppError (Machine Config)
 run contents syms = do
     s <- parseContents contents
     evalSemantics s syms

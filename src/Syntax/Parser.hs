@@ -49,7 +49,7 @@ import Text.Megaparsec.String
 --                | 'print'
 --                | 'print' String
 --  Import        : 'import ' UpperChar ((LowerChar | UpperChar | Digit)* [.])*
---  Program       : Import* Stm
+--  Appram       : Import* Stm
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -253,7 +253,7 @@ importStm = tok "import" *> importPath where
     pathSection = (:) <$> upperChar <*> many alphaNumChar
 
 -- Parses a program, the EBNF syntax of which is:
---  Program : Import* Stm
-program :: Parser Program
-program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
+--  Appram : Import* Stm
+program :: Parser Appram
+program = Appram <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline
