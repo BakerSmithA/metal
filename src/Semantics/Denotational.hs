@@ -145,4 +145,3 @@ evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
 evalStm (PrintRead)               = id
 evalStm (PrintStr str)            = id
-evalStm (Import path)             = id

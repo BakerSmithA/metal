@@ -5,6 +5,7 @@ import Syntax.Parser
 import Text.Megaparsec
 import Test.Hspec
 import Test.Hspec.Megaparsec
+import TestHelper.Parser
 
 parserSpec :: Spec
 parserSpec = do
@@ -17,7 +18,7 @@ parserSpec = do
         derivedSymbolSpec
         bexpSpec
         ifStmSpec
-        stmSpec
+        programSpec
         importStmSpec
 
 encasedStringSpec :: Spec
@@ -205,72 +206,73 @@ ifStmSpec :: Spec
 ifStmSpec = describe "ifStm" $ do
     context "parsing a single IF" $ do
         it "parses IF" $ do
-            parse stm "" "if True { right }" `shouldParse` (If TRUE MoveRight [] Nothing)
+            parse program "" "if True { right }" `shouldParseStm` (If TRUE MoveRight [] Nothing)
 
         it "fails to parse if a boolean expression is missing" $ do
-            parse stm "" `shouldFailOn` "if { right }"
+            parse program "" `shouldFailOn` "if { right }"
 
         it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True right }"
+            parse program "" `shouldFailOn` "if True right }"
 
         it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right"
+            parse program "" `shouldFailOn` "if True { right"
 
         it "fails to parse if both braces are missing" $ do
-            parse stm "" `shouldFailOn` "if True right"
+            parse program "" `shouldFailOn` "if True right"
 
     context "parsing an IF-ELSEIF" $ do
         it "parses with a single ELSE-IF clause" $ do
             let str      = "if True { right } else if False { left }"
                 expected = If TRUE MoveRight [(FALSE, MoveLeft)] Nothing
-            parse stm "" str `shouldParse` expected
+            parse program "" str `shouldParseStm` expected
 
         it "parses with multiple ELSE-IF clauses" $ do
             let str      = "if True { right } else if False { left } else if True { accept }"
                 expected = If TRUE MoveRight [(FALSE, MoveLeft), (TRUE, Accept)] Nothing
-            parse stm "" str `shouldParse` expected
+            parse program "" str `shouldParseStm` expected
 
         it "fails to parse if ELSE-IF is before IF" $ do
-            parse stm "" `shouldFailOn` "else if True { right } if True right }"
+            parse program "" `shouldFailOn` "else if True { right } if True right }"
 
         it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right } else if True right }"
+            parse program "" `shouldFailOn` "if True { right } else if True right }"
 
         it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right } else if True { right"
+            parse program "" `shouldFailOn` "if True { right } else if True { right"
 
         it "fails to parse if both braces are missing" $ do
-            parse stm "" `shouldFailOn` "if True { right } else if True right"
+            parse program "" `shouldFailOn` "if True { right } else if True right"
 
     context "parsing an ELSE clause" $ do
         it "parses ELSE with just an IF" $ do
             let str      = "if True { right } else { left }"
                 expected = If TRUE MoveRight [] (Just MoveLeft)
-            parse stm "" str `shouldParse` expected
+            parse program "" str `shouldParseStm` expected
 
         it "parses ELSE with a preceding ELSE-IF" $ do
             let str      = "if True { right } else if False { left } else { accept }"
                 expected = If TRUE MoveRight [(FALSE, MoveLeft)] (Just Accept)
-            parse stm "" str `shouldParse` expected
+            parse program "" str `shouldParseStm` expected
 
         it "fails to parse if the ELSE is before IF" $ do
-            parse stm "" `shouldFailOn` "else { accept } if { left }"
+            parse program "" `shouldFailOn` "else { accept } if { left }"
 
         it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right } else right }"
+            parse program "" `shouldFailOn` "if True { right } else right }"
 
         it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "if True { right } else { right"
+            parse program "" `shouldFailOn` "if True { right } else { right"
 
         it "fails to parse if both braces are missing" $ do
-            parse stm "" `shouldFailOn` "if True { right } else right"
+            parse program "" `shouldFailOn` "if True { right } else right"
+
 importStmSpec :: Spec
 importStmSpec = describe "importStm" $ do
     it "parses just a file name" $ do
-        parse importStm "" "import FileName" `shouldParse` Import ["FileName"]
+        parse importStm "" "import FileName" `shouldParse` ["FileName"]
 
     it "parses a file path" $ do
-        parse importStm "" "import Dir.SubDir.FileName" `shouldParse` Import ["Dir", "SubDir", "FileName"]
+        parse importStm "" "import Dir.SubDir.FileName" `shouldParse` ["Dir", "SubDir", "FileName"]
 
     it "fails if the file name begins with a lowercase letter" $ do
         parse importStm "" `shouldFailOn` "import fileName"
@@ -287,187 +289,218 @@ importStmSpec = describe "importStm" $ do
     it "fails if the keyword 'import' is missing" $ do
         parse importStm "" `shouldFailOn` "Dir.SubDir.FileName"
 
-stmSpec :: Spec
-stmSpec = describe "stm" $ do
+programSpec :: Spec
+programSpec = describe "program" $ do
     context "parsing Turing Machine operators" $ do
         it "parses LEFT command" $ do
-            parse stm "" "left" `shouldParse` MoveLeft
+            parse program "" "left" `shouldParseStm` MoveLeft
 
         it "parses RIGHT command" $ do
-            parse stm "" "right" `shouldParse` MoveRight
+            parse program "" "right" `shouldParseStm` MoveRight
 
         it "parses WRITE command" $ do
-            parse stm "" "write 'x'" `shouldParse` (Write (Literal 'x'))
+            parse program "" "write 'x'" `shouldParseStm` (Write (Literal 'x'))
 
         it "parses REJECT" $ do
-            parse stm "" "reject" `shouldParse` Reject
+            parse program "" "reject" `shouldParseStm` Reject
 
         it "parses ACCEPT" $ do
-            parse stm "" "accept" `shouldParse` Accept
+            parse program "" "accept" `shouldParseStm` Accept
 
     context "parsing variable declarations" $ do
         it "parses variable declarations" $ do
-            parse stm "" "let x = read" `shouldParse` VarDecl "x" Read
+            parse program "" "let x = read" `shouldParseStm` VarDecl "x" Read
 
         it "fails if '=' is missing" $ do
-            parse stm "" `shouldFailOn` "let x read"
+            parse program "" `shouldFailOn` "let x read"
 
         it "fails if a derived symbol is missing" $ do
-            parse stm "" `shouldFailOn` "let x ="
+            parse program "" `shouldFailOn` "let x ="
 
     context "parsing WHILE statements" $ do
         it "parses WHILE" $ do
-            parse stm "" "while True { right }" `shouldParse` (While TRUE MoveRight)
+            parse program "" "while True { right }" `shouldParseStm` (While TRUE MoveRight)
 
         it "fails to parse if a boolean expression is missing" $ do
-            parse stm "" `shouldFailOn` "while { right }"
+            parse program "" `shouldFailOn` "while { right }"
 
         it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "while True right }"
+            parse program "" `shouldFailOn` "while True right }"
 
         it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "while True { right"
+            parse program "" `shouldFailOn` "while True { right"
 
         it "fails to parse if both braces are missing" $ do
-            parse stm "" `shouldFailOn` "while True right"
+            parse program "" `shouldFailOn` "while True right"
 
     context "parsing function declarations" $ do
         it "parses function delcarations" $ do
             let expected = FuncDecl "fName" [] MoveRight
-            parse stm "" "func fName { right }" `shouldParse` expected
+            parse program "" "func fName { right }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
             let expected = FuncDecl "fName" ["a", "bb", "ccc"] MoveRight
-            parse stm "" "func fName a bb ccc { right }" `shouldParse` expected
+            parse program "" "func fName a bb ccc { right }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
             let expected = FuncDecl "leftUntil" [] MoveRight
-            parse stm "" "func leftUntil { right }" `shouldParse` expected
+            parse program "" "func leftUntil { right }" `shouldParseStm` expected
 
         it "fails to parse if a function name is missing" $ do
-            parse stm "" `shouldFailOn` "func { right }"
+            parse program "" `shouldFailOn` "func { right }"
 
         it "fails to parse if the first brace is missing" $ do
-            parse stm "" `shouldFailOn` "func fName right }"
+            parse program "" `shouldFailOn` "func fName right }"
 
         it "fails to parse if the second brace is missing" $ do
-            parse stm "" `shouldFailOn` "func fName { right"
+            parse program "" `shouldFailOn` "func fName { right"
 
         it "fails to parse if both braces are missing" $ do
-            parse stm "" `shouldFailOn` "func fName right"
+            parse program "" `shouldFailOn` "func fName right"
 
     context "parsing function calls" $ do
         it "parses function calls" $ do
-            parse stm "" "fName" `shouldParse` (Call "fName" [])
+            parse program "" "fName" `shouldParseStm` (Call "fName" [])
 
         it "parses function calls with arguments" $ do
             let expected = Call "fName" [Read, Var "x", Literal '#']
-            parse stm "" "fName read x '#'" `shouldParse` expected
+            parse program "" "fName read x '#'" `shouldParseStm` expected
 
         it "parses function calls with multiple spaces between arguments" $ do
             let expected = Call "fName" [Read, Var "x", Literal '#']
-            parse stm "" "fName   read  x  '#'" `shouldParse` expected
+            parse program "" "fName   read  x  '#'" `shouldParseStm` expected
 
         it "parses function calls with tabs between arguments" $ do
             let expected = Call "fName" [Read, Var "x", Literal '#']
-            parse stm "" "fName \tread\tx\t'#'" `shouldParse` expected
+            parse program "" "fName \tread\tx\t'#'" `shouldParseStm` expected
 
         it "parses function calls followed by another statement" $ do
             let call = Call "fName" [Read]
                 expected = Comp call (MoveLeft)
-            parse stm "" "fName read \n left" `shouldParse` expected
+            parse program "" "fName read \n left" `shouldParseStm` expected
 
         it "parses function calls where the name contains a keyword" $ do
             let expected = Call "leftUntil" []
-            parse stm "" "leftUntil" `shouldParse` expected
+            parse program "" "leftUntil" `shouldParseStm` expected
 
     context "parsing composition" $ do
         it "parses composition" $ do
-            parse stm "" "left\n right" `shouldParse` (Comp MoveLeft MoveRight)
+            parse program "" "left\n right" `shouldParseStm` (Comp MoveLeft MoveRight)
 
         it "parses composition to be right associative" $ do
             let expected = Comp MoveLeft (Comp MoveRight (Write (Literal 'x')))
-            parse stm "" "left \n right \n write 'x'" `shouldParse` expected
+            parse program "" "left \n right \n write 'x'" `shouldParseStm` expected
 
         it "allows for multiple newlines between statements" $ do
-            parse stm "" "left \n\n right" `shouldParse` (Comp MoveLeft MoveRight)
-            parse stm "" "left \n\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
+            parse program "" "left \n\n right" `shouldParseStm` (Comp MoveLeft MoveRight)
+            parse program "" "left \n\n\n right" `shouldParseStm` (Comp MoveLeft MoveRight)
 
         it "fails if parsing the first statements fails to parse" $ do
-            parse stm "" `shouldFailOn` "left \n if"
+            parse program "" `shouldFailOn` "left \n if"
 
         it "fails if parsing the second statements fails to parse" $ do
-            parse stm "" `shouldFailOn `"if \n left"
+            parse program "" `shouldFailOn `"if \n left"
 
     context "parsing printing" $ do
         it "parses printing a string" $ do
-            parse stm "" "print \"This is a string\"" `shouldParse` (PrintStr "This is a string")
+            parse program "" "print \"This is a string\"" `shouldParseStm` (PrintStr "This is a string")
 
         it "parses printing the symbol read from the tape" $ do
-            parse stm "" "print" `shouldParse` PrintRead
+            parse program "" "print" `shouldParseStm` PrintRead
+
+    context "imports" $ do
+        it "parses imports followed by a statement" $ do
+            let expected = Program [["A", "B"], ["C"]] MoveRight
+            parse program "" "import A.B\nimport C\nright" `shouldParse` expected
+
+        it "fails if there is more than one newline between imports" $ do
+            parse program "" `shouldFailOn` "import A\n\nimport B\nleft"
 
     context "removing whitespace and comments" $ do
         context "before statements" $ do
             it "ignores spaces" $ do
-                parse stm "" " left" `shouldParse` MoveLeft
+                parse program "" " left" `shouldParseStm` MoveLeft
 
             it "ignores newlines" $ do
-                parse stm "" "\n\nleft" `shouldParse` MoveLeft
+                parse program "" "\n\nleft" `shouldParseStm` MoveLeft
 
             it "ignores whole-line comments" $ do
-                parse stm "" "//Comment\n left" `shouldParse` MoveLeft
+                parse program "" "//Comment\n left" `shouldParseStm` MoveLeft
 
             it "ignores in-line" $ do
-                parse stm "" "/* Comment */\n left" `shouldParse` MoveLeft
+                parse program "" "/* Comment */\n left" `shouldParseStm` MoveLeft
 
             it "ignores tabs" $ do
-                parse stm "" "\tleft" `shouldParse` MoveLeft
+                parse program "" "\tleft" `shouldParseStm` MoveLeft
+
+        context "before imports" $ do
+            it "ignores spaces" $ do
+                let expected = Program [["A"]] MoveLeft
+                parse program "" " import A\nleft" `shouldParse` expected
+
+            it "ignores newlines" $ do
+                let expected = Program [["A"]] MoveLeft
+                parse program "" "\n\nimport A\nleft" `shouldParse` expected
+
+            it "ignores whole-line comments" $ do
+                let expected = Program [["A"]] MoveLeft
+                parse program "" "//Comment\nimportA\nleft" `shouldParse` expected
+
+            it "ignores in-line" $ do
+                let expected = Program [["A"]] MoveLeft
+                parse program "" "/* Comment */\nimportA\nleft" `shouldParse` expected
 
         context "interspersed with statements" $ do
             it "ignores whole line comments" $ do
-                parse stm "" "left\n//Comment\n\n right" `shouldParse` (Comp MoveLeft MoveRight)
+                parse program "" "left\n//Comment\n\n right" `shouldParseStm` (Comp MoveLeft MoveRight)
 
             it "ignores in-line comments" $ do
-                parse stm "" "if /* Comment */ True { left }" `shouldParse` (If TRUE MoveLeft [] Nothing)
+                parse program "" "if /* Comment */ True { left }" `shouldParseStm` (If TRUE MoveLeft [] Nothing)
 
         context "ignores whitespace after of statements" $ do
             it "ignores whitespace at the end of a statement" $ do
-                parse stm "" "left   " `shouldParse` MoveLeft
+                parse program "" "left   " `shouldParseStm` MoveLeft
 
             it "ignores newlines at the end of a statement" $ do
-                parse stm "" "left\n\n " `shouldParse` MoveLeft
+                parse program "" "left\n\n " `shouldParseStm` MoveLeft
 
             it "ignores tabs" $ do
-                parse stm "" "left\t" `shouldParse` MoveLeft
+                parse program "" "left\t" `shouldParseStm` MoveLeft
 
         context "composition" $ do
             it "ignores tabs after the newline" $ do
-                parse stm "" "left\n\tright" `shouldParse` (Comp MoveLeft MoveRight)
+                parse program "" "left\n\tright" `shouldParseStm` (Comp MoveLeft MoveRight)
 
             it "ignores tabs before the newline" $ do
-                parse stm "" "left\t\nright" `shouldParse` (Comp MoveLeft MoveRight)
+                parse program "" "left\t\nright" `shouldParseStm` (Comp MoveLeft MoveRight)
 
             it "ignores tabs alone on lines inbetween statements" $ do
-                parse stm "" "left\n\t\nright" `shouldParse` (Comp MoveLeft MoveRight)
+                parse program "" "left\n\t\nright" `shouldParseStm` (Comp MoveLeft MoveRight)
 
             it "ignores spaces alone on lines inbetween statements" $ do
-                parse stm "" "left\n \nright" `shouldParse` (Comp MoveLeft MoveRight)
+                parse program "" "left\n \nright" `shouldParseStm` (Comp MoveLeft MoveRight)
 
         context "whitespace nested in statements" $ do
             it "ignores newlines after an opening brace" $ do
-                parse stm "" "while True {\n\n left }" `shouldParse` (While TRUE MoveLeft)
+                let expected = While TRUE MoveLeft
+                parse program "" "while True {\n\n left }" `shouldParseStm` expected
 
             it "ignores newlines before a closing brace" $ do
-                parse stm "" "while True { left \n\n }" `shouldParse` (While TRUE MoveLeft)
+                let expected = While TRUE MoveLeft
+                parse program "" "while True { left \n\n }" `shouldParseStm` expected
 
             it "ignores newlines before and after braces" $ do
-                parse stm "" "while True { \n\n left \n\n }" `shouldParse` (While TRUE MoveLeft)
+                let expected = While TRUE MoveLeft
+                parse program "" "while True { \n\n left \n\n }" `shouldParseStm` expected
 
             it "ignores newlines after an opening brace when composing" $ do
-                parse stm "" "while True {\n\n left \n\n right }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+                let expected = While TRUE (Comp MoveLeft MoveRight)
+                parse program "" "while True {\n\n left \n\n right }" `shouldParseStm` expected
 
             it "ignores newlines after a closing brace when composing" $ do
-                parse stm "" "while True { left \n\n right \n\n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+                let expected = While TRUE (Comp MoveLeft MoveRight)
+                parse program "" "while True { left \n\n right \n\n }" `shouldParseStm` expected
 
             it "ignores newlines before and after braces when composing" $ do
-                parse stm "" "while True { \n\n left \n\n right \n\n }" `shouldParse` (While TRUE (Comp MoveLeft MoveRight))
+                let expected = While TRUE (Comp MoveLeft MoveRight)
+                parse program "" "while True { \n\n left \n\n right \n\n }" `shouldParseStm` expected
