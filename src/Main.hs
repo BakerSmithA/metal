@@ -36,21 +36,21 @@ parseArgs _            = throwError (ArgError "Incorrect number of arguments, ex
 -- the parse error.
 parseContents :: String -> Either ProgError Stm
 parseContents contents = do
-    let result = M.runParser stm "" contents
-    either (throwError . ParseError) return result
+    let result = M.runParser program "" contents
+    either (throwError . ParseError) (\(Program _ body) -> return body) result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine Config)
+evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine (Config, [String]))
 evalSemantics s syms = do
     let config = return (Config.fromString syms)
-        result = runApp' (evalStm s config)
+        result = evalApp (evalStm s config)
     either (throwError . SemanticError) return result
 
 -- Parses `contents`, and runs the parsed statement with `syms` at the start of
 -- the tape. If parsing is unsuccessful, or a runtime error occurs, an error
 -- is returned.
-run ::  String -> [TapeSymbol] -> Either ProgError (Machine Config)
+run ::  String -> [TapeSymbol] -> Either ProgError (Machine (Config, [String]))
 run contents syms = do
     s <- parseContents contents
     evalSemantics s syms
