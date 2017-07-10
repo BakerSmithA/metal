@@ -1,9 +1,7 @@
 module Semantics.Helpers where
 
-import State.State
+import State.App
 import State.Config
-
-type StateConfig = State Config
 
 -- Fixpoint operator used to defined loops.
 fix :: (a -> a) -> a
@@ -12,7 +10,7 @@ fix f = let x = f x in x
 -- Conditionally chooses to 'execute' a branch if associated predicate
 -- evaluates to true. Returns the branch to execute, or `id` if no predicates
 -- evaluate to true.
-cond :: [(StateConfig -> State Bool, StateConfig -> StateConfig)] -> (StateConfig -> StateConfig)
+cond :: [(App Config -> App Bool, App Config -> App Config)] -> (App Config -> App Config)
 cond []                       p = p
 cond ((predicate, branch):ps) p = do
     bVal <- predicate p
@@ -23,7 +21,7 @@ cond ((predicate, branch):ps) p = do
 -- environment are not persistented outside the block. I.e. after finishing
 -- executing the statement, the variable and function environments return to
 -- how they were before the statement.
-block :: (StateConfig -> StateConfig) -> StateConfig -> StateConfig
+block :: (App Config -> App Config) -> App Config -> App Config
 block f p = do
     oldConfig <- p
     newConfig <- f p

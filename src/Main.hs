@@ -2,11 +2,10 @@ module Main where
 
 import Control.Monad.Except
 import Semantics.Stm
-import Semantics.Program
+import State.App
 import State.Config as Config
 import State.Error
 import State.Machine
-import State.State
 import Syntax.Tree
 import Syntax.Parser
 import System.Environment
@@ -45,7 +44,7 @@ parseContents contents = do
 evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine Config)
 evalSemantics s syms = do
     let config = return (Config.fromString syms)
-        result = runState' (evalStm s config)
+        result = runApp' (evalStm s config)
     either (throwError . SemanticError) return result
 
 -- Parses `contents`, and runs the parsed statement with `syms` at the start of

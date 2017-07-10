@@ -1,9 +1,6 @@
 module Semantics.Program where
 
 import Data.List
-import Semantics.Helpers
-import Semantics.Stm
-import State.State
 import Syntax.Tree
 import System.FilePath.Posix
 

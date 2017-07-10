@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module State.State where
+module State.App where
 
 import Control.Monad.Except
 import State.Error
@@ -10,21 +10,21 @@ import State.Machine
 import State.MachineClass
 import State.Trans.Machine
 
-newtype State a = State {
-    runState :: MachineT (Either RuntimeError) a
+newtype App a = App {
+    runApp :: MachineT (Either RuntimeError) a
 } deriving (Functor
           , Applicative
           , Monad
           , MonadError RuntimeError)
 
-instance MonadMachine a State where
+instance MonadMachine a App where
     -- accept :: State a
-    accept = State accept
+    accept = App accept
     -- reject :: State a
-    reject = State reject
+    reject = App reject
     -- inter :: a -> State a
     inter = return
 
 -- Runs the program in the given environment.
-runState' :: State a -> Either RuntimeError (Machine a)
-runState' p = runMachineT (runState p)
+runApp' :: App a -> Either RuntimeError (Machine a)
+runApp' p = runMachineT (runApp p)
