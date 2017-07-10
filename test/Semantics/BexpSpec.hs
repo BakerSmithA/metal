@@ -4,7 +4,7 @@ import State.Config as Config
 import State.Tape()
 import Syntax.Tree
 import TestHelper.Denotational
-import Test.Hspec hiding (shouldContain, shouldThrow)
+import Test.Hspec hiding (shouldReturn, shouldThrow, shouldContain)
 
 bexpValSpec :: Spec
 bexpValSpec = do
@@ -14,15 +14,15 @@ bexpValSpec = do
     describe "bexpVal" $ do
         it "evaluates TRUE" $ do
             let result = evalBexp TRUE testConfig'
-            result `shouldContain` True
+            result `shouldReturn` True
 
         it "evaluates FALSE" $ do
             let result = evalBexp FALSE testConfig'
-            result `shouldContain` False
+            result `shouldReturn` False
 
         it "evaluates not" $ do
             let result = evalBexp (Not TRUE) testConfig'
-            result `shouldContain` False
+            result `shouldReturn` False
 
         it "evaluates and" $ do
             let ff = evalBexp (And FALSE FALSE) testConfig'
@@ -30,10 +30,10 @@ bexpValSpec = do
                 tf = evalBexp (And TRUE FALSE) testConfig'
                 tt = evalBexp (And TRUE TRUE) testConfig'
 
-            ff `shouldContain` False
-            ft `shouldContain` False
-            tf `shouldContain` False
-            tt `shouldContain` True
+            ff `shouldReturn` False
+            ft `shouldReturn` False
+            tf `shouldReturn` False
+            tt `shouldReturn` True
 
         it "evaluates or" $ do
             let ff = evalBexp (Or FALSE FALSE) testConfig'
@@ -41,10 +41,10 @@ bexpValSpec = do
                 tf = evalBexp (Or TRUE FALSE) testConfig'
                 tt = evalBexp (Or TRUE TRUE) testConfig'
 
-            ff `shouldContain` False
-            ft `shouldContain` True
-            tf `shouldContain` True
-            tt `shouldContain` True
+            ff `shouldReturn` False
+            ft `shouldReturn` True
+            tf `shouldReturn` True
+            tt `shouldReturn` True
 
         it "evaluates <=" $ do
             let b1      = Le (Read) (Literal 'c') -- The current symbol is 'b'.
@@ -52,8 +52,8 @@ bexpValSpec = do
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
-            result1 `shouldContain` True
-            result2 `shouldContain` False
+            result1 `shouldReturn` True
+            result2 `shouldReturn` False
 
         it "evaluates ==" $ do
             let b1      = Eq (Read) (Literal 'b') -- The current symbol is 'b'.
@@ -61,8 +61,8 @@ bexpValSpec = do
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
-            result1 `shouldContain` True
-            result2 `shouldContain` False
+            result1 `shouldReturn` True
+            result2 `shouldReturn` False
 
         it "evaluates !=" $ do
             let b1      = Ne (Read) (Literal 'b') -- The current symbol is 'b'.
@@ -70,5 +70,5 @@ bexpValSpec = do
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
-            result1 `shouldContain` False
-            result2 `shouldContain` True
+            result1 `shouldReturn` False
+            result2 `shouldReturn` True

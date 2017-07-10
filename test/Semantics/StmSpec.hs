@@ -5,7 +5,7 @@ import State.Error
 import State.Tape()
 import Syntax.Tree
 import TestHelper.Denotational
-import Test.Hspec hiding (shouldContain, shouldThrow)
+import Test.Hspec hiding (shouldThrow)
 
 -- Takes a function to construct a control structure (e.g. function, while-loop,
 -- if-statement), given the body of the structure. Also takes an optional

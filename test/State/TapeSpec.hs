@@ -2,12 +2,11 @@ module State.TapeSpec (tapeSpec) where
 
 import State.Tape
 import Syntax.Tree
-import TestHelper.Tape
 import Test.Hspec
 
 -- Asserts that the tape should contain `syms` at its start.
 shouldRead :: Tape -> [TapeSymbol] -> Expectation
-shouldRead tape syms = tapeShouldRead tape syms `shouldBe` True
+shouldRead tape syms = fromString syms `shouldBe` tape
 
 tapeSpec :: Spec
 tapeSpec = do

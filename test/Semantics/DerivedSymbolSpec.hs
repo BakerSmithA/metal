@@ -5,7 +5,7 @@ import State.Error
 import State.Tape()
 import Syntax.Tree
 import TestHelper.Denotational
-import Test.Hspec hiding (shouldContain, shouldThrow)
+import Test.Hspec hiding (shouldReturn, shouldThrow, shouldContain)
 
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
@@ -15,15 +15,15 @@ derivedSymbolValSpec = do
     describe "derivedSymbolVal" $ do
         it "reads the symbol under the read-write head" $ do
             let result = evalDerivedSymbol Read testConfig'
-            result `shouldContain` 'b'
+            result `shouldReturn` 'b'
 
         it "returns the literal" $ do
             let result = evalDerivedSymbol (Literal 'm') testConfig'
-            result `shouldContain` 'm'
+            result `shouldReturn` 'm'
 
         it "returns the value of a variable" $ do
             let result = evalDerivedSymbol (Var "x") testConfig'
-            result `shouldContain` '1'
+            result `shouldReturn` '1'
 
         it "fails if the variable is not defined" $ do
             let result = evalDerivedSymbol (Var "undef") testConfig'
