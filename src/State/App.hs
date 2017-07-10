@@ -13,7 +13,14 @@ newtype App a = App {
 } deriving (Functor
           , Applicative
           , Monad
-          , MonadError RuntimeError)
+          , MonadError RuntimeError
+          , MonadWriter [String])
+
+-- Adds `str` to the list of outputted strings.
+output :: String -> App a -> App a
+output str app = do
+    x <- app
+    writer (x, [str])
 
 -- Runs the program in the given environment.
 evalApp :: App a -> Either RuntimeError (Machine (a, [String]))

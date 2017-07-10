@@ -21,9 +21,9 @@ evalRight = fmap right
 
 -- Evaluates writing to the tape.
 evalWrite :: DerivedSymbol -> App Config -> App Config
-evalWrite sym p = do
-    val <- derivedSymbolVal sym p
-    fmap (setCurr val) p
+evalWrite sym app = do
+    val <- derivedSymbolVal sym app
+    fmap (setCurr val) app
 
 -- Evaluates an if-else statement.
 evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> App Config -> App Config
@@ -39,9 +39,9 @@ evalWhile b body = fix f where
 
 -- Evaluates a variable declaration.
 evalVarDecl :: VarName -> DerivedSymbol -> App Config -> App Config
-evalVarDecl name sym p = do
-    val <- derivedSymbolVal sym p
-    fmap (addVar name val) p
+evalVarDecl name sym app = do
+    val <- derivedSymbolVal sym app
+    fmap (addVar name val) app
 
 -- Evaluates a function declaration.
 evalFuncDecl :: FuncName -> FuncDeclArgs -> Stm -> App Config -> App Config
@@ -50,9 +50,9 @@ evalFuncDecl name args body = fmap (addFunc name args body)
 -- Checks that the number of arguments to a function is the same as the number
 -- of arguments the function declaration specified.
 checkNumArgs :: FuncName -> FuncDeclArgs -> FuncCallArgs -> App Config -> App Config
-checkNumArgs name ds cs p | (length ds) == (length cs) = p
-                          | otherwise                  = throwError err where
-                              err = WrongNumArgs name ds cs
+checkNumArgs name ds cs app | (length ds) == (length cs) = app
+                            | otherwise                  = throwError err where
+                                err = WrongNumArgs name ds cs
 
 -- Evaluates the body of a function, after adding any arguments to the variable
 -- environment. The variable and function environments are reset after executing
@@ -62,22 +62,33 @@ evalFuncBody name ds cs body = (block evalBody) . check where
     check    = checkNumArgs name ds cs
     evalBody = (evalStm body) . addedVarsP
     -- A `App Config` where the arguments have been added to the environment.
-    addedVarsP p' = foldr (uncurry evalVarDecl) p' zippedArgs
+    addedVarsP app' = foldr (uncurry evalVarDecl) app' zippedArgs
     zippedArgs    = zip ds cs
 
 -- Evaluates a function call.
 evalCall :: FuncName -> FuncCallArgs -> App Config -> App Config
-evalCall name args p = do
-    config <- p
+evalCall name args app = do
+    config <- app
     let fMaybe = lookupFunc name config
     maybe err eval fMaybe where
         err                   = throwError (UndefFunc name)
-        eval (argNames, body) = evalFuncBody name argNames args body p
+        eval (argNames, body) = evalFuncBody name argNames args body app
 
 
 -- Evaluates the composition of two statements.
 evalComp :: Stm -> Stm -> App Config -> App Config
 evalComp stm1 stm2 = (evalStm stm2) . (evalStm stm1)
+
+-- Evaluates printing the current symbol.
+evalPrintRead :: App Config -> App Config
+evalPrintRead app = do
+    config <- app
+    config' <- output [(getCurr config)] app
+    return config'
+
+-- Evaluates printing a string.
+evalPrintStr :: String -> App Config -> App Config
+evalPrintStr = output
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: Stm -> App Config -> App Config
@@ -92,5 +103,5 @@ evalStm (VarDecl name sym)        = evalVarDecl name sym
 evalStm (FuncDecl name args body) = evalFuncDecl name args body
 evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
-evalStm (PrintRead)               = id
-evalStm (PrintStr _)              = id
+evalStm (PrintRead)               = evalPrintRead
+evalStm (PrintStr str)            = evalPrintStr str
