@@ -1,17 +1,14 @@
 module TestHelper.Denotational where
 
-import State.Tape
+import State.Tape as T
 import Syntax.Tree
 import State.App
 import State.Config as Config
-import State.Error
 import State.Machine
-import State.Tape as T
 import Semantics.Bexp
 import Semantics.DerivedSymbol
 import Semantics.Stm
 import qualified Test.Hspec as H
-import Test.HUnit.Lang
 
 type AppResult a = IO (Machine a)--Either RuntimeError (Machine (a, [String]))
 
@@ -29,62 +26,44 @@ evalBexp = evalWith bexpVal
 evalSemantics :: Stm -> Config -> AppResult Config
 evalSemantics = evalWith evalStm
 
--- Asserts that the app threw the given runtime error.
--- shouldThrow :: (Show a) => AppResult a -> RuntimeError -> H.Expectation
--- shouldThrow result expected = either (`H.shouldBe` expected) failure result where
---     failure c = assertFailure ("Expected error, got: " ++ (show c))
+-- Asserts that when the semantics have finished being evaulated, the value
+-- wrapped in the machine satisfies the predicate.
+shouldSatisfy :: (Eq a, Show a) => IO (Machine a) -> (a -> Bool) -> H.Expectation
+shouldSatisfy result predicate = result >>= (`H.shouldSatisfy` f) where
+    f = machine False False predicate
 
--- Asserts that when the semantics have finished being evaulated, the resulting
--- machine satisfies the given predicate.
-shouldSatisfyMachine :: (Show a) => AppResult a -> (Machine (a, [String]) -> Bool) -> H.Expectation
-shouldSatisfyMachine result predicate = either failure match result where
-    failure err = assertFailure ("Expected machine, got error: " ++ (show err))
-    match m = m `H.shouldSatisfy` predicate
+-- Asserts that when the semantics have finished being evaulated, the machine
+-- contains the given value.
+shouldReturn :: (Eq a, Show a) => IO (Machine a) -> a -> H.Expectation
+shouldReturn result expected = result `H.shouldReturn` (return expected)
 
--- Asserts that the app didn't throw an error, but instead resulted in the
--- given machine (ignoring any output).
-shouldBeMachine :: (Eq a, Show a) => AppResult a -> Machine a -> H.Expectation
-shouldBeMachine result expected = result `shouldSatisfyMachine` predicate where
-    predicate actual = fmap fst actual == expected
-
--- Asserts that the app outputted the given list of strings.
-shouldOutput :: (Show a) => AppResult a -> [String] -> H.Expectation
-shouldOutput result expected = result `shouldSatisfyMachine` predicate where
-    predicate actual = fmap snd actual == return expected
-
--- Asserts that the result of running the app satisfies the given predicate.
-shouldSatisfy :: (Show a) => AppResult a -> (a -> Bool) -> H.Expectation
-shouldSatisfy result predicate = result `shouldSatisfyMachine` predicate' where
-    predicate' = machine False False (predicate . fst)
-
--- Asserts that the app contains the given value.
-shouldReturn :: (Eq a, Show a) => AppResult a -> a -> H.Expectation
-shouldReturn result = (shouldBeMachine result) . return
-
--- Asserts that the variable environment contains the given variable name and
--- corresponding value.
-shouldContainVar :: AppResult Config -> VarName -> TapeSymbol -> H.Expectation
-shouldContainVar result name sym = shouldSatisfy result predicate where
+-- Asserts that the variable environment contains the given value for the
+-- variable name.
+shouldReturnVar :: IO (Machine Config) -> VarName -> TapeSymbol -> H.Expectation
+shouldReturnVar r name sym = shouldSatisfy r predicate where
     predicate config = lookupVar name config == Just sym
 
--- Asserts that the function environment contains the given function name and
--- corresponding arguments and body.
-shouldContainFunc :: AppResult Config -> FuncName -> FuncDeclArgs -> Stm -> H.Expectation
-shouldContainFunc result name args body = shouldSatisfy result predicate where
+-- Asserts that the function environment contains the given function body for
+-- the function name.
+shouldReturnFunc :: IO (Machine Config) -> FuncName -> FuncDeclArgs -> Stm -> H.Expectation
+shouldReturnFunc r name args body = shouldSatisfy r predicate where
     predicate config = lookupFunc name config == Just (args, body)
 
--- Asserts that the read-write head is at the given position.
-shouldBeAt :: AppResult Config -> Pos -> H.Expectation
-shouldBeAt result expected = shouldSatisfy result ((== expected) . pos)
+-- Asserts that when the semantics have finished being evauluated, the position
+-- of the read-write head is in the given position.
+shouldBeAt :: IO (Machine Config) -> Pos -> H.Expectation
+shouldBeAt r p = shouldSatisfy r predicate where
+    predicate c = pos c == p
 
--- Asserts that the tape contains the given symbols at is start.
-shouldRead :: AppResult Config -> [TapeSymbol] -> H.Expectation
-shouldRead result expected = shouldSatisfy result ((== T.fromString expected) . tape)
+-- Asserts that the tape has the string `str` at the start of the tape.
+shouldRead :: IO (Machine Config) -> [TapeSymbol] -> H.Expectation
+shouldRead r syms = shouldSatisfy r predicate where
+    predicate c = tape c == T.fromString syms
 
--- Asserts that the app accepted.
-shouldAccept :: (Eq a, Show a) => AppResult a -> H.Expectation
-shouldAccept result = result `shouldBeMachine` HaltA
+-- Asserts that the machine halted in the accepting state.
+shouldAccept :: IO (Machine Config) -> H.Expectation
+shouldAccept r = r >>= (`H.shouldBe` HaltA)
 
--- Asserts that app rejected.
-shouldReject :: (Eq a, Show a) => AppResult a -> H.Expectation
-shouldReject result = result `shouldBeMachine` HaltR
+-- Asserts that the machine halted in the rejecting state.
+shouldReject :: IO (Machine Config) -> H.Expectation
+shouldReject r = r >>= (`H.shouldBe` HaltR)

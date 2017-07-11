@@ -5,7 +5,7 @@ import State.Error
 import State.Tape()
 import Syntax.Tree
 import TestHelper.Denotational
-import Test.Hspec hiding (shouldReturn, shouldThrow, shouldContain)
+import Test.Hspec hiding (shouldReturn, shouldContain)
 
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
@@ -27,4 +27,4 @@ derivedSymbolValSpec = do
 
         it "fails if the variable is not defined" $ do
             let result = evalDerivedSymbol (Var "undef") testConfig'
-            result `shouldThrow` (UndefVar "undef")
+            result `shouldThrow` (== UndefVar "undef")

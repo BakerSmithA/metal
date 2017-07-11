@@ -25,7 +25,9 @@ newtype App a = App {
 
 -- Adds `str` to the list of outputted strings.
 output :: String -> a -> App a
-output str x = undefined --writer (x, [str])
+output str x = do
+    liftIO (putStrLn str)
+    return x
 
 -- Runs the program in the given environment.
 --evalApp :: App a -> Either RuntimeError (Machine (a, [String]))
