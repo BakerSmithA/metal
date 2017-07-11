@@ -216,13 +216,13 @@ whileSpec = do
 
             testResetFuncEnv makeIf Nothing
 
-        -- it "breaks by rejecting" $ do
-        --     let loop = While TRUE Reject
-        --     shouldReject (evalSemantics loop testConfig)
+        it "breaks by rejecting" $ do
+            let loop = While TRUE Reject
+            shouldReject (evalSemantics loop testConfig)
 
-        -- it "breaks by accepting" $ do
-        --     let loop = While TRUE Accept
-        --     shouldAccept (evalSemantics loop testConfig)
+        it "breaks by accepting" $ do
+            let loop = While TRUE Accept
+            shouldAccept (evalSemantics loop testConfig)
 
 varDeclSpec :: Spec
 varDeclSpec = do
