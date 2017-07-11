@@ -1,6 +1,6 @@
 module Semantics.Stm (evalStm) where
 
-import Control.Monad.Except hiding (fix)
+import Control.Exception
 import Data.Maybe (maybeToList)
 import Semantics.Bexp
 import Semantics.DerivedSymbol
@@ -52,7 +52,7 @@ evalFuncDecl name args body config = return (addFunc name args body config)
 -- of arguments the function declaration specified.
 checkNumArgs :: FuncName -> FuncDeclArgs -> FuncCallArgs -> Config -> App Config
 checkNumArgs name ds cs config | (length ds) == (length cs) = return config
-                               | otherwise = throwError err where
+                               | otherwise = throw err where
                                    err = WrongNumArgs name ds cs
 
 -- Evaluates the body of a function, after adding any arguments to the variable
@@ -80,7 +80,7 @@ evalCall :: FuncName -> FuncCallArgs -> Config -> App Config
 evalCall name args config = do
     let fMaybe = lookupFunc name config
     maybe err eval fMaybe where
-        err                   = throwError (UndefFunc name)
+        err                   = throw (UndefFunc name)
         eval (argNames, body) = evalFuncBody name argNames args body config
 
 -- Evaluates the composition of two statements.

@@ -8,18 +8,26 @@ import State.Error
 import State.Machine
 import State.Trans.Machine
 
+-- newtype App a = App {
+--     runApp :: WriterT [String] (MachineT (Either RuntimeError)) a
+-- } deriving (Functor
+--           , Applicative
+--           , Monad
+--           , MonadError RuntimeError
+--           , MonadWriter [String])
+
 newtype App a = App {
-    runApp :: WriterT [String] (MachineT (Either RuntimeError)) a
+    runApp :: MachineT IO a
 } deriving (Functor
           , Applicative
           , Monad
-          , MonadError RuntimeError
-          , MonadWriter [String])
+          , MonadIO)
 
 -- Adds `str` to the list of outputted strings.
 output :: String -> a -> App a
-output str x = writer (x, [str])
+output str x = undefined --writer (x, [str])
 
 -- Runs the program in the given environment.
-evalApp :: App a -> Either RuntimeError (Machine (a, [String]))
-evalApp p = runMachineT (runWriterT (runApp p))
+--evalApp :: App a -> Either RuntimeError (Machine (a, [String]))
+evalApp :: App a -> IO (Machine a)
+evalApp p = runMachineT (runApp p)

@@ -13,7 +13,7 @@ import Semantics.Stm
 import qualified Test.Hspec as H
 import Test.HUnit.Lang
 
-type AppResult a = Either RuntimeError (Machine (a, [String]))
+type AppResult a = IO (Machine a)--Either RuntimeError (Machine (a, [String]))
 
 evalWith :: (a -> Config -> App b) -> a -> Config -> AppResult b
 evalWith f x config = evalApp (f x config)
@@ -30,9 +30,9 @@ evalSemantics :: Stm -> Config -> AppResult Config
 evalSemantics = evalWith evalStm
 
 -- Asserts that the app threw the given runtime error.
-shouldThrow :: (Show a) => AppResult a -> RuntimeError -> H.Expectation
-shouldThrow result expected = either (`H.shouldBe` expected) failure result where
-    failure c = assertFailure ("Expected error, got: " ++ (show c))
+-- shouldThrow :: (Show a) => AppResult a -> RuntimeError -> H.Expectation
+-- shouldThrow result expected = either (`H.shouldBe` expected) failure result where
+--     failure c = assertFailure ("Expected error, got: " ++ (show c))
 
 -- Asserts that when the semantics have finished being evaulated, the resulting
 -- machine satisfies the given predicate.

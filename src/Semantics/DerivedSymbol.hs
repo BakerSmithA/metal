@@ -1,6 +1,6 @@
 module Semantics.DerivedSymbol where
 
-import Control.Monad.Except hiding (fix)
+import Control.Exception
 import State.App
 import State.Config
 import State.Error
@@ -11,7 +11,7 @@ import Syntax.Tree
 getVarVal :: VarName -> Config -> App TapeSymbol
 getVarVal name config = do
     let val = lookupVar name config
-    maybe (throwError (UndefVar name)) return val
+    maybe (throw (UndefVar name)) return val
 
 -- The semantic function D[[.]] over tape symbols.
 derivedSymbolVal :: DerivedSymbol -> Config -> App TapeSymbol
