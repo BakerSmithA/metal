@@ -21,12 +21,12 @@ cond ((predicate, branch):ps) p = do
 -- environment are not persistented outside the block. I.e. after finishing
 -- executing the statement, the variable and function environments return to
 -- how they were before the statement.
--- block :: (Config -> App Config) -> Config -> App Config
--- block f oldConfig = do
---     newConfig <- f oldConfig
---     return (resetEnv oldConfig newConfig)
-
-block f p = do
-    oldConfig <- p
-    newConfig <- f p
+block :: (Config -> App Config) -> Config -> App Config
+block f oldConfig = do
+    newConfig <- f oldConfig
     return (resetEnv oldConfig newConfig)
+
+-- block f p = do
+--     oldConfig <- p
+--     newConfig <- f p
+--     return (resetEnv oldConfig newConfig)

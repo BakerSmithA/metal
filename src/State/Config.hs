@@ -61,10 +61,6 @@ lookupFunc name config = Map.lookup name (funcs config)
 addVar :: VarName -> TapeSymbol -> Config -> Config
 addVar name sym config = config { vars = Map.insert name sym (vars config) }
 
--- Adds multiple variables to the environment.
-addVars :: [(VarName, TapeSymbol)] -> Config -> Config
-addVars decls config = List.foldr (uncurry addVar) config decls where
-
 -- Adds a single function to the environment.
 addFunc :: FuncName -> FuncDeclArgs -> Stm -> Config -> Config
 addFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }

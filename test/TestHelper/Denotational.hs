@@ -15,8 +15,8 @@ import Test.HUnit.Lang
 
 type AppResult a = Either RuntimeError (Machine (a, [String]))
 
-evalWith :: (a -> App Config -> App b) -> a -> Config -> AppResult b
-evalWith f x config = evalApp (f x (return config))
+evalWith :: (a -> Config -> App b) -> a -> Config -> AppResult b
+evalWith f x config = evalApp (f x config)
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
 evalDerivedSymbol :: DerivedSymbol -> Config -> AppResult TapeSymbol
