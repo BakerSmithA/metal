@@ -83,12 +83,13 @@ evalComp stm1 stm2 = (evalStm stm2) . (evalStm stm1)
 evalPrintRead :: App Config -> App Config
 evalPrintRead app = do
     config <- app
-    config' <- output [(getCurr config)] app
-    return config'
+    output [(getCurr config)] config
 
 -- Evaluates printing a string.
 evalPrintStr :: String -> App Config -> App Config
-evalPrintStr = output
+evalPrintStr str app = do
+    config <- app
+    output str config
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: Stm -> App Config -> App Config
