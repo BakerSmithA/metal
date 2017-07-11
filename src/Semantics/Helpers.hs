@@ -10,12 +10,12 @@ fix f = let x = f x in x
 -- Conditionally chooses to 'execute' a branch if associated predicate
 -- evaluates to true. Returns the branch to execute, or `id` if no predicates
 -- evaluate to true.
-cond :: [(App Config -> App Bool, App Config -> App Config)] -> (App Config -> App Config)
-cond []                       p = p
-cond ((predicate, branch):ps) p = do
-    bVal <- predicate p
-    if bVal then branch p
-            else cond ps p
+cond :: [(Config -> App Bool, Config -> App Config)] -> (Config -> App Config)
+cond []                       config = return config
+cond ((predicate, branch):ps) config = do
+    bVal <- predicate config
+    if bVal then branch config
+            else cond ps config
 
 -- Performs `f` on the program ensuing changes to the variable or function
 -- environment are not persistented outside the block. I.e. after finishing
@@ -25,8 +25,3 @@ block :: (Config -> App Config) -> Config -> App Config
 block f oldConfig = do
     newConfig <- f oldConfig
     return (resetEnv oldConfig newConfig)
-
--- block f p = do
---     oldConfig <- p
---     newConfig <- f p
---     return (resetEnv oldConfig newConfig)

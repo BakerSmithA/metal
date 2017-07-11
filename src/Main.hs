@@ -43,7 +43,7 @@ parseContents contents = do
 -- empty environment, and tape containing `syms`.
 evalSemantics :: Stm -> [TapeSymbol] -> Either ProgError (Machine (Config, [String]))
 evalSemantics s syms = do
-    let config = return (Config.fromString syms)
+    let config = Config.fromString syms
         result = evalApp (evalStm s config)
     either (throwError . SemanticError) return result
 

@@ -27,19 +27,16 @@ evalWrite sym config = do
 
 -- Evaluates an if-else statement.
 evalIf :: Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> App Config
-evalIf = undefined
-
--- evalIf bexp ifStm elseIfClauses elseStm = cond branches where
---     branches   = map (\(b, stm) -> (bexpVal b, block (evalStm stm))) allClauses
---     allClauses = ((bexp, ifStm):elseIfClauses) ++ (maybeToList elseClause)
---     elseClause = fmap (\stm -> (TRUE, stm)) elseStm
+evalIf bexp ifStm elseIfClauses elseStm = cond branches where
+    branches   = map (\(b, stm) -> (bexpVal b, block (evalStm stm))) allClauses
+    allClauses = ((bexp, ifStm):elseIfClauses) ++ (maybeToList elseClause)
+    elseClause = fmap (\stm -> (TRUE, stm)) elseStm
 
 -- Evaluates a while loop.
 evalWhile :: Bexp -> Stm -> Config -> App Config
-evalWhile = undefined
-
--- evalWhile b body = fix f where
---     f loop = cond [(bexpVal b, loop . (block (evalStm body)))]
+evalWhile b body = fix f where
+    f loop = cond [(bexpVal b, evalLoop)] where
+        evalLoop c = block (evalStm body) c >>= loop
 
 -- Evaluates a variable declaration.
 evalVarDecl :: VarName -> DerivedSymbol -> Config -> App Config
