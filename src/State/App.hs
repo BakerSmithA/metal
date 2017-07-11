@@ -8,14 +8,6 @@ import State.Error
 import State.Machine
 import State.Trans.Machine
 
--- newtype App a = App {
---     runApp :: WriterT [String] (MachineT (Either RuntimeError)) a
--- } deriving (Functor
---           , Applicative
---           , Monad
---           , MonadError RuntimeError
---           , MonadWriter [String])
-
 newtype App a = App {
     runApp :: MachineT IO a
 } deriving (Functor

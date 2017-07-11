@@ -68,13 +68,6 @@ evalFuncBody name ds cs body config = do
     addedVarsConfig <- foldr f app zippedArgs
     block (evalStm body) addedVarsConfig
 
--- evalFuncBody name ds cs body config = (block evalBody) . check where
---     check    = checkNumArgs name ds cs
---     evalBody = (evalStm body) . addedVarsP
---     -- A `App Config` where the arguments have been added to the environment.
---     addedVarsP app' = foldr (uncurry evalVarDecl) app' zippedArgs
---     zippedArgs    = zip ds cs
-
 -- Evaluates a function call.
 evalCall :: FuncName -> FuncCallArgs -> Config -> App Config
 evalCall name args config = do
