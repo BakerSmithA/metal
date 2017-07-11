@@ -78,6 +78,7 @@ stmSpec = do
         varDeclSpec
         funcCallSpec
         compSpec
+        printReadSpec
 
 leftSpec :: Spec
 leftSpec = do
@@ -332,3 +333,17 @@ compSpec = do
             let ifStm = If (Eq (Read) (Literal 'b')) (Write (Literal '#')) [] Nothing
                 comp  = Comp MoveRight ifStm
             evalSemantics comp testConfig `shouldRead` "a#c"
+
+printReadSpec :: Spec
+printReadSpec = do
+    let testConfig = Config.fromString "abc"
+
+    context "evaluating printing the current symbol" $ do
+        it "prints the current symbol" $ do
+            let result = evalSemantics PrintRead testConfig
+            result `shouldOutput` ["a"]
+
+        it "prints multiple the symbols using moving" $ do
+            let comp   = Comp PrintRead (Comp MoveRight (Comp PrintRead (Comp MoveRight PrintRead)))
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "b", "c"]
