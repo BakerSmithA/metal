@@ -272,22 +272,26 @@ importStmSpec = describe "importStm" $ do
         parse importStm "" "import FileName" `shouldParse` ["FileName"]
 
     it "parses a file path" $ do
-        parse importStm "" "import Dir.SubDir.FileName" `shouldParse` ["Dir", "SubDir", "FileName"]
+        parse importStm "" "import Dir/SubDir/FileName" `shouldParse` ["Dir", "SubDir", "FileName"]
+
+    it "parses when there is a backup dir" $ do
+        let expected = ["..", "Dir", "..", "FileName"]
+        parse importStm "" "import ../Dir/../FileName" `shouldParse` expected
 
     it "fails if the file name begins with a lowercase letter" $ do
         parse importStm "" `shouldFailOn` "import fileName"
 
     it "fails if the directory name begins with a lowercase letter" $ do
-        parse importStm "" `shouldFailOn` "import Dir.subDir.FileName"
+        parse importStm "" `shouldFailOn` "import Dir/subDir/FileName"
 
     it "fails if the file name begins with a number" $ do
         parse importStm "" `shouldFailOn` "import 1FileName"
 
     it "fails if the directory name begins with a number letter" $ do
-        parse importStm "" `shouldFailOn` "import Dir.1SubDir.FileName"
+        parse importStm "" `shouldFailOn` "import Dir/1SubDir/FileName"
 
     it "fails if the keyword 'import' is missing" $ do
-        parse importStm "" `shouldFailOn` "Dir.SubDir.FileName"
+        parse importStm "" `shouldFailOn` "Dir/SubDir/FileName"
 
 programSpec :: Spec
 programSpec = describe "program" $ do
@@ -411,7 +415,7 @@ programSpec = describe "program" $ do
     context "imports" $ do
         it "parses imports followed by a statement" $ do
             let expected = Program [["A", "B"], ["C"]] MoveRight
-            parse program "" "import A.B\nimport C\nright" `shouldParse` expected
+            parse program "" "import A/B\nimport C\nright" `shouldParse` expected
 
         it "fails if there is more than one newline between imports" $ do
             parse program "" `shouldFailOn` "import A\n\nimport B\nleft"
