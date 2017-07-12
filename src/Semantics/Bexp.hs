@@ -1,6 +1,5 @@
 module Semantics.Bexp (bexpVal) where
 
-import Control.Monad.Except hiding (fix)
 import State.App
 import State.Config
 import Semantics.DerivedSymbol

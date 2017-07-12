@@ -2,9 +2,7 @@
 
 module State.App where
 
-import Control.Monad.Except
-import Control.Monad.Writer
-import State.Error
+import Control.Monad.IO.Class
 import State.Machine
 import State.Trans.Machine
 

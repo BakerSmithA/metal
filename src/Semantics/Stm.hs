@@ -63,7 +63,7 @@ evalFuncBody name ds cs body config = do
     -- Check the number of arguments to the function is the correct.
     let app = checkNumArgs name ds cs config
     let zippedArgs = zip ds cs
-    let f (name, sym) app = evalVarDecl name sym =<< app
+    let f (name', sym) app' = evalVarDecl name' sym =<< app'
     -- A config where the arguments have been added to the environment.
     addedVarsConfig <- foldr f app zippedArgs
     block (evalStm body) addedVarsConfig

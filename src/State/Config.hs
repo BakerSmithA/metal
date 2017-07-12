@@ -1,7 +1,6 @@
 module State.Config where
 
 import Data.Map as Map
-import Data.List as List
 import State.Tape as Tape
 import Syntax.Tree
 

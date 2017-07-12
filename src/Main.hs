@@ -4,7 +4,6 @@ import Control.Exception
 import Semantics.Stm
 import State.App
 import State.Config as Config
-import State.Error
 import State.Machine
 import Syntax.Tree
 import Syntax.Parser
