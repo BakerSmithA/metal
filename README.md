@@ -31,7 +31,7 @@ while read != ' ' {
 Modification of the tape is done using `write`. For example, to replace 'a' characters input on the tape with '#', you could do:
 
 ```c
-white read != ' ' {
+while read != ' ' {
 	if read == 'a' {
 		write '#'
 	}
@@ -44,7 +44,7 @@ Functions are useful to execute the same code multiple times. For example, a fun
 ```c
 func goToStart {
 	// The symbol used to mark the position of the read-write head.
-	let mark  = '#'
+	let mark = '#'
 	// We'll be overwriting the current cell, so we need to save it.
 	let saved = read
 
