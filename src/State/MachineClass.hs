@@ -34,7 +34,7 @@ instance (Monad m) => MonadMachine a (MachineT m) where
     -- inter :: a -> MachineT a
     inter c = MachineT (return (Inter c))
 
-instance MonadMachine a App where
+instance (Monad m) => MonadMachine a (App m) where
     -- accept :: State a
     accept = App accept
     -- reject :: State a

@@ -10,20 +10,20 @@ import Semantics.DerivedSymbol
 import Semantics.Stm
 import qualified Test.Hspec as H
 
-type AppResult a = IO (Machine a)--Either RuntimeError (Machine (a, [String]))
+type AppResult m a = m (Machine a)
 
-evalWith :: (a -> Config -> App b) -> a -> Config -> AppResult b
+evalWith :: (a -> Config -> App m b) -> a -> Config -> AppResult m b
 evalWith f x config = evalApp (f x config)
 
 -- Runs `derivedSymbolVal` with `sym` in the given config and environment.
-evalDerivedSymbol :: DerivedSymbol -> Config -> AppResult TapeSymbol
+evalDerivedSymbol :: (Monad m) => DerivedSymbol -> Config -> AppResult m TapeSymbol
 evalDerivedSymbol = evalWith derivedSymbolVal
 
 -- Runs `bexpVal` with `b` in the given config and environment.
-evalBexp :: Bexp -> Config -> AppResult Bool
+evalBexp :: (Monad m) => Bexp -> Config -> AppResult m Bool
 evalBexp = evalWith bexpVal
 
-evalSemantics :: Stm -> Config -> AppResult Config
+evalSemantics :: (Monad m) => Stm -> Config -> AppResult m Config
 evalSemantics = evalWith evalStm
 
 -- Asserts that when the semantics have finished being evaulated, the value

@@ -6,20 +6,20 @@ import Control.Monad.IO.Class
 import State.Machine
 import State.Trans.Machine
 
-newtype App a = App {
-    runApp :: MachineT IO a
+newtype App m a = App {
+    runApp :: MachineT m a
 } deriving (Functor
           , Applicative
           , Monad
           , MonadIO)
 
--- Adds `str` to the list of outputted strings.
-output :: String -> a -> App a
-output str x = do
-    liftIO (putStrLn str)
-    return x
+-- Output the string `str` without changing the state of the program.
+output :: String -> a -> App m a
+output = undefined
+-- output str x = do
+--     liftIO (putStrLn str)
+--     return x
 
 -- Runs the program in the given environment.
---evalApp :: App a -> Either RuntimeError (Machine (a, [String]))
-evalApp :: App a -> IO (Machine a)
+evalApp :: App m a -> m (Machine a)
 evalApp p = runMachineT (runApp p)
