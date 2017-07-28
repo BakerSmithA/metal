@@ -5,6 +5,7 @@ import Syntax.Tree
 import State.App
 import State.Config as Config
 import State.Machine
+import State.Output
 import Semantics.Bexp
 import Semantics.DerivedSymbol
 import Semantics.Stm
@@ -23,7 +24,7 @@ evalDerivedSymbol = evalWith derivedSymbolVal
 evalBexp :: (Monad m) => Bexp -> Config -> AppResult m Bool
 evalBexp = evalWith bexpVal
 
-evalSemantics :: (Monad m) => Stm -> Config -> AppResult m Config
+evalSemantics :: (MonadOutput m) => Stm -> Config -> AppResult m Config
 evalSemantics = evalWith evalStm
 
 -- Asserts that when the semantics have finished being evaulated, the value
