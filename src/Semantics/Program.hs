@@ -1,12 +1,14 @@
 module Semantics.Program where
 
-import Data.List
 import Syntax.Tree
-import System.FilePath.Posix
 
-class Monad m => MonadFS m where
-    readFile :: FilePath -> m String
+-- Describes a path in the tree, this could represent a file system path.
+type TreePath = String
 
--- Generates a OS specific filepath from a generic import path.
-generatePath :: ImportPath -> FilePath
-generatePath = intercalate [pathSeparator]
+-- Perfoms a depth first search resolving imports into the statement in those
+-- files. `tree` describes the shape of the tree by giving a list of branches
+-- (import statements) in that file.
+importStms :: (TreePath -> ([TreePath], Stm)) -> TreePath -> [Stm]
+importStms tree initial = foldr f [body] imports where
+    f path acc = (importStms tree path) ++ acc
+    (imports, body) = tree initial

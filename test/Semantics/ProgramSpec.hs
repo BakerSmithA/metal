@@ -1,18 +1,29 @@
 module Semantics.ProgramSpec (programSpec) where
 
 import Semantics.Program
-import System.FilePath.Posix
+import Syntax.Tree
 import Test.Hspec
 
-programSpec :: Spec
-programSpec = do
-    generatePathSpec
+-- Simulates a file structure, returning the contents of a file given the file
+-- path.
+testTree :: TreePath -> ([TreePath], Stm)
+testTree "File1" = (["File2", "File3"], PrintStr "1")
+testTree "File2" = (["File4"], PrintStr "2")
+testTree "File3" = ([], PrintStr "3")
+testTree "File4" = ([], PrintStr "4")
+testTree _       = error "No file"
 
-generatePathSpec :: Spec
-generatePathSpec = do
-    describe "generatePath" $ do
-        it "generates a file path" $ do
-            let importPath = ["A", "BB", "CCC"]
-                sep        = pathSeparator
-                expected   = "A" ++ [sep] ++ "BB" ++ [sep] ++ "CCC"
-            generatePath importPath `shouldBe` expected
+programSpec :: Spec
+programSpec = importStmsSpec
+
+importStmsSpec :: Spec
+importStmsSpec = do
+    describe "importStms" $ do
+        it "recursively searches a tree importing files" $ do
+            -- Resolving the dependencies we get the order of imports to be:
+            -- File4, File2, File3, File1.
+            let expected = [PrintStr "4", PrintStr "2", PrintStr "3", PrintStr "1"]
+            importStms testTree "File1" `shouldBe` expected
+
+        it "returns nothing if there is a cycle in the dependencies" $ do
+            pending
