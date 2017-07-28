@@ -10,6 +10,7 @@ import Semantics.Bexp
 import Semantics.DerivedSymbol
 import Semantics.Stm
 import qualified Test.Hspec as H
+import TestHelper.Output
 
 type AppResult m a = m (Machine a)
 
@@ -68,3 +69,7 @@ shouldAccept r = r >>= (`H.shouldBe` HaltA)
 -- Asserts that the machine halted in the rejecting state.
 shouldReject :: IO (Machine Config) -> H.Expectation
 shouldReject r = r >>= (`H.shouldBe` HaltR)
+
+-- Asserts that the machine outputted the given strings.
+shouldOutput :: TestM (Machine Config) -> [String] -> H.Expectation
+shouldOutput r expected = logTestM r `H.shouldBe` expected

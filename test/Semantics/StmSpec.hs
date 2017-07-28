@@ -78,8 +78,8 @@ stmSpec = do
         varDeclSpec
         funcCallSpec
         compSpec
-        -- printReadSpec
-        -- printStrSpec
+        printReadSpec
+        printStrSpec
 
 leftSpec :: Spec
 leftSpec = do
@@ -335,72 +335,72 @@ compSpec = do
                 comp  = Comp MoveRight ifStm
             evalSemantics comp testConfig `shouldRead` "a#c"
 
--- printReadSpec :: Spec
--- printReadSpec = do
---     let testConfig = Config.fromString "abc"
---
---     context "evaluating printing the current symbol" $ do
---         it "prints the current symbol" $ do
---             let result = evalSemantics PrintRead testConfig
---             result `shouldOutput` ["a"]
---
---         it "prints multiple symbols in the correct order" $ do
---             let comp   = Comp PrintRead (Comp PrintRead PrintRead)
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a", "a", "a"]
---
---         it "prints multiple symbols in the correct order using movement" $ do
---             let comp   = Comp PrintRead (Comp MoveRight (Comp PrintRead (Comp MoveRight PrintRead)))
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a", "b", "c"]
---
---     context "evaluating printing the current symbol using an if" $ do
---         it "prints using an if" $ do
---             let comp   = If TRUE PrintRead [] Nothing
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a"]
---
---         it "does not print anything before the if multiple times" $ do
---             let ifStm  = If TRUE PrintRead [] Nothing
---                 comp   = Comp PrintRead ifStm
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a", "a"]
---
---     context "evaluating printing the current symbol using a loop" $ do
---         it "prints multiple using a loop" $ do
---             let comp = While (Not (Eq Read (Literal ' '))) (Comp PrintRead MoveRight)
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a", "b", "c"]
---
---         it "does not print anything before the loop multiple times" $ do
---             let loop = While (Not (Eq Read (Literal ' '))) (Comp PrintRead MoveRight)
---                 comp = Comp PrintRead loop
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a", "a", "b", "c"]
---
---     context "evaluating printing using a function" $ do
---         it "prints multiple using a function" $ do
---             let decl   = FuncDecl "f" [] PrintRead
---                 comp   = Comp decl (Call "f" [])
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a"]
---
---         it "does not print anything before the function multiple times" $ do
---             let decl   = FuncDecl "f" [] PrintRead
---                 comp   = Comp PrintRead (Comp decl (Call "f" []))
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["a", "a"]
---
--- printStrSpec :: Spec
--- printStrSpec = do
---     let testConfig = Config.fromString "abc"
---
---     context "evaluating printing the current symbol" $ do
---         it "prints a string" $ do
---             let result = evalSemantics (PrintStr "hello") testConfig
---             result `shouldOutput` ["hello"]
---
---         it "prints multiple strings in the correct order" $ do
---             let comp   = Comp (PrintStr "1") (Comp (PrintStr "2") (PrintStr "3"))
---                 result = evalSemantics comp testConfig
---             result `shouldOutput` ["1", "2", "3"]
+printReadSpec :: Spec
+printReadSpec = do
+    let testConfig = Config.fromString "abc"
+
+    context "evaluating printing the current symbol" $ do
+        it "prints the current symbol" $ do
+            let result = evalSemantics PrintRead testConfig
+            result `shouldOutput` ["a"]
+
+        it "prints multiple symbols in the correct order" $ do
+            let comp   = Comp PrintRead (Comp PrintRead PrintRead)
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "a", "a"]
+
+        it "prints multiple symbols in the correct order using movement" $ do
+            let comp   = Comp PrintRead (Comp MoveRight (Comp PrintRead (Comp MoveRight PrintRead)))
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "b", "c"]
+
+    context "evaluating printing the current symbol using an if" $ do
+        it "prints using an if" $ do
+            let comp   = If TRUE PrintRead [] Nothing
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a"]
+
+        it "does not print anything before the if multiple times" $ do
+            let ifStm  = If TRUE PrintRead [] Nothing
+                comp   = Comp PrintRead ifStm
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "a"]
+
+    context "evaluating printing the current symbol using a loop" $ do
+        it "prints multiple using a loop" $ do
+            let comp = While (Not (Eq Read (Literal ' '))) (Comp PrintRead MoveRight)
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "b", "c"]
+
+        it "does not print anything before the loop multiple times" $ do
+            let loop = While (Not (Eq Read (Literal ' '))) (Comp PrintRead MoveRight)
+                comp = Comp PrintRead loop
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "a", "b", "c"]
+
+    context "evaluating printing using a function" $ do
+        it "prints multiple using a function" $ do
+            let decl   = FuncDecl "f" [] PrintRead
+                comp   = Comp decl (Call "f" [])
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a"]
+
+        it "does not print anything before the function multiple times" $ do
+            let decl   = FuncDecl "f" [] PrintRead
+                comp   = Comp PrintRead (Comp decl (Call "f" []))
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["a", "a"]
+
+printStrSpec :: Spec
+printStrSpec = do
+    let testConfig = Config.fromString "abc"
+
+    context "evaluating printing the current symbol" $ do
+        it "prints a string" $ do
+            let result = evalSemantics (PrintStr "hello") testConfig
+            result `shouldOutput` ["hello"]
+
+        it "prints multiple strings in the correct order" $ do
+            let comp   = Comp (PrintStr "1") (Comp (PrintStr "2") (PrintStr "3"))
+                result = evalSemantics comp testConfig
+            result `shouldOutput` ["1", "2", "3"]
