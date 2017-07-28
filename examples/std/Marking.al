@@ -5,7 +5,7 @@ let markingSym = '#'
 
 // effect     : writes the marking symbol, i.e. '#', to the current position on
 //              the tape.
-// write 0    : a '#' symbol.
+// write 0    : the marking symbol.
 // complexity : O(1)
 func mark {
     write markingChar

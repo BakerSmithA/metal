@@ -62,7 +62,7 @@ func ignoreRight {
 }
 
 // effect     : moves the read-write head to the start of the tape.
-// warning    : employs marking.
+// warning    : uses marking.
 // complexity : O(n)
 func goToStart {
 	// TODO: Use import statement to import tape.al
@@ -86,8 +86,9 @@ func goToStart {
 	}
 }
 
-// effect     : moves the read-wrute head to the end of input on the tape, i.e.
+// effect     : moves the read-write head to the end of input on the tape, i.e.
 //			    until a space symbol is reached.
+// warning    : causes an infinite loop if ' ' is not encountered.
 // complexity : O(n)
 func goToEnd {
 	rightUntil ' '
