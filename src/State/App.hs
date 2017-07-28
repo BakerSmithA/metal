@@ -2,7 +2,6 @@
 
 module State.App where
 
-import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import State.Machine
 import State.Trans.Machine
@@ -13,7 +12,6 @@ newtype App m a = App {
 } deriving (Functor
           , Applicative
           , Monad
-          , MonadIO
           , MonadTrans)
 
 -- Output the string `str` without changing the state of the program.
