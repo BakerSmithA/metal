@@ -13,15 +13,15 @@ import State.Output
 import Syntax.Tree
 
 -- Evaluates moving the read-write head one cell to the left.
-evalLeft :: (MonadOutput m) => Config -> App m Config
+evalLeft :: (Monad m) => Config -> App m Config
 evalLeft = return . left
 
 -- Evaluates moving the read-write head one cell to the right.
-evalRight :: (MonadOutput m) => Config -> App m Config
+evalRight :: (Monad m) => Config -> App m Config
 evalRight = return . right
 
 -- Evaluates writing to the tape.
-evalWrite :: (MonadOutput m) => DerivedSymbol -> Config -> App m Config
+evalWrite :: (Monad m) => DerivedSymbol -> Config -> App m Config
 evalWrite sym config = do
     val <- derivedSymbolVal sym config
     return (setCurr val config)
@@ -40,18 +40,18 @@ evalWhile b body = fix f where
         evalLoop c = block (evalStm body) c >>= loop
 
 -- Evaluates a variable declaration.
-evalVarDecl :: (MonadOutput m) => VarName -> DerivedSymbol -> Config -> App m Config
+evalVarDecl :: (Monad m) => VarName -> DerivedSymbol -> Config -> App m Config
 evalVarDecl name sym config = do
     val <- derivedSymbolVal sym config
     return (addVar name val config)
 
 -- Evaluates a function declaration.
-evalFuncDecl :: (MonadOutput m) => FuncName -> FuncDeclArgs -> Stm -> Config -> App m Config
+evalFuncDecl :: (Monad m) => FuncName -> FuncDeclArgs -> Stm -> Config -> App m Config
 evalFuncDecl name args body config = return (addFunc name args body config)
 
 -- Checks that the number of arguments to a function is the same as the number
 -- of arguments the function declaration specified.
-checkNumArgs :: (MonadOutput m) => FuncName -> FuncDeclArgs -> FuncCallArgs -> Config -> App m Config
+checkNumArgs :: (Monad m) => FuncName -> FuncDeclArgs -> FuncCallArgs -> Config -> App m Config
 checkNumArgs name ds cs config | (length ds) == (length cs) = return config
                                | otherwise = throw err where
                                    err = WrongNumArgs name ds cs
