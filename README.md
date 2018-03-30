@@ -19,7 +19,7 @@ right
 left
 ```
 
-Reading from the tape is done using `read`, or is implicit in the `print` command when no arguments are given. A program to print each cell until a space character is encountered could be:
+Reading from the tape is done using `read`, or is implicit in the `print` command when no arguments are given. A program to print each cell until a space character is encountered is:
 
 ```c
 while read != ' ' {
@@ -39,7 +39,7 @@ while read != ' ' {
 }
 ```
 
-Functions are useful to execute the same code multiple times. For example, a function that moves the read-write head back to the start of the tape could be written as:
+Functions are useful to execute the same code multiple times. For example, a recursive function that moves the read-write head back to the start of the tape is:
 
 ```c
 func goToStart {
