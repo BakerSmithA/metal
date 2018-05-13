@@ -2,6 +2,8 @@ module Semantics.ProgramSpec (programSpec) where
 
 import Semantics.Program
 import Syntax.Tree
+import State.Config as Config
+import TestHelper.Denotational
 import Test.Hspec
 
 -- Simulates a file structure, returning the contents of a file given the file
@@ -14,7 +16,9 @@ testTree "File4" = ([], PrintStr "4")
 testTree _       = error "No file"
 
 programSpec :: Spec
-programSpec = importStmsSpec
+programSpec = do
+    importStmsSpec
+    evalProgSpec
 
 importStmsSpec :: Spec
 importStmsSpec = do
@@ -27,3 +31,16 @@ importStmsSpec = do
 
         it "returns nothing if there is a cycle in the dependencies" $ do
             pending
+
+evalProgSpec :: Spec
+evalProgSpec = do
+    describe "evalProg" $ do
+        it "evalutes a program" $ do
+            let testConfig = right (Config.fromString "abc")
+                prog = Program [] Reject
+            shouldReject $ evalProgram prog testConfig
+
+        it "defaults to accepting" $ do
+            let testConfig = right (Config.fromString "abc")
+                prog = Program [] MoveLeft
+            shouldAccept $ evalProgram prog testConfig

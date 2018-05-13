@@ -19,17 +19,18 @@ parseArgs _            = throw (userError "Incorrect number of arguments, expect
 
 -- Parses the contents of source file, returning either the parsed program, or
 -- the parse error.
-parseContents :: String -> IO Stm
+parseContents :: String -> IO Program
 parseContents contents = do
     let result = M.runParser program "" contents
-    either throw (\(Program _ body) -> return body) result
+    -- either throw (\(Program _ body) -> return body) result
+    either throw id result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Stm -> [TapeSymbol] -> IO (Machine Config)
+evalSemantics :: Program -> [TapeSymbol] -> IO (Machine Config)
 evalSemantics s syms = do
     let config = Config.fromString syms
-    evalApp (evalStm s config)
+    evalApp (evalProg s config)
 
 main :: IO ()
 main = do

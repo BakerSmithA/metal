@@ -9,6 +9,7 @@ import State.Output
 import Semantics.Bexp
 import Semantics.DerivedSymbol
 import Semantics.Stm
+import Semantics.Program
 import qualified Test.Hspec as H
 import TestHelper.Output
 
@@ -27,6 +28,9 @@ evalBexp = evalWith bexpVal
 
 evalSemantics :: (MonadOutput m) => Stm -> Config -> AppResult m Config
 evalSemantics = evalWith evalStm
+
+evalProgram :: (MonadOutput m) => Program -> Config -> AppResult m Config
+evalProgram = evalWith evalProg
 
 -- Asserts that when the semantics have finished being evaulated, the value
 -- wrapped in the machine satisfies the predicate.
