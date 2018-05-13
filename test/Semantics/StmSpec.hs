@@ -111,7 +111,7 @@ acceptSpec = do
 
     context "accept" $ do
         it "accepts after evaluating an accept statement" $ do
-            shouldAccept $ evalSemantics (Accept) testConfig
+            shouldAccept "abc" $ evalSemantics (Accept) testConfig
 
 rejectSpec :: Spec
 rejectSpec = do
@@ -119,7 +119,7 @@ rejectSpec = do
 
     context "reject" $ do
         it "rejects after evaluating an accept statement" $ do
-            shouldReject $ evalSemantics (Reject) testConfig
+            shouldReject "abc" $ evalSemantics (Reject) testConfig
 
 ifSpec :: Spec
 ifSpec = do
@@ -218,11 +218,11 @@ whileSpec = do
 
         it "breaks by rejecting" $ do
             let loop = While TRUE Reject
-            shouldReject (evalSemantics loop testConfig)
+            shouldReject "Ab5#" (evalSemantics loop testConfig)
 
         it "breaks by accepting" $ do
             let loop = While TRUE Accept
-            shouldAccept (evalSemantics loop testConfig)
+            shouldAccept "Ab5#" (evalSemantics loop testConfig)
 
 varDeclSpec :: Spec
 varDeclSpec = do
@@ -316,8 +316,8 @@ funcCallSpec = do
                 nonTermConfig = Config.fromString "abc"
                 comp          = Comp funcDecl (Call "f" [])
 
-            shouldAccept (evalSemantics comp termConfig)
-            shouldReject (evalSemantics comp nonTermConfig)
+            shouldAccept "abc#" (evalSemantics comp termConfig)
+            shouldReject "abc"  (evalSemantics comp nonTermConfig)
 
 compSpec :: Spec
 compSpec = do

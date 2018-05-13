@@ -6,9 +6,10 @@ import Control.Monad.Trans.Class
 import State.Machine
 import State.Trans.Machine
 import State.Output
+import State.Tape
 
 newtype App m a = App {
-    runApp :: MachineT m a
+    runApp :: MachineT Tape m a
 } deriving (Functor
           , Applicative
           , Monad
@@ -21,5 +22,5 @@ output' str x = do
     return x
 
 -- Runs the program in the given environment.
-evalApp :: App m a -> m (Machine a)
+evalApp :: App m a -> m (Machine Tape a)
 evalApp p = runMachineT (runApp p)

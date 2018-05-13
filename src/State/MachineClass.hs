@@ -8,6 +8,7 @@ import Control.Monad.Writer
 import State.App
 import State.Machine
 import State.Trans.Machine
+import State.Tape
 
 -- Written with help from:
 -- https://hackage.haskell.org/package/mtl-2.2.1/docs/src/Control.Monad.Error.Class.html#MonadError
@@ -16,9 +17,9 @@ import State.Trans.Machine
 -- monad stack.
 class (Monad m) => MonadMachine a m where
     -- A machine in halted in the accepted state.
-    accept :: m a
+    accept :: Tape -> m a
     -- A machine in halted in the rejected state.
-    reject :: m a
+    reject :: Tape -> m a
     -- An intermediate state of a Turing machine.
     inter :: a -> m a
 
@@ -26,26 +27,26 @@ class (Monad m) => MonadMachine a m where
 -- condition. For more information see:
 -- https://stackoverflow.com/questions/5941701/why-can-i-not-make-string-an-instance-of-a-typeclass
 
-instance (Monad m) => MonadMachine a (MachineT m) where
+instance (Monad m) => MonadMachine a (MachineT Tape m) where
     -- accept :: MachineT a
-    accept = MachineT (return HaltA)
+    accept a = MachineT (return (HaltA a))
     -- reject :: MachineT a
-    reject = MachineT (return HaltR)
+    reject r = MachineT (return (HaltR r))
     -- inter :: a -> MachineT a
     inter c = MachineT (return (Inter c))
 
 instance (Monad m) => MonadMachine a (App m) where
     -- accept :: State a
-    accept = App accept
+    accept a = App (accept a)
     -- reject :: State a
-    reject = App reject
+    reject r = App (reject r)
     -- inter :: a -> State a
     inter = return
 
 instance (Monoid w, Monad m, MonadMachine a m) => MonadMachine a (WriterT w m) where
     -- accept :: WriterT w m a
-    accept = lift accept
+    accept a = lift (accept a)
     -- reject :: WriterT w m a
-    reject = lift reject
+    reject r = lift (reject r)
     -- inter :: a -> WriterT w m a
     inter = return
