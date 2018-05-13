@@ -1,10 +1,11 @@
 module Main where
 
 import Control.Exception
-import Semantics.Stm
+import Semantics.Program
 import State.App
 import State.Config as Config
 import State.Machine
+import State.Tape
 import Syntax.Tree
 import Syntax.Parser
 import System.Environment
@@ -22,12 +23,11 @@ parseArgs _            = throw (userError "Incorrect number of arguments, expect
 parseContents :: String -> IO Program
 parseContents contents = do
     let result = M.runParser program "" contents
-    -- either throw (\(Program _ body) -> return body) result
-    either throw id result
+    either throw return result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Program -> [TapeSymbol] -> IO (Machine Config)
+evalSemantics :: Program -> [TapeSymbol] -> IO (Machine Tape Config)
 evalSemantics s syms = do
     let config = Config.fromString syms
     evalApp (evalProg s config)
