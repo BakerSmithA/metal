@@ -9,7 +9,7 @@ import Test.Hspec
 
 -- Simulates a file structure, returning the contents of a file given the file
 -- path.
-testTree :: TreePath -> Identity ([TreePath], Stm)
+testTree :: ImportPath -> Identity ([ImportPath], Stm)
 testTree "File1" = return (["File2", "File3"], PrintStr "1")
 testTree "File2" = return (["File4"], PrintStr "2")
 testTree "File3" = return ([], PrintStr "3")

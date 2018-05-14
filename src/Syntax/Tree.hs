@@ -53,15 +53,8 @@ data Stm = MoveLeft
          | PrintStr String
          deriving (Eq, Show)
 
--- The type that represents a section of a path to a Metal file. For example,
--- in the path "Directory.SubDirectory.FileName" the three path components
--- "Directory", "SubDirectory", and "FileName".
-type ImportPathComponent = String
-
--- The type that represents each component the path of a Metal file to be
--- imported. For example, the path "Directory.SubDirectory.FileName" is
--- represented as ["Directory", "SubDirectory", "FileName"].
-type ImportPath = [ImportPathComponent]
+-- The type that represents the path of a Metal file to be imported.
+type ImportPath = String
 
 -- A type that represents a parsed program.
 data Program = Program [ImportPath] Stm deriving (Eq, Show)

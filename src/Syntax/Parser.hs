@@ -48,8 +48,8 @@ import Text.Megaparsec.String
 --                | Stm '\n' Stm
 --                | 'print'
 --                | 'print' String
---  Import        : 'import ' UpperChar ((LowerChar | UpperChar | Digit)* [/])*
---  Stateram       : Import* Stm
+--  Import        : 'import ' String
+--  Program       : Import* Stm
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -246,15 +246,12 @@ stm = stmComp <* whitespaceNewline
 
 -- Parses an import statement, the EBNF syntax of which is given below. An
 -- example of a valid file path is: Directory.SubDirectory.File
---  Import : 'import ' UpperChar ((LowerChar | UpperChar | Digit)* [/])*
+--  Import : 'import ' String
 importStm :: Parser ImportPath
-importStm = tok "import" *> importPath where
-    importPath  = pathSection `sepBy1` string "/"
-    pathSection = (:) <$> upperChar <*> many alphaNumChar
-              <|> string ".."
+importStm = tok "import" *> many (noneOf "\n\r")
 
 -- Parses a program, the EBNF syntax of which is:
---  Stateram : Import* Stm
+--  Program : Import* Stm
 program :: Parser Program
 program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline

@@ -269,29 +269,13 @@ ifStmSpec = describe "ifStm" $ do
 importStmSpec :: Spec
 importStmSpec = describe "importStm" $ do
     it "parses just a file name" $ do
-        parse importStm "" "import FileName" `shouldParse` ["FileName"]
+        parse importStm "" "import FileName" `shouldParse` "FileName"
 
     it "parses a file path" $ do
-        parse importStm "" "import Dir/SubDir/FileName" `shouldParse` ["Dir", "SubDir", "FileName"]
+        parse importStm "" "import Dir/SubDir/FileName" `shouldParse` "Dir/SubDir/FileName"
 
     it "parses when there is a backup dir" $ do
-        let expected = ["..", "Dir", "..", "FileName"]
-        parse importStm "" "import ../Dir/../FileName" `shouldParse` expected
-
-    it "fails if the file name begins with a lowercase letter" $ do
-        parse importStm "" `shouldFailOn` "import fileName"
-
-    it "fails if the directory name begins with a lowercase letter" $ do
-        parse importStm "" `shouldFailOn` "import Dir/subDir/FileName"
-
-    it "fails if the file name begins with a number" $ do
-        parse importStm "" `shouldFailOn` "import 1FileName"
-
-    it "fails if the directory name begins with a number letter" $ do
-        parse importStm "" `shouldFailOn` "import Dir/1SubDir/FileName"
-
-    it "fails if the keyword 'import' is missing" $ do
-        parse importStm "" `shouldFailOn` "Dir/SubDir/FileName"
+        parse importStm "" "import ../Dir/../FileName" `shouldParse` "../Dir/../FileName"
 
 programSpec :: Spec
 programSpec = describe "program" $ do
@@ -414,7 +398,7 @@ programSpec = describe "program" $ do
 
     context "imports" $ do
         it "parses imports followed by a statement" $ do
-            let expected = Program [["A", "B"], ["C"]] MoveRight
+            let expected = Program ["A/B", "C"] MoveRight
             parse program "" "import A/B\nimport C\nright" `shouldParse` expected
 
         it "fails if there is more than one newline between imports" $ do
@@ -439,19 +423,19 @@ programSpec = describe "program" $ do
 
         context "before imports" $ do
             it "ignores spaces" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Program ["A"] MoveLeft
                 parse program "" " import A\nleft" `shouldParse` expected
 
             it "ignores newlines" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Program ["A"] MoveLeft
                 parse program "" "\n\nimport A\nleft" `shouldParse` expected
 
             it "ignores whole-line comments" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Program ["A"] MoveLeft
                 parse program "" "//Comment\nimportA\nleft" `shouldParse` expected
 
             it "ignores in-line" $ do
-                let expected = Program [["A"]] MoveLeft
+                let expected = Program ["A"] MoveLeft
                 parse program "" "/* Comment */\nimportA\nleft" `shouldParse` expected
 
         context "interspersed with statements" $ do
