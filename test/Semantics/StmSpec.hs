@@ -71,6 +71,7 @@ stmSpec = do
         leftSpec
         rightSpec
         writeSpec
+        writeStrSpec
         acceptSpec
         rejectSpec
         ifSpec
@@ -104,6 +105,17 @@ writeSpec = do
     context "right" $ do
         it "writes to the cell under the read-write head" $ do
             evalSemantics (Write (Literal '2')) testConfig `shouldRead` "a2c"
+
+writeStrSpec :: Spec
+writeStrSpec = do
+    let testConfig = Config.fromString "xyz"
+
+    context "write string" $ do
+        it "writes a string" $ do
+            evalSemantics (WriteStr "abcde") testConfig `shouldRead` "abcde"
+
+        it "leaves the head at the position of the last written character" $ do
+            evalSemantics (WriteStr "abcde") testConfig `shouldBeAt` 4
 
 acceptSpec :: Spec
 acceptSpec = do

@@ -26,6 +26,16 @@ evalWrite sym config = do
     val <- derivedSymbolVal sym config
     return (setCurr val config)
 
+-- Evalutes writing a string to the tape. This is the same as individually
+-- writing many symbols to the tape, and moving right in between writes.
+evalWriteStr :: (Monad m) => [TapeSymbol] -> Config -> App m Config
+evalWriteStr []       config = return config
+evalWriteStr [s]      config = evalWrite (Literal s) config
+evalWriteStr (s:rest) config = do
+    c'  <- evalWrite (Literal s) config
+    c'' <- evalRight c'
+    evalWriteStr rest c''
+
 -- Evaluates an if-else statement.
 evalIf :: (MonadOutput m) => Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> App m Config
 evalIf bexp ifStm elseIfClauses elseStm = cond branches where
@@ -94,6 +104,7 @@ evalStm :: (MonadOutput m) => Stm -> Config -> App m Config
 evalStm (MoveLeft)                = evalLeft
 evalStm (MoveRight)               = evalRight
 evalStm (Write sym)               = evalWrite sym
+evalStm (WriteStr str)            = evalWriteStr str
 evalStm (Accept)                  = accept . tape
 evalStm (Reject)                  = reject . tape
 evalStm (If b stm elseIf elseStm) = evalIf b stm elseIf elseStm
