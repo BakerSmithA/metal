@@ -25,8 +25,8 @@ importStmsSpec :: Spec
 importStmsSpec = do
     describe "importStms" $ do
         it "recursively searches a tree importing files" $ do
-            -- Resolving the dependencies we get the order of imports to be:
-            -- File4, File2, File3, File1.
+            -- Resolving the dependencies using DFS we get the order of imports
+            -- to be: File4, File2, File3, File1.
             let expected = [PrintStr "4", PrintStr "2", PrintStr "3", PrintStr "1"]
             importStms testTree ["File1"] `shouldBe` (return expected)
 
