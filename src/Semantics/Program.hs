@@ -44,5 +44,5 @@ evalProg :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (App m 
 evalProg tree (Program imports body) config = do
     imported <- importStms tree imports
     let allStms = imported ++ [body]
-    let allComp = Comp (compose allStms) body
+    let allComp = compose allStms
     return $ evalStm (Comp allComp Accept) config
