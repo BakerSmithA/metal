@@ -41,6 +41,7 @@ data Bexp = TRUE
 data Stm = MoveLeft
          | MoveRight
          | Write DerivedSymbol
+         | WriteStr [TapeSymbol]
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)

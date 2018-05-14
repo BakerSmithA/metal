@@ -38,6 +38,7 @@ import Text.Megaparsec.String
 --  Stm           : 'left'
 --                | 'right'
 --                | 'write' DerivedSymbol
+--                | 'write' String
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
@@ -88,14 +89,12 @@ parens = between (tok "(") (tok ")")
 braces :: Parser a -> Parser a
 braces = between (tok "{" <* whitespaceNewline) (tok "}")
 
--- braces p = between openBrace closeBrace p' where
---     p'         = p <* whitespaceNewline
---     openBrace  = tok "{" <* optional newline
---     closeBrace = tok "}"
+quoted :: Parser a -> Parser a
+quoted = between (tok "\"") (tok "\"")
 
 -- Parses a string encased in double quotes.
-encasedString :: Parser String
-encasedString = between (tok "\"") (tok "\"") (many (noneOf "\""))
+quotedString :: Parser String
+quotedString = quoted (many (noneOf "\""))
 
 -- Parses a tape symbol, the EBNF syntax of which is:
 --  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
@@ -203,12 +202,13 @@ stm' :: Parser Stm
 stm' = try funcCall
    <|> MoveLeft <$ tok "left"
    <|> MoveRight <$ tok "right"
-   <|> Write <$ tok "write" <*> derivedSymbol
+   <|> try (Write <$ tok "write" <*> derivedSymbol)
+   <|> WriteStr <$ tok "write" <*> quotedString
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
    <|> funcDecl
-   <|> try (PrintStr <$ tok "print" <*> encasedString)
+   <|> try (PrintStr <$ tok "print" <*> quotedString)
    <|> try (PrintRead <$ tok "print")
    <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm

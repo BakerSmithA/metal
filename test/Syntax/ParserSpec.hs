@@ -23,21 +23,21 @@ parserSpec = do
 
 encasedStringSpec :: Spec
 encasedStringSpec = do
-    describe "encasedString" $ do
+    describe "quotedString" $ do
         it "parses the empty string" $ do
-            parse encasedString "" "\"\"" `shouldParse` ""
+            parse quotedString "" "\"\"" `shouldParse` ""
 
         it "parses a string enclosed in double quotes" $ do
-            parse encasedString "" "\"str\"" `shouldParse` "str"
+            parse quotedString "" "\"str\"" `shouldParse` "str"
 
         it "parses strings enclosed in double quotes that contain spaces" $ do
-            parse encasedString "" "\"This is a string\"" `shouldParse` "This is a string"
+            parse quotedString "" "\"This is a string\"" `shouldParse` "This is a string"
 
         it "fails to parse if a starting quote is missing" $ do
-            parse encasedString "" `shouldFailOn` "str\""
+            parse quotedString "" `shouldFailOn` "str\""
 
         it "fails to parse if an ending quote is missing" $ do
-            parse encasedString "" `shouldFailOn` "\"str"
+            parse quotedString "" `shouldFailOn` "\"str"
 
 tapeSymbolSpec :: Spec
 tapeSymbolSpec = do
@@ -288,6 +288,9 @@ programSpec = describe "program" $ do
 
         it "parses WRITE command" $ do
             parse program "" "write 'x'" `shouldParseStm` (Write (Literal 'x'))
+
+        it "parses a WRITESTR command" $ do
+            parse program "" "write \"abcd\"" `shouldParseStm` (WriteStr "abcd")
 
         it "parses REJECT" $ do
             parse program "" "reject" `shouldParseStm` Reject
