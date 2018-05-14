@@ -215,7 +215,7 @@ stm' = try funcCall
 
 -- Composes a list of statements using Comp.
 compose :: [Stm] -> Stm
-compose []  = error "Expected a statement"
+compose []  = error "Compose failed: expected a statement"
 compose [x] = x
 compose xs  = foldr1 Comp xs
 
@@ -225,7 +225,7 @@ stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
     stms :: Parser [Stm]
     stms = try ((:) <$> (stm' <* some (newline <* whitespace)) <*> stms)
        <|> (:) <$> stm' <*> pure []
-      
+
 -- Parses a statement, the EBNF syntax of which is given below. The parser will
 -- fail if not all input is consumed.
 --  Stm : 'left'

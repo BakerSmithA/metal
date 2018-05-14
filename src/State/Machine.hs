@@ -28,8 +28,8 @@ instance Monad (Machine e) where
 
 instance (Show e, Show a) => Show (Machine e a) where
     -- show :: (Machine e a) -> String
-    show (HaltA a) = "Accepted: " ++ (show a)
-    show (HaltR r) = "Rejected: " ++ (show r)
+    show (HaltA a) = "Accepted: '" ++ (show a) ++ "'"
+    show (HaltR r) = "Rejected: '" ++ (show r) ++ "'"
     show (Inter x) = "Inter: " ++ (show x)
 
 -- Returns either `acc`, `rej`, or applies f depending on the state of the

@@ -21,7 +21,8 @@ parseArgs _            = throw (userError "Incorrect number of arguments, expect
 evalSemantics :: Program -> [TapeSymbol] -> IO (Machine Tape Config)
 evalSemantics s syms = do
     let config = Config.fromString syms
-    evalApp (evalProg s config)
+    app <- evalProg ioTree s config
+    evalApp app
 
 main :: IO ()
 main = do

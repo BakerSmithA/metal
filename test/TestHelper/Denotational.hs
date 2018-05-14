@@ -29,8 +29,10 @@ evalBexp = evalWith bexpVal
 evalSemantics :: (MonadOutput m) => Stm -> Config -> AppResult m Config
 evalSemantics = evalWith evalStm
 
-evalProgram :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (AppResult m Config)
-evalProgram tree = evalWith (evalProg tree)
+evalProgram :: (MonadOutput t) => Tree t -> Program -> Config -> t (Machine Tape Config)
+evalProgram tree prog config = do
+    app <- evalProg tree prog config
+    evalApp app
 
 -- Asserts that when the semantics have finished being evaulated, the value
 -- wrapped in the machine satisfies the predicate.

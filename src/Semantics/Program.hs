@@ -42,5 +42,6 @@ ioTree path = do
 evalProg :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (App m Config)
 evalProg tree (Program imports body) config = do
     imported <- importStms tree imports
-    let importedComp = Comp (compose imported) body
-    return $ evalStm (Comp importedComp Accept) config
+    let allStms = imported ++ [body]
+    let allComp = Comp (compose allStms) body
+    return $ evalStm (Comp allComp Accept) config
