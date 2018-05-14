@@ -8,6 +8,7 @@ import State.Config
 import State.Output
 import Semantics.Stm
 import qualified Text.Megaparsec as M
+import System.FilePath
 
 -- Parses the contents of source file, returning either the parsed program, or
 -- the parse error.
@@ -34,7 +35,8 @@ importStms tree (path:rest) = do
 ioTree :: ImportPath -> IO ([ImportPath], Stm)
 ioTree path = do
     -- Add Metal ".al" extension to end of file.
-    contents <- readFile (path ++ ".al")
+    let fullPath = addExtension path "al"
+    contents <- readFile fullPath
     Program imports body <- parseContents contents
     return (imports, body)
 
