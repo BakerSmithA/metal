@@ -39,9 +39,9 @@ evalProgSpec = do
         it "evalutes a program" $ do
             let testConfig = right (Config.fromString "abc")
                 prog = Program [] Reject
-            shouldReject "abc" $ evalProgram prog testConfig
+            shouldReject "abc" $ evalProgram testTree prog testConfig
 
         it "defaults to accepting" $ do
             let testConfig = right (Config.fromString "abc")
                 prog = Program [] MoveLeft
-            shouldAccept "abc" $ evalProgram prog testConfig
+            shouldAccept "abc" $ evalProgram testTree prog testConfig

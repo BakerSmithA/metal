@@ -1,11 +1,20 @@
 module Semantics.Program where
 
+import Control.Exception
 import Syntax.Tree
 import Syntax.Parser
 import State.App
 import State.Config
-import Semantics.Stm
 import State.Output
+import Semantics.Stm
+import qualified Text.Megaparsec as M
+
+-- Parses the contents of source file, returning either the parsed program, or
+-- the parse error.
+parseContents :: String -> IO Program
+parseContents contents = do
+    let result = M.runParser program "" contents
+    either throw return result
 
 -- Describes a path in the tree, this could represent a file system path.
 type Tree m = (ImportPath -> m ([ImportPath], Stm))
@@ -16,16 +25,22 @@ type Tree m = (ImportPath -> m ([ImportPath], Stm))
 importStms :: (Monad m) => Tree m -> [ImportPath] -> m [Stm]
 importStms _ [] = return []
 importStms tree (path:rest) = do
-    (imports, stm) <- tree path
+    (imports, body) <- tree path
     childrenStms <- importStms tree imports
     restStms <- importStms tree rest
-    return (childrenStms ++ [stm] ++ restStms)
+    return (childrenStms ++ [body] ++ restStms)
 
 -- Uses the file system to read a Metal file and parse the input.
 ioTree :: ImportPath -> IO ([ImportPath], Stm)
-ioTree path = undefined
+ioTree path = do
+    contents <- readFile path
+    Program imports body <- parseContents contents
+    return (imports, body)
 
 -- Evalutes the program, and defaults to accepting if no terminating state is
 -- reached.
-evalProg :: (MonadOutput m) => Program -> Config -> App m Config
-evalProg (Program _ body) = evalStm (Comp body Accept)
+evalProg :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (App m Config)
+evalProg tree (Program imports body) config = do
+    imported <- importStms tree imports
+    let importedComp = Comp (compose imported) body
+    return $ evalStm (Comp importedComp Accept) config

@@ -213,18 +213,19 @@ stm' = try funcCall
    <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 
+-- Composes a list of statements using Comp.
+compose :: [Stm] -> Stm
+compose []  = error "Expected a statement"
+compose [x] = x
+compose xs  = foldr1 Comp xs
+
 -- Parses statements separated by newlines into a composition of statements.
 stmComp :: Parser Stm
-stmComp = (stms <* whitespaceNewline) >>= compose where
+stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
     stms :: Parser [Stm]
     stms = try ((:) <$> (stm' <* some (newline <* whitespace)) <*> stms)
        <|> (:) <$> stm' <*> pure []
-
-    compose :: [Stm] -> Parser Stm
-    compose []  = fail "Expected a statement"
-    compose [x] = return x
-    compose xs  = return (foldr1 Comp xs)
-
+      
 -- Parses a statement, the EBNF syntax of which is given below. The parser will
 -- fail if not all input is consumed.
 --  Stm : 'left'

@@ -7,9 +7,7 @@ import State.Config as Config
 import State.Machine
 import State.Tape
 import Syntax.Tree
-import Syntax.Parser
 import System.Environment
-import qualified Text.Megaparsec as M
 
 -- Takes in arguments to the program, and returns the parsed arguments, or
 -- an error if the arguments were not parsed correctly.
@@ -17,13 +15,6 @@ parseArgs :: [String] -> IO (FilePath, [TapeSymbol])
 parseArgs [path]       = return (path, [])
 parseArgs [path, syms] = return (path, syms)
 parseArgs _            = throw (userError "Incorrect number of arguments, expected <source_file> <tape>")
-
--- Parses the contents of source file, returning either the parsed program, or
--- the parse error.
-parseContents :: String -> IO Program
-parseContents contents = do
-    let result = M.runParser program "" contents
-    either throw return result
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
@@ -37,6 +28,6 @@ main = do
     args <- getArgs
     (filePath, tapeSyms) <- parseArgs args
     sourceCode <- readFile filePath
-    parsedStm <- parseContents sourceCode
-    result <- evalSemantics parsedStm tapeSyms
+    parsedProg <- parseContents sourceCode
+    result <- evalSemantics parsedProg tapeSyms
     putStrLn (show result)
