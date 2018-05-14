@@ -107,54 +107,107 @@ func fullAdder a b cIn {
     orGate read carry0
 }
 
-// effect     : performs binary addition of two 4-bit integers.
-// writes 0-3 : each bit of the result from from LSB to MSB.
-// arg a0-a3  : each bit of the first operand from LSB to MSB.
-// arg b0-b3  : each bit of the second operand from LSB to MSB.
-// complexity : O(1)
-// ref        : http://www.electronics-tutorials.ws/combination/comb_7.html
-func rippleCarryAdder a3 a2 a1 a0 b3 b2 b1 b0 {
-    fullAdder a3 b3 false
-    // ..|sum3|*carry3|..
-
-    fullAdder a2 b2 read
-    // ..|sum3|sum2|*carry2|..
-
-    fullAdder a1 b1 read
-    // ..|sum3|sum2|sum1|*carry1|..
-
-    fullAdder a0 b0 read
-    // ..|sum3|sum2|sum1|sum0|*carry3|..
+// effect: moves the head to the next digit to check in the first operand.
+func moveToFirstOp {
+    // Move to the end of first operand.
+    while read != '+' {
+        left
+    }
+    left
+    // '#' indicates the digits that have been checked.
+    while read != '#' {
+        left
+    }
+    right
 }
 
-func main {
-    // Get the operands a0-a3 from the tape.
-    let a3 = read
+// effect: moves the head to the next digit to check in the second operand.
+func moveToSecondOp {
+    // Move to the start of the second operand.
+    while read != '+' {
+        right
+    }
     right
-    let a2 = read
-    right
-    let a1 = read
-    right
-    let a0 = read
-    right
+    // '#' indicates the digits that have been checked.
+    while read == '#' {
+        right
+    }
+}
 
-    // Ignore the cell between the operands.
-    right
+// effect: move to the very right of the tape, except one. This is the position
+//         of the last written carry bit.
+func moveToLastCarry {
+    // Move to the end of the tape.
+    while read != ' ' {
+        right
+    }
+    left
+}
 
-    // Get the operands b0-b3 from the tape.
-    let b3 = read
-    right
-    let b2 = read
-    right
-    let b1 = read
-    right
-    let b0 = read
-    right
+// effect: calculates the sum of the bits on the tape.
+func add cIn {
+    // Stop if the end of the first operand has been reached.
+    if read == '+' {
+        accept
+    }
 
-    // Write the result of the addition.
+    // Read the next bit of the first operand.
+    let first = read
+    write '#'
+
+    // Read the next bit of the second operand.
+    moveToSecondOp
+    let second = read
+    write '#'
+
+    // Write the answer
+    moveToLastCarry
+    fullAdder first second cIn
+
+    // Read the carry bit from the tape to be used the next time add is called.
+    let newCIn = read
+
+    // Move to the unprocessed bits of the first operand and repeat.
+    moveToFirstOp
+
+    add newCIn
+}
+
+// effect: moves the read-write head to the start (zeroed) position.
+func zero {
+	let mark  = '#'
+	let saved = read
+
+	write mark
+	left
+
+	if read == mark {
+		// The head is zeroed.
+		write saved
+
+	} else {
+		// The head is not zeroed, therefore go back
+		// and put the saved character back.
+		right
+		write saved
+
+		// Now continue searching for the start by moving to
+		// the left and performing a recursive call.
+		left
+		zero
+	}
+}
+
+// effect: writes '=0' to the end of the tape.
+func initAnswer {
+    while read != ' ' {
+        right
+    }
     write '='
     right
-    rippleCarryAdder a3 a2 a1 a0 b3 b2 b1 b0
+    write false
 }
 
-main
+initAnswer
+zero
+add false
