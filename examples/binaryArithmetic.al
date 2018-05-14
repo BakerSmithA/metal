@@ -107,7 +107,8 @@ func fullAdder a b cIn {
     orGate read carry0
 }
 
-// effect: moves the head to the next digit to check in the first operand.
+// effect     : moves the head to the next digit to check in the first operand.
+// complexity : O(n)
 func moveToFirstOp {
     // Move to the end of first operand.
     while read != '+' {
@@ -121,7 +122,8 @@ func moveToFirstOp {
     right
 }
 
-// effect: moves the head to the next digit to check in the second operand.
+// effect     : moves the head to the next digit to check in the second operand.
+// complexity : O(n)
 func moveToSecondOp {
     // Move to the start of the second operand.
     while read != '+' {
@@ -134,8 +136,9 @@ func moveToSecondOp {
     }
 }
 
-// effect: move to the very right of the tape, except one. This is the position
-//         of the last written carry bit.
+// effect     : move to the very right of the tape, except one. This is the
+//              position of the last written carry bit.
+// complexity : O(n)
 func moveToLastCarry {
     // Move to the end of the tape.
     while read != ' ' {
@@ -144,7 +147,8 @@ func moveToLastCarry {
     left
 }
 
-// effect: calculates the sum of the bits on the tape.
+// effect     : calculates the sum of the bits on the tape.
+// complexity : O(n)
 func add cIn {
     // Stop if the end of the first operand has been reached.
     if read == '+' {
@@ -173,7 +177,8 @@ func add cIn {
     add newCIn
 }
 
-// effect: moves the read-write head to the start (zeroed) position.
+// effect     : moves the read-write head to the start (zeroed) position.
+// complexity : O(n)
 func zero {
 	let mark  = '#'
 	let saved = read
@@ -198,7 +203,8 @@ func zero {
 	}
 }
 
-// effect: writes '=0' to the end of the tape.
+// effect     : writes '=0' to the end of the tape.
+// complexity : O(n)
 func initAnswer {
     while read != ' ' {
         right
