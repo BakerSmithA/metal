@@ -5,11 +5,12 @@ import Semantics.Program
 import Syntax.Tree
 import State.Config as Config
 import TestHelper.Denotational
+import TestHelper.Output
 import Test.Hspec
 
 -- Simulates a file structure, returning the contents of a file given the file
 -- path.
-testTree1 :: ImportPath -> Identity ([ImportPath], Stm)
+testTree1 :: (Monad m) => ImportPath -> m ([ImportPath], Stm)
 testTree1 "File1" = return (["File2", "File3"], PrintStr "1")
 testTree1 "File2" = return (["File4"], PrintStr "2")
 testTree1 "File3" = return ([], PrintStr "3")
@@ -35,7 +36,8 @@ importStmsSpec = do
             -- Resolving the dependencies using DFS we get the order of imports
             -- to be: File4, File2, File3, File1.
             let expected = [PrintStr "4", PrintStr "2", PrintStr "3", PrintStr "1"]
-            importStms testTree1 ["File1"] `shouldBe` (return expected)
+                tree = testTree1 :: ImportPath -> Identity ([ImportPath], Stm)
+            importStms tree ["File1"] `shouldBe` (return expected)
 
         it "returns nothing if there is a cycle in the dependencies" $ do
             pending
@@ -64,3 +66,10 @@ evalProgSpec = do
             let testConfig = Config.fromString ""
                 prog = Program ["File1"] (Write (Var "x"))
             shouldAccept "1" $ evalProgram testTree2 prog testConfig
+
+        it "prints" $ do
+            let testConfig = Config.fromString "a"
+                tree = testTree1 :: ImportPath -> TestM ([ImportPath], Stm)
+                prog = Program [] PrintRead
+                result = evalProgram tree prog testConfig
+            result `shouldOutput` ["a"]

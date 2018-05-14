@@ -33,7 +33,8 @@ importStms tree (path:rest) = do
 -- Uses the file system to read a Metal file and parse the input.
 ioTree :: ImportPath -> IO ([ImportPath], Stm)
 ioTree path = do
-    contents <- readFile path
+    -- Add Metal ".al" extension to end of file.
+    contents <- readFile (path ++ ".al")
     Program imports body <- parseContents contents
     return (imports, body)
 
