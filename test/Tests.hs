@@ -3,8 +3,8 @@ module Main where
 import Syntax.ParserSpec
 import State.TapeSpec
 import State.ConfigSpec
--- import Semantics.BexpSpec
 -- import Semantics.DerivedSymbolSpec
+-- import Semantics.BexpSpec
 -- import Semantics.StmSpec
 -- import Semantics.ProgramSpec
 import Test.Hspec

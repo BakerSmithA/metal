@@ -27,32 +27,35 @@ fromString :: TapeName -> String -> Config
 fromString tapeName str = State.Config.empty { tapes = ts } where
     ts = singleton tapeName (Tape.fromString str)
 
+-- Looks up a tape in an environment.
 getTape :: TapeName -> Config -> Maybe Tape
 getTape name (Config ts _ _) = Map.lookup name ts
 
+-- Sets a tape in the environment.
 putTape :: TapeName -> Tape -> Config -> Config
 putTape name tape c = c { tapes = Map.insert name tape (tapes c) }
 
+-- Retrieves and then modifies a tape in the environment.
 modifyTape :: TapeName -> (Tape -> Tape) -> Config -> Maybe Config
 modifyTape name f config = do
     tape <- getTape name config
     return $ putTape name (f tape) config
 
 -- Looks up a variable in an environment.
-lookupVar :: VarName -> Config -> Maybe TapeSymbol
-lookupVar name config = Map.lookup name (vars config)
+getVar :: VarName -> Config -> Maybe TapeSymbol
+getVar name config = Map.lookup name (vars config)
 
 -- Looks up a function in an environment.
-lookupFunc :: FuncName -> Config -> Maybe (FuncDeclArgs, Stm)
-lookupFunc name config = Map.lookup name (funcs config)
+getFunc :: FuncName -> Config -> Maybe (FuncDeclArgs, Stm)
+getFunc name config = Map.lookup name (funcs config)
 
 -- Adds a single variable to the environment.
-addVar :: VarName -> TapeSymbol -> Config -> Config
-addVar name sym config = config { vars = Map.insert name sym (vars config) }
+putVar :: VarName -> TapeSymbol -> Config -> Config
+putVar name sym config = config { vars = Map.insert name sym (vars config) }
 
 -- Adds a single function to the environment.
-addFunc :: FuncName -> FuncDeclArgs -> Stm -> Config -> Config
-addFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }
+putFunc :: FuncName -> FuncDeclArgs -> Stm -> Config -> Config
+putFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }
 
 -- Resets the variable and function environment of `cNew` to that provided
 -- by `cOld`.
