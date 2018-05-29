@@ -14,6 +14,7 @@ import Text.Megaparsec.String
 --  Digit         : '0' | '1' | ... | '9'
 --  String        : " (LowerChar | UpperChar | Digit)* "
 --  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
+--  TapeName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  ArgName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
@@ -35,19 +36,20 @@ import Text.Megaparsec.String
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
 --  FuncCallArgs  : DerivedSymbol (',' DerivedSymbol) | ε
 --  Call          : FuncName FuncCallArgs
---  Stm           : 'left'
---                | 'right'
---                | 'write' DerivedSymbol
---                | 'write' String
+--  Stm           : 'left' TapeName
+--                | 'right' TapeName
+--                | 'write' DerivedSymbol TapeName
+--                | 'write' String TapeName
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
+--                | 'let' TapeName '=' '"' TapeSymbol* '"'
 --                | If
 --                | 'while' Bexp '{' Stm '}'
 --                | FuncDecl
 --                | Call
 --                | Stm '\n' Stm
---                | 'print'
+--                | 'print' TapeName
 --                | 'print' String
 --  Import        : 'import ' String
 --  Program       : Import* Stm
@@ -118,6 +120,11 @@ identifier = (str >>= check) <* whitespace where
 varName :: Parser VarName
 varName = identifier
 
+-- Parses a tape name, the EBNF syntax of which is:
+--  VarName : LowerChar (LowerChar | UpperChar | Digit)*
+tapeName :: Parser VarName
+tapeName = identifier
+
 -- Parses a function name, the EBNF syntax of which is:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
 funcName :: Parser FuncName
@@ -133,9 +140,10 @@ argName = identifier
 --                | VarName
 --                | \' TapeSymbol \'
 derivedSymbol :: Parser DerivedSymbol
-derivedSymbol = Read <$ tok "read"
+derivedSymbol = Read <$ tok "read" <* whitespace <*> tapeName
             <|> Var <$> varName
             <|> Literal <$> between (char '\'') (tok "\'") tapeSymbol
+            <|> parens derivedSymbol
 
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.
@@ -200,16 +208,16 @@ funcCall = Call <$> funcName <*> funcCallArgs
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = try funcCall
-   <|> MoveLeft <$ tok "left"
-   <|> MoveRight <$ tok "right"
-   <|> try (Write <$ tok "write" <*> derivedSymbol)
-   <|> WriteStr <$ tok "write" <*> quotedString
+   <|> MoveLeft <$ tok "left" <* whitespace <*> tapeName
+   <|> MoveRight <$ tok "right" <* whitespace <*> tapeName
+   <|> try (Write <$ tok "write" <*> derivedSymbol <* whitespace <*> tapeName)
+   <|> WriteStr <$ tok "write" <*> quotedString <* whitespace <*> tapeName
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
    <|> funcDecl
    <|> try (PrintStr <$ tok "print" <*> quotedString)
-   <|> try (PrintRead <$ tok "print")
+   <|> try (PrintRead <$ tok "print" <* whitespace <*> tapeName)
    <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 
