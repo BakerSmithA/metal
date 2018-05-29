@@ -8,6 +8,8 @@ import State.Machine
 import State.Tape
 import Syntax.Tree
 import System.Environment
+import System.Directory
+import System.FilePath
 
 -- Takes in arguments to the program, and returns the parsed arguments, or
 -- an error if the arguments were not parsed correctly.
@@ -30,5 +32,10 @@ main = do
     (filePath, tapeSyms) <- parseArgs args
     sourceCode <- readFile filePath
     parsedProg <- parseContents sourceCode
+
+    -- So when files are included, the paths are from the correct source.
+    let dir = takeDirectory filePath
+    setCurrentDirectory dir
+
     result <- evalSemantics parsedProg tapeSyms
     putStrLn (show result)
