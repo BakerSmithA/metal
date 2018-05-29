@@ -101,7 +101,7 @@ quotedString = quoted (many (noneOf "\""))
 -- Parses a tape symbol, the EBNF syntax of which is:
 --  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
 tapeSymbol :: Parser TapeSymbol
-tapeSymbol = noneOf "\'"
+tapeSymbol = noneOf "\'\""
 
 -- Parses an identifier, i.e. variable or function name, the EBNF syntax for
 -- both being:
@@ -214,7 +214,8 @@ stm' = try funcCall
    <|> WriteStr <$ tok "write" <*> quotedString <* whitespace <*> tapeName
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
-   <|> VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol
+   <|> try (VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol)
+   <|> TapeDecl <$ tok "let" <*> tapeName <* tok "=" <*> quoted (many tapeSymbol)
    <|> funcDecl
    <|> try (PrintStr <$ tok "print" <*> quotedString)
    <|> try (PrintRead <$ tok "print" <* whitespace <*> tapeName)

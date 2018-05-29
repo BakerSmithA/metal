@@ -308,6 +308,10 @@ programSpec = describe "program" $ do
         it "fails if a derived symbol is missing" $ do
             parse program "" `shouldFailOn` "let x ="
 
+    context "parsing tape declarations" $ do
+        it "parses tape declarations" $ do
+            parse program "" "let tape = \"abcd\"" `shouldParseStm` TapeDecl "tape" "abcd"
+
     context "parsing WHILE statements" $ do
         it "parses WHILE" $ do
             parse program "" "while True { right tape }" `shouldParseStm` (While TRUE (MoveRight "tape"))
