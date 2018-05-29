@@ -6,14 +6,14 @@ import Syntax.Tree
 
 -- A configuration of a Turing machine.
 data Config = Config {
-    tapes :: Map TapeName (Tape, Pos)         -- The tape of the Turing machine.
+    tapes :: Map TapeName Tape                -- The tape of the Turing machine.
   , vars  :: Map VarName TapeSymbol           -- The environment of variable declarations.
   , funcs :: Map FuncName (FuncDeclArgs, Stm) -- The environment of function declarations.
 } deriving (Eq)
 
 instance Show Config where
     -- show :: Config -> String
-    show (Config ts vs fs) = "tapes: "  ++ (show ts)
+    show (Config ts vs fs) = "tapes: "   ++ (show ts)
                           ++ ", vars: "  ++ (show vs)
                           ++ ", funcs: " ++ (show (keys fs))
 

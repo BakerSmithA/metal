@@ -6,12 +6,14 @@ import Test.Hspec
 
 -- Asserts that the tape should contain `syms` at its start.
 shouldRead :: Tape -> [TapeSymbol] -> Expectation
-shouldRead tape syms = fromString syms `shouldBe` tape
+shouldRead tape syms = contents (fromString syms) `shouldBe` contents tape
 
 tapeSpec :: Spec
 tapeSpec = do
     describe "Tape" $ do
         fromStringSpec
+        leftSpec
+        rightSpec
         getSymSpec
         setSymSpec
 
@@ -22,34 +24,46 @@ fromStringSpec = do
             let tape = fromString "abc"
             tape `shouldRead` "abc"
 
-        it "leaves the rest of the tape as space characters" $ do
+leftSpec :: Spec
+leftSpec = do
+    describe "left" $ do
+        it "does nothing if already zeroed" $ do
             let tape = fromString "abc"
-            getSym 3 tape `shouldBe` ' '
+            pos (left tape) `shouldBe` 0
+
+        it "moves left" $ do
+            let tape = right $ right $ fromString "abc"
+            pos (left tape) `shouldBe` 1
+
+rightSpec :: Spec
+rightSpec = do
+    describe "right" $ do
+        it "moves right" $ do
+            let tape = fromString "abc"
+            pos (right tape) `shouldBe` 1
 
 getSymSpec :: Spec
 getSymSpec = do
     describe "getSym" $ do
         it "returns the symbol at the specified position on the tape" $ do
             let tape = fromString "abc"
-            getSym 0 tape `shouldBe` 'a'
-            getSym 1 tape `shouldBe` 'b'
-            getSym 2 tape `shouldBe` 'c'
+            getSym tape `shouldBe` 'a'
+            getSym (right tape) `shouldBe` 'b'
+            getSym (right (right tape)) `shouldBe` 'c'
 
         it "returns the blank (space) character if the cell is empty" $ do
             let tape = fromString "abc"
-            getSym 3 tape `shouldBe` ' '
-            getSym 4 tape `shouldBe` ' '
-            getSym 5 tape `shouldBe` ' '
+            getSym (right (right (right tape))) `shouldBe` ' '
 
 setSymSpec :: Spec
 setSymSpec = do
     describe "setSym" $ do
         it "sets the tape symbol" $ do
             let tape  = fromString "abc"
-                tape' = setSym 1 'x' tape
+                tape' = setSym 'x' (right tape)
             tape' `shouldRead` "axc"
 
         it "does not set symbol other than that specified" $ do
             let tape = fromString "abc"
-                tape' = setSym 1 'x' tape
+                tape' = setSym 'x' (right tape)
             tape' `shouldRead` "axc"
