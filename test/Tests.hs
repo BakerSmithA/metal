@@ -3,7 +3,7 @@ module Main where
 import Syntax.ParserSpec
 import State.TapeSpec
 import State.ConfigSpec
--- import Semantics.DerivedSymbolSpec
+import Semantics.DerivedSymbolSpec
 -- import Semantics.BexpSpec
 -- import Semantics.StmSpec
 -- import Semantics.ProgramSpec
@@ -15,7 +15,7 @@ main = hspec specs where
         parserSpec
         tapeSpec
         configSpec
-        -- derivedSymbolValSpec
+        derivedSymbolValSpec
         -- bexpValSpec
         -- stmSpec
         -- programSpec

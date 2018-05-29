@@ -10,31 +10,36 @@ import State.Config
 import State.Error
 import State.MachineClass
 import State.Output
+import State.Tape as Tape
 import Syntax.Tree
 
+-- Attempt to modify the tape, and throw if the tape does not exist.
+modify :: (Monad m) => (Tape -> Tape) -> TapeName -> Config -> App m Config
+modify f tapeName c = tryMaybe (modifyTape tapeName f c) (UndefTape tapeName)
+
 -- Evaluates moving the read-write head one cell to the left.
-evalLeft :: (Monad m) => Config -> App m Config
-evalLeft = return . left
+evalLeft :: (Monad m) => TapeName -> Config -> App m Config
+evalLeft = modify left
 
 -- Evaluates moving the read-write head one cell to the right.
-evalRight :: (Monad m) => Config -> App m Config
-evalRight = return . right
+evalRight :: (Monad m) => TapeName -> Config -> App m Config
+evalRight = modify right
 
 -- Evaluates writing to the tape.
-evalWrite :: (Monad m) => DerivedSymbol -> Config -> App m Config
-evalWrite sym config = do
-    val <- derivedSymbolVal sym config
-    return (setCurr val config)
+evalWrite :: (Monad m) => TapeName -> DerivedSymbol -> Config -> App m Config
+evalWrite tapeName sym c = do
+    val <- derivedSymbolVal sym c
+    modify (setSym val) tapeName c
 
 -- Evalutes writing a string to the tape. This is the same as individually
 -- writing many symbols to the tape, and moving right in between writes.
-evalWriteStr :: (Monad m) => [TapeSymbol] -> Config -> App m Config
-evalWriteStr []       config = return config
-evalWriteStr [s]      config = evalWrite (Literal s) config
-evalWriteStr (s:rest) config = do
-    c'  <- evalWrite (Literal s) config
-    c'' <- evalRight c'
-    evalWriteStr rest c''
+evalWriteStr :: (Monad m) => TapeName -> [TapeSymbol] -> Config -> App m Config
+evalWriteStr tapeName []       config = return config
+evalWriteStr tapeName [s]      config = evalWrite tapeName (Literal s) config
+evalWriteStr tapeName (s:rest) config = do
+    c'  <- evalWrite tapeName (Literal s) config
+    c'' <- evalRight tapeName c'
+    evalWriteStr tapeName rest c''
 
 -- Evaluates an if-else statement.
 evalIf :: (MonadOutput m) => Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> App m Config
@@ -53,11 +58,16 @@ evalWhile b body = fix f where
 evalVarDecl :: (Monad m) => VarName -> DerivedSymbol -> Config -> App m Config
 evalVarDecl name sym config = do
     val <- derivedSymbolVal sym config
-    return (addVar name val config)
+    return (putVar name val config)
+
+-- Evalutes a tape declaration.
+evalTapeDecl :: (Monad m) => TapeName -> String -> Config -> App m Config
+evalTapeDecl name contents config = return (putTape name tape config) where
+    tape = Tape.fromString contents
 
 -- Evaluates a function declaration.
 evalFuncDecl :: (Monad m) => FuncName -> FuncDeclArgs -> Stm -> Config -> App m Config
-evalFuncDecl name args body config = return (addFunc name args body config)
+evalFuncDecl name args body config = return (putFunc name args body config)
 
 -- Checks that the number of arguments to a function is the same as the number
 -- of arguments the function declaration specified.
@@ -82,7 +92,7 @@ evalFuncBody name ds cs body config = do
 -- Evaluates a function call.
 evalCall :: (MonadOutput m) => FuncName -> FuncCallArgs -> Config -> App m Config
 evalCall name args config = do
-    let fMaybe = lookupFunc name config
+    let fMaybe = getFunc name config
     maybe err eval fMaybe where
         err                   = throw (UndefFunc name)
         eval (argNames, body) = evalFuncBody name argNames args body config
@@ -92,8 +102,10 @@ evalComp :: (MonadOutput m) => Stm -> Stm -> Config -> App m Config
 evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 
 -- Evaluates printing the current symbol.
-evalPrintRead :: (MonadOutput m) => Config -> App m Config
-evalPrintRead config = output' [(getCurr config)] config
+evalPrintRead :: (MonadOutput m) => TapeName -> Config -> App m Config
+evalPrintRead tapeName c = do
+    sym <- derivedSymbolVal (Read tapeName) c
+    output' [sym] c
 
 -- Evaluates printing a string.
 evalPrintStr :: (MonadOutput m) => String -> Config -> App m Config
@@ -101,17 +113,18 @@ evalPrintStr = output'
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: (MonadOutput m) => Stm -> Config -> App m Config
-evalStm (MoveLeft)                = evalLeft
-evalStm (MoveRight)               = evalRight
-evalStm (Write sym)               = evalWrite sym
-evalStm (WriteStr str)            = evalWriteStr str
-evalStm (Accept)                  = accept . tape
-evalStm (Reject)                  = reject . tape
+evalStm (MoveLeft tapeName)       = evalLeft tapeName
+evalStm (MoveRight tapeName)      = evalRight tapeName
+evalStm (Write sym tapeName)      = evalWrite tapeName sym
+evalStm (WriteStr str tapeName)   = evalWriteStr tapeName str
+evalStm (Accept)                  = accept . tapes
+evalStm (Reject)                  = reject . tapes
 evalStm (If b stm elseIf elseStm) = evalIf b stm elseIf elseStm
 evalStm (While b stm)             = evalWhile b stm
 evalStm (VarDecl name sym)        = evalVarDecl name sym
+evalStm (TapeDecl name contents)  = evalTapeDecl name contents
 evalStm (FuncDecl name args body) = evalFuncDecl name args body
 evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
-evalStm (PrintRead)               = evalPrintRead
+evalStm (PrintRead tapeName)      = evalPrintRead tapeName
 evalStm (PrintStr str)            = evalPrintStr str
