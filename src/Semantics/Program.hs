@@ -32,13 +32,18 @@ importStms tree (path:rest) = do
     return (childrenStms ++ [body] ++ restStms)
 
 -- Uses the file system to read a Metal file and parse the input.
-ioTree :: ImportPath -> IO ([ImportPath], Stm)
-ioTree path = do
+ioTree :: String -> ImportPath -> IO ([ImportPath], Stm)
+ioTree dirPath path = do
     -- Add Metal ".al" extension to end of file.
-    let fullPath = addExtension path "al"
+    let fullPath = dirPath </> addExtension path "al"
     contents <- readFile fullPath
+
     Program imports body <- parseContents contents
-    return (imports, body)
+
+    let importPath = takeDirectory path
+    let fullImports = map (importPath </>) imports
+
+    return (fullImports, body)
 
 -- Evalutes the program, and defaults to accepting if no terminating state is
 -- reached.

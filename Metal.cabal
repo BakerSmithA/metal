@@ -44,5 +44,6 @@ test-suite spec
                      , mtl
                      , transformers
                      , filepath
+                     , directory
   other-modules:       Syntax.ParserSpec
   default-language:    Haskell2010

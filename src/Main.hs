@@ -8,7 +8,6 @@ import State.Machine
 import State.Tape
 import Syntax.Tree
 import System.Environment
-import System.Directory
 import System.FilePath
 
 -- Takes in arguments to the program, and returns the parsed arguments, or
@@ -20,10 +19,10 @@ parseArgs _            = throw (userError "Incorrect number of arguments, expect
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: Program -> [TapeSymbol] -> IO (Machine Tape Config)
-evalSemantics s syms = do
+evalSemantics :: String -> Program -> [TapeSymbol] -> IO (Machine Tape Config)
+evalSemantics startDir s syms = do
     let config = Config.fromString syms
-    app <- evalProg ioTree s config
+    app <- evalProg (ioTree startDir) s config
     evalApp app
 
 main :: IO ()
@@ -32,10 +31,6 @@ main = do
     (filePath, tapeSyms) <- parseArgs args
     sourceCode <- readFile filePath
     parsedProg <- parseContents sourceCode
-
-    -- So when files are included, the paths are from the correct source.
-    let dir = takeDirectory filePath
-    setCurrentDirectory dir
-
-    result <- evalSemantics parsedProg tapeSyms
+    let startDir = takeDirectory filePath
+    result <- evalSemantics startDir parsedProg tapeSyms
     putStrLn (show result)
