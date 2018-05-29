@@ -1,32 +1,31 @@
 module Syntax.Tree where
 
--- The type representing a tape symbol, i.e. a symbol contained in a cell of
--- the machine's tape.
+-- Tape symbol, i.e. a symbol contained in a cell of the machine's tape.
 type TapeSymbol = Char
 
--- The type representing a variable name,
+-- variable name,
 type VarName = String
 
--- The type representing a function name.
+-- Function name.
 type FuncName = String
 
--- The type representing a function argument name.
+-- Function argument name.
 type ArgName = String
 
--- A type that represents all the declared arguments to a function.
+-- All the declared arguments to a function.
 type FuncDeclArgs = [ArgName]
 
--- A type that represents all the arguments passed to a function call.
+-- All the arguments passed to a function call.
 type FuncCallArgs = [DerivedSymbol]
 
--- The type represented a derived symbol, i.e. either a literal tape symbol, or
--- a symbol read from under the read/write head.
+-- Derived symbol, i.e. either a literal tape symbol, or a symbol read from
+-- under the read/write head.
 data DerivedSymbol = Read
                    | Var VarName
                    | Literal TapeSymbol
                    deriving (Eq, Show)
 
--- The type representing the syntax tree for boolean expressions.
+-- Syntax tree for boolean expressions.
 data Bexp = TRUE
           | FALSE
           | Not Bexp
@@ -37,7 +36,7 @@ data Bexp = TRUE
           | Ne DerivedSymbol DerivedSymbol
           deriving (Eq, Show)
 
--- The type that represents the syntax tree for statements.
+-- Syntax tree for statements.
 data Stm = MoveLeft
          | MoveRight
          | Write DerivedSymbol
@@ -54,7 +53,7 @@ data Stm = MoveLeft
          | PrintStr String
          deriving (Eq, Show)
 
--- The type that represents the path of a Metal file to be imported.
+-- Path of a Metal file to be imported.
 type ImportPath = String
 
 -- A type that represents a parsed program.
