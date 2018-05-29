@@ -1,7 +1,7 @@
 module Main where
 
 import Syntax.ParserSpec
--- import State.ConfigSpec
+import State.ConfigSpec
 -- import State.TapeSpec
 -- import Semantics.BexpSpec
 -- import Semantics.DerivedSymbolSpec
@@ -13,7 +13,7 @@ main :: IO ()
 main = hspec specs where
     specs = do
         parserSpec
-        -- configSpec
+        configSpec
         -- tapeSpec
         -- derivedSymbolValSpec
         -- bexpValSpec

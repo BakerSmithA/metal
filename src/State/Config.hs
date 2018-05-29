@@ -26,7 +26,7 @@ fromString tapeName str = Config ts Map.empty Map.empty where
 -- A configuration in which the read-writ head is in the zeroed position, and
 -- the tape is empty.
 initial :: TapeName -> Config
-initial = State.Config.fromString ""
+initial tapeName = State.Config.fromString tapeName ""
 
 -- Checks the required tape exists and the performs the operation. If it does
 -- not exist then Nothing is returned.
@@ -39,7 +39,7 @@ adjustTape op tapeName c@(Config ts _ _) = do
 -- position, in this case no action occurs.
 -- Returns Nothing if the tape does not exist.
 move :: Integer -> TapeName -> Config -> Maybe Config
-move dist = adjustTape $ \(tape, pos) -> (tape, max 0 pos+dist)
+move dist = adjustTape $ \(tape, pos) -> (tape, max 0 (pos+dist))
 
 -- Moves the read-write head one cell to the left, provided the head is not in
 -- the zeroed position, in this case no action occurs.
@@ -57,8 +57,8 @@ getCurr tapeName (Config ts _ _) = do
     return (getSym pos tape)
 
 -- Writes a symbol at the current position of the read-write head.
-setCurr :: TapeSymbol -> TapeName -> Config -> Maybe Config
-setCurr sym = adjustTape $ \(tape, pos) -> (setSym pos sym tape, pos)
+setCurr :: TapeName -> TapeSymbol -> Config -> Maybe Config
+setCurr tapeName sym = adjustTape (\(tape, pos) -> (setSym pos sym tape, pos)) tapeName
 
 -- Looks up a variable in an environment.
 lookupVar :: VarName -> Config -> Maybe TapeSymbol
