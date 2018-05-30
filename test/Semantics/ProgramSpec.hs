@@ -60,7 +60,7 @@ evalProgSpec = do
         it "works with no imports" $ do
             let testConfig = Config.fromString "tape" "a"
                 tree = testTree1 :: ImportPath -> TestM ([ImportPath], Stm)
-                prog = Program [] (Comp (Write (Literal '1') "tape") (PrintRead "tape"))
+                prog = Program [] (Comp (Write "tape" (Literal '1')) (PrintRead "tape"))
                 result = evalProgram tree prog testConfig
             result `shouldOutput` ["1"]
 
@@ -69,7 +69,7 @@ evalProgSpec = do
         it "imports files in correct order" $ do
             let testConfig = Config.fromString "tape" "a"
                 tree = testTree2 :: ImportPath -> TestM ([ImportPath], Stm)
-                prog = Program ["File1"] (Comp (Write (Var "x") "tape") (PrintRead "tape"))
+                prog = Program ["File1"] (Comp (Write "tape" (Var "x")) (PrintRead "tape"))
                 result = evalProgram tree prog testConfig
             result `shouldOutput` ["1"]
 

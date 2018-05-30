@@ -23,7 +23,7 @@ testResetVarEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetVarEnv makeControlStruct invoke = do
     let outerVarDecl = VarDecl "x" (Literal '1')
         innerVarDecl = VarDecl "x" (Literal '2')
-        write        = Write (Literal '#') "tape"
+        write        = Write "tape" (Literal '#')
         structBody   = Comp innerVarDecl write
         structDecl   = makeControlStruct structBody
         invoke'      = maybe structDecl (Comp structDecl) invoke
@@ -54,7 +54,7 @@ testResetFuncEnv makeControlStruct invoke = do
     let outerFBody = (MoveRight "tape")
         args       = [FuncDeclArg "x" SymType]
         outerFDecl = FuncDecl "f" args outerFBody
-        innerFBody = Write (Literal '#') "tape"
+        innerFBody = Write "tape" (Literal '#')
         innerFDecl = FuncDecl "f" [] innerFBody
         fCall      = Call "f" []
         structBody = Comp innerFDecl fCall
@@ -105,7 +105,7 @@ writeSpec = do
 
     context "right" $ do
         it "writes to the cell under the read-write head" $ do
-            shouldRead (evalSemantics (Write (Literal '2') "tape") testConfig) "tape" "a2c"
+            shouldRead (evalSemantics (Write "tape" (Literal '2')) testConfig) "tape" "a2c"
 
 writeStrSpec :: Spec
 writeStrSpec = do
@@ -113,10 +113,10 @@ writeStrSpec = do
 
     context "write string" $ do
         it "writes a string" $ do
-            shouldRead (evalSemantics (WriteStr "abcde" "tape") testConfig) "tape" "abcde"
+            shouldRead (evalSemantics (WriteStr "tape" "abcde") testConfig) "tape" "abcde"
 
         it "leaves the head at the position of the last written character" $ do
-            shouldBeAt (evalSemantics (WriteStr "abcde" "tape") testConfig) "tape" 4
+            shouldBeAt (evalSemantics (WriteStr "tape" "abcde") testConfig) "tape" 4
 
 acceptSpec :: Spec
 acceptSpec = do
@@ -140,11 +140,11 @@ ifSpec = do
 
     context "evaluating a single if-statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write (Literal '1') "tape") [] Nothing
+            let ifStm = If TRUE (Write "tape" (Literal '1')) [] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs nothing if predicate is false" $ do
-            let ifStm = If FALSE (Write (Literal '1') "tape") [] Nothing
+            let ifStm = If FALSE (Write "tape" (Literal '1')) [] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "abc"
 
         it "resets the variable environment after executing a branch" $ do
@@ -157,44 +157,44 @@ ifSpec = do
 
     context "evaluating an if-elseif statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] Nothing
+            let ifStm = If TRUE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] Nothing
+            let ifStm = If FALSE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a2c"
 
         it "performs the third branch" $ do
-            let ifStm = If FALSE (Write (Literal '1') "tape") [(FALSE, Write (Literal '2') "tape"), (TRUE, Write (Literal '3') "tape")] Nothing
+            let ifStm = If FALSE (Write "tape" (Literal '1')) [(FALSE, Write "tape" (Literal '2')), (TRUE, Write "tape" (Literal '3'))] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a3c"
 
         it "resets the variable environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1') "tape") [(TRUE, body)] Nothing
+            let makeIf body = If FALSE (Write "tape" (Literal '1')) [(TRUE, body)] Nothing
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1') "tape") [(TRUE, body)] Nothing
+            let makeIf body = If FALSE (Write "tape" (Literal '1')) [(TRUE, body)] Nothing
             testResetFuncEnv makeIf Nothing
 
     context "evaluating an if-elseif-else statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] (Just (Write (Literal '3') "tape"))
+            let ifStm = If TRUE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] (Just (Write "tape" (Literal '3')))
             shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] (Just (Write (Literal '3') "tape"))
+            let ifStm = If FALSE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] (Just (Write "tape" (Literal '3')))
             shouldRead (evalSemantics ifStm testConfig) "tape" "a2c"
 
         it "performs the else branch" $ do
-            let ifStm = If FALSE (Write (Literal '1') "tape") [(FALSE, Write (Literal '2') "tape")] (Just (Write (Literal '3') "tape"))
+            let ifStm = If FALSE (Write "tape" (Literal '1')) [(FALSE, Write "tape" (Literal '2'))] (Just (Write "tape" (Literal '3')))
             shouldRead (evalSemantics ifStm testConfig) "tape" "a3c"
 
         it "resets the variable environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1') "tape") [] (Just body)
+            let makeIf body = If FALSE (Write "tape" (Literal '1')) [] (Just body)
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1') "tape") [] (Just body)
+            let makeIf body = If FALSE (Write "tape" (Literal '1')) [] (Just body)
             testResetFuncEnv makeIf Nothing
 
 whileSpec :: Spec
@@ -203,14 +203,14 @@ whileSpec = do
 
     context "evaluating while loop" $ do
         it "does not loop if the condition is false" $ do
-            let loop = While FALSE (Write (Literal '1') "tape")
+            let loop = While FALSE (Write "tape" (Literal '1'))
             shouldRead (evalSemantics loop testConfig) "tape" "Ab5#"
 
         it "performs a loop" $ do
             -- Move right until a '#' character is reached, overwriting each
             -- character with 'X'.
             let cond   = Not (Eq (Read "tape") (Literal '#'))
-                comp   = Comp (Write (Literal 'X') "tape") (MoveRight "tape")
+                comp   = Comp (Write "tape" (Literal 'X')) (MoveRight "tape")
                 loop   = While cond comp
                 result = evalSemantics loop testConfig
 
@@ -244,7 +244,7 @@ varDeclSpec = do
     context "evaluating a variable declaration" $ do
         it "adds the variable to the environment" $ do
             let decl   = VarDecl "y" (Literal '1')
-                ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#') "tape") [] Nothing
+                ifStm  = If (Eq (Var "y") (Literal '1')) (Write "tape" (Literal '#')) [] Nothing
                 comp   = Comp decl ifStm
 
             shouldRead (evalSemantics comp testConfig) "tape" "#bc"
@@ -336,7 +336,7 @@ funcCallSpec = do
 
         it "modifies a reference to a tape" $ do
             let declTape = TapeDecl "tape1" "xyz"
-                body     = Write (Literal '1') "inputTape"
+                body     = Write "inputTape" (Literal '1')
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
                 comp     = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
                 result   = evalSemantics comp Config.empty
@@ -345,11 +345,11 @@ funcCallSpec = do
 
         it "removes the tape reference once the function is exited" $ do
             let declTape = TapeDecl "tape1" "xyz"
-                body     = Write (Literal '1') "inputTape"
+                body     = Write "inputTape" (Literal '1')
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
                 comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
                 -- Attempt to use inputTape which was only declared as an argument of the function.
-                comp2    = Comp comp1 (Write (Literal 'a') "inputTape")
+                comp2    = Comp comp1 (Write "inputTape" (Literal 'a'))
                 result   = evalSemantics comp2 Config.empty
 
             result `shouldThrow` (== UndefTape "inputTape")
@@ -379,13 +379,13 @@ compSpec = do
 
     context "evaluating a function composition" $ do
         it "composes two statements 1" $ do
-            let comp   = Comp (MoveRight "tape") (Write (Literal '#') "tape")
+            let comp   = Comp (MoveRight "tape") (Write "tape" (Literal '#'))
                 result = evalSemantics comp testConfig
             shouldBeAt result "tape" 1
             shouldRead result "tape" "a#c"
 
         it "composes two statements 2" $ do
-            let ifStm  = If (Eq ((Read "tape")) (Literal 'b')) (Write (Literal '#') "tape") [] Nothing
+            let ifStm  = If (Eq ((Read "tape")) (Literal 'b')) (Write "tape" (Literal '#')) [] Nothing
                 comp   = Comp (MoveRight "tape") ifStm
                 result = evalSemantics comp testConfig
             shouldRead result "tape" "a#c"

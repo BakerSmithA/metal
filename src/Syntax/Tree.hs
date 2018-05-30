@@ -47,8 +47,8 @@ data Bexp = TRUE
 -- Syntax tree for statements.
 data Stm = MoveLeft VarName
          | MoveRight VarName
-         | Write DerivedSymbol VarName
-         | WriteStr [TapeSymbol] VarName
+         | Write VarName DerivedSymbol
+         | WriteStr VarName [TapeSymbol]
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)

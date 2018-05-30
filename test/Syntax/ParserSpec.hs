@@ -287,10 +287,10 @@ programSpec = describe "program" $ do
             parse program "" "right tape" `shouldParseStm` (MoveRight "tape")
 
         it "parses WRITE command" $ do
-            parse program "" "write 'x' tape" `shouldParseStm` (Write (Literal 'x') "tape")
+            parse program "" "write tape 'x'" `shouldParseStm` (Write "tape" (Literal 'x'))
 
         it "parses a WRITESTR command" $ do
-            parse program "" "write \"abcd\" tape" `shouldParseStm` (WriteStr "abcd" "tape")
+            parse program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr "tape" "abcd")
 
         it "parses REJECT" $ do
             parse program "" "reject" `shouldParseStm` Reject
@@ -384,8 +384,8 @@ programSpec = describe "program" $ do
             parse program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
         it "parses composition to be right associative" $ do
-            let expected = Comp (MoveLeft "tape") (Comp (MoveRight "tape") (Write (Literal 'x') "tape"))
-            parse program "" "left tape \n right tape \n write 'x' tape" `shouldParseStm` expected
+            let expected = Comp (MoveLeft "tape") (Comp (MoveRight "tape") (Write "tape" (Literal 'x')))
+            parse program "" "left tape \n right tape \n write tape 'x'" `shouldParseStm` expected
 
         it "allows for multiple newlines between statements" $ do
             parse program "" "left tape \n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))

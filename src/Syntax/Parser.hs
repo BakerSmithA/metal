@@ -40,8 +40,8 @@ import Text.Megaparsec.String
 --  Call          : FuncName FuncCallArgs
 --  Stm           : 'left' VarName
 --                | 'right' VarName
---                | 'write' DerivedSymbol VarName
---                | 'write' String VarName
+--                | 'write' VarName DerivedSymbol
+--                | 'write' VarName String
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
@@ -223,8 +223,8 @@ stm' :: Parser Stm
 stm' = try funcCall
    <|> MoveLeft <$ tok "left" <* whitespace <*> tapeName
    <|> MoveRight <$ tok "right" <* whitespace <*> tapeName
-   <|> try (Write <$ tok "write" <*> derivedSymbol <* whitespace <*> tapeName)
-   <|> WriteStr <$ tok "write" <*> quotedString <* whitespace <*> tapeName
+   <|> try (Write <$ tok "write" <*> tapeName <* whitespace <*> derivedSymbol)
+   <|> WriteStr <$ tok "write" <*> tapeName <* whitespace <*> quotedString
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> try (VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol)
