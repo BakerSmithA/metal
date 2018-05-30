@@ -348,7 +348,7 @@ funcCallSpec = do
                 body     = Write (Literal '1') "inputTape"
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
                 comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
-                -- Attemp to use inputTape which was only declared as an argument of the function.
+                -- Attempt to use inputTape which was only declared as an argument of the function.
                 comp2    = Comp comp1 (Write (Literal 'a') "inputTape")
                 result   = evalSemantics comp2 Config.empty
 
@@ -359,7 +359,7 @@ funcCallSpec = do
                 body     = PrintStr "hello"
                 funcDecl = FuncDecl "f" [FuncDeclArg "y" SymType] body
                 comp1    = Comp declSym (Comp funcDecl (Call "f" [Var "x"]))
-                -- Attemp to use y which was only declared as an argument of the function.
+                -- Attempt to use y which was only declared as an argument of the function.
                 comp2    = Comp comp1 (VarDecl "new" (Var "y"))
                 result   = evalSemantics comp2 Config.empty
 
