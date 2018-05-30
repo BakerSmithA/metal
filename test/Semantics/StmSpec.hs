@@ -365,6 +365,14 @@ funcCallSpec = do
 
             result `shouldThrow` (== UndefVar "y")
 
+        it "fails if incorrect types are supplied" $ do
+            let funcDecl = FuncDecl "f" [FuncDeclArg "x" TapeType] (PrintStr "hello")
+                call     = Call "f" [Literal 'x']
+                comp     = Comp funcDecl call
+                result   = evalSemantics comp Config.empty
+
+            result `shouldThrow` (== MismatchedTypes "x" "f" TapeType (Literal 'x'))
+
 compSpec :: Spec
 compSpec = do
     let testConfig = Config.fromString "tape" "abc"

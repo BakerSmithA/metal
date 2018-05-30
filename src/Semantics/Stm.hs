@@ -34,7 +34,7 @@ evalWrite tapeName sym c = do
 -- Evalutes writing a string to the tape. This is the same as individually
 -- writing many symbols to the tape, and moving right in between writes.
 evalWriteStr :: (Monad m) => VarName -> [TapeSymbol] -> Config -> App m Config
-evalWriteStr tapeName []       config = return config
+evalWriteStr _        []       config = return config
 evalWriteStr tapeName [s]      config = evalWrite tapeName (Literal s) config
 evalWriteStr tapeName (s:rest) config = do
     c'  <- evalWrite tapeName (Literal s) config
@@ -62,8 +62,8 @@ evalVarDecl name sym config = do
 
 -- Evalutes a tape declaration.
 evalTapeDecl :: (Monad m) => VarName -> String -> Config -> App m Config
-evalTapeDecl name contents config = return (newTape name tape config) where
-    tape = Tape.fromString contents
+evalTapeDecl name cs config = return (newTape name tape config) where
+    tape = Tape.fromString cs
 
 -- Evaluates a function declaration.
 evalFuncDecl :: (Monad m) => FuncName -> FuncDeclArgs -> Stm -> Config -> App m Config
@@ -77,12 +77,12 @@ checkNumArgs name ds cs config | (length ds) == (length cs) = return config
                                    err = WrongNumArgs name ds cs
 
 -- Binds function arguments to values supplied to the function.
-bindFuncArg :: (Monad m) => (FuncDeclArg, DerivedSymbol) -> App m Config -> App m Config
-bindFuncArg ((FuncDeclArg name    SymType),  sym)          app = app >>= evalVarDecl name sym
-bindFuncArg ((FuncDeclArg newName TapeType), Var tapeName) app = do
+bindFuncArg :: (Monad m) => FuncName -> (FuncDeclArg, DerivedSymbol) -> App m Config -> App m Config
+bindFuncArg _ ((FuncDeclArg name    SymType),  sym)          app = app >>= evalVarDecl name sym
+bindFuncArg _ ((FuncDeclArg newName TapeType), Var tapeName) app = do
     config <- app
     tryMaybe (putTapeRef newName tapeName config) (UndefTape tapeName)
-bindFuncArg _ app = error "types"
+bindFuncArg fName ((FuncDeclArg name dataType), arg) _ = throw (MismatchedTypes name fName dataType arg)
 
 -- Evaluates the body of a function, after adding any arguments to the variable
 -- environment. The variable and function environments are reset after executing
@@ -93,7 +93,7 @@ evalFuncBody name ds cs body config = do
     let app = checkNumArgs name ds cs config
     let zippedArgs = zip ds cs
     -- A config where the arguments have been added to the environment.
-    addedVarsConfig <- foldr bindFuncArg app zippedArgs
+    addedVarsConfig <- foldr (bindFuncArg name) app zippedArgs
     newConfig <- block (evalStm body) addedVarsConfig
     oldConfig <- app
     -- Reset the environment so variables declared as function arguments do not
@@ -133,7 +133,7 @@ evalStm (Reject)                  = const reject
 evalStm (If b stm elseIf elseStm) = evalIf b stm elseIf elseStm
 evalStm (While b stm)             = evalWhile b stm
 evalStm (VarDecl name sym)        = evalVarDecl name sym
-evalStm (TapeDecl name contents)  = evalTapeDecl name contents
+evalStm (TapeDecl name cs)        = evalTapeDecl name cs
 evalStm (FuncDecl name args body) = evalFuncDecl name args body
 evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
