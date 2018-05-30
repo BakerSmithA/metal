@@ -1,41 +1,41 @@
 module State.Machine where
 
 -- A representation of the configuration of a Turing machine.
-data Machine e a = HaltA e  -- The machine halted in the accepting state.
-                 | HaltR e  -- The machine halted in the reject state.
-                 | Inter a -- The machine is running.
-                 deriving (Eq)
+data Machine a = HaltA   -- The machine halted in the accepting state.
+               | HaltR   -- The machine halted in the reject state.
+               | Inter a -- The machine is running.
+               deriving (Eq)
 
-instance Functor (Machine e) where
-    -- fmap :: (a -> b) -> Machine e a -> Machine e b
-    fmap _ (HaltA a)   = HaltA a
-    fmap _ (HaltR r)   = HaltR r
+instance Functor Machine where
+    -- fmap :: (a -> b) -> Machine a -> Machine b
+    fmap _ (HaltA)   = HaltA
+    fmap _ (HaltR)   = HaltR
     fmap f (Inter x) = Inter (f x)
 
-instance Applicative (Machine e) where
-    -- pure :: a -> Machine e a
+instance Applicative Machine where
+    -- pure :: a -> Machine a
     pure = Inter
-    -- (<*>) :: Machine e (a -> b) -> Machine e a -> Machine e b
-    (HaltA a) <*> _    = HaltA a
-    (HaltR r) <*> _    = HaltR r
+    -- (<*>) :: Machine (a -> b) -> Machine a -> Machine b
+    (HaltA)   <*> _    = HaltA
+    (HaltR)   <*> _    = HaltR
     (Inter f) <*> mach = fmap f mach
 
-instance Monad (Machine e) where
-    -- (>>=) :: Machine e a -> (a -> Machine e b) -> Machine e b
-    (HaltA a) >>= _ = HaltA a
-    (HaltR r) >>= _ = HaltR r
+instance Monad Machine where
+    -- (>>=) :: Machine a -> (a -> Machine b) -> Machine b
+    (HaltA)   >>= _ = HaltA
+    (HaltR)   >>= _ = HaltR
     (Inter x) >>= f = f x
 
-instance (Show e, Show a) => Show (Machine e a) where
-    -- show :: (Machine e a) -> String
-    show (HaltA a) = "Accepted: '" ++ (show a) ++ "'"
-    show (HaltR r) = "Rejected: '" ++ (show r) ++ "'"
+instance (Show a) => Show (Machine a) where
+    -- show :: (Machine a) -> String
+    show (HaltA)   = "Accepted"
+    show (HaltR)   = "Rejected"
     show (Inter x) = "Inter: " ++ (show x)
 
 -- Returns either `acc`, `rej`, or applies f depending on the state of the
 -- machine.
-machine :: (e -> b) -> (e -> b) -> (a -> b) -> Machine e a -> b
+machine :: b -> b -> (a -> b) -> Machine a -> b
 machine acc rej f m = case m of
-    HaltA a -> acc a
-    HaltR r -> rej r
+    HaltA   -> acc
+    HaltR   -> rej
     Inter x -> f x

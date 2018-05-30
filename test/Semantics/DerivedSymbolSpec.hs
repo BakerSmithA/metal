@@ -2,19 +2,19 @@ module Semantics.DerivedSymbolSpec where
 
 import State.Config as Config
 import State.Error
-import State.Tape()
 import Syntax.Tree
+import TestHelper.Config
 import TestHelper.Denotational
 import Test.Hspec hiding (shouldReturn, shouldContain)
 
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
-    let testConfig  = right (Config.fromString "abc")
-        testConfig' = addVar "x" '1' testConfig
+    let testConfig  = right (Config.fromString "tape" "abc")
+        testConfig' = putVar "x" '1' testConfig
 
     describe "derivedSymbolVal" $ do
         it "reads the symbol under the read-write head" $ do
-            let result = evalDerivedSymbol Read testConfig'
+            let result = evalDerivedSymbol (Read "tape") testConfig'
             result `shouldReturn` 'b'
 
         it "returns the literal" $ do
