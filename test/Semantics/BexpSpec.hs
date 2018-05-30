@@ -9,7 +9,7 @@ import Test.Hspec hiding (shouldReturn, shouldThrow, shouldContain)
 bexpValSpec :: Spec
 bexpValSpec = do
     let testConfig  = right (Config.fromString "tape" "abc")
-        testConfig' = putVar "x" '1' testConfig
+        testConfig' = putSym "x" '1' testConfig
 
     describe "bexpVal" $ do
         it "evaluates TRUE" $ do

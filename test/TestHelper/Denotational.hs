@@ -50,7 +50,7 @@ shouldReturn result expected = result `H.shouldReturn` (return expected)
 -- variable name.
 shouldReturnVar :: IO (Machine Config) -> VarName -> TapeSymbol -> H.Expectation
 shouldReturnVar r name sym = shouldSatisfy r predicate where
-    predicate config = getVar name config == Just sym
+    predicate config = Config.getSym name config == Just sym
 
 -- Asserts that the function environment contains the given function body for
 -- the function name.

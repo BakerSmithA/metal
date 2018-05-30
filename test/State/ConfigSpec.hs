@@ -1,7 +1,7 @@
 module State.ConfigSpec (configSpec) where
 
 import State.Config as Config
-import State.Tape as Tape
+import qualified State.Tape as Tape
 import Syntax.Tree
 import Test.Hspec
 
@@ -25,27 +25,35 @@ tapeSpec = do
         it "allows modification of tapes" $ do
             let env = putTape "tape" (Tape.fromString "abc") Config.empty
                 expected = Config.fromString "tape" "xbc"
-            modifyTape "tape" (setSym 'x') env `shouldBe` Just expected
+            modifyTape "tape" (Tape.setSym 'x') env `shouldBe` Just expected
 
         it "overrides previous tape declarations" $ do
             let env  = putTape "tape" (Tape.fromString "abc") Config.empty
                 env' = putTape "tape" (Tape.fromString "xyz") env
             getTape "tape" env' `shouldBe` Just (Tape.fromString "xyz")
 
+        it "fails if asking for a variable" $ do
+            let env = putSym "x" '1' Config.empty
+            getTape "x" env `shouldBe` Nothing
+
 varSpec :: Spec
 varSpec = do
     describe "variable environment" $ do
         it "returns Nothing if the variable is undefined" $ do
-            getVar "x" Config.empty `shouldBe` Nothing
+            getSym "x" Config.empty `shouldBe` Nothing
 
         it "allows variables to be added and retrieved" $ do
-            let env = putVar "x" '1' Config.empty
-            getVar "x" env `shouldBe` Just '1'
+            let env = putSym "x" '1' Config.empty
+            getSym "x" env `shouldBe` Just '1'
 
         it "overrides previous variable declarations" $ do
-            let env  = putVar "x" '1' Config.empty
-                env' = putVar "x" '2' env
-            getVar "x" env' `shouldBe` Just '2'
+            let env  = putSym "x" '1' Config.empty
+                env' = putSym "x" '2' env
+            getSym "x" env' `shouldBe` Just '2'
+
+        it "fails if asking for a tape" $ do
+            let env = putTape "tape" (Tape.fromString "abc") Config.empty
+            getSym "tape" env `shouldBe` Nothing
 
 funcSpec :: Spec
 funcSpec = do

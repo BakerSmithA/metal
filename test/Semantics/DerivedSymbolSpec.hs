@@ -10,7 +10,7 @@ import Test.Hspec hiding (shouldReturn, shouldContain)
 derivedSymbolValSpec :: Spec
 derivedSymbolValSpec = do
     let testConfig  = right (Config.fromString "tape" "abc")
-        testConfig' = putVar "x" '1' testConfig
+        testConfig' = putSym "x" '1' testConfig
 
     describe "derivedSymbolVal" $ do
         it "reads the symbol under the read-write head" $ do

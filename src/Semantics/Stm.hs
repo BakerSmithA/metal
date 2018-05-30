@@ -58,7 +58,7 @@ evalWhile b body = fix f where
 evalVarDecl :: (Monad m) => VarName -> DerivedSymbol -> Config -> App m Config
 evalVarDecl name sym config = do
     val <- derivedSymbolVal sym config
-    return (putVar name val config)
+    return (putSym name val config)
 
 -- Evalutes a tape declaration.
 evalTapeDecl :: (Monad m) => VarName -> String -> Config -> App m Config
