@@ -331,6 +331,15 @@ funcCallSpec = do
             shouldAccept (evalSemantics comp termConfig)
             shouldReject (evalSemantics comp nonTermConfig)
 
+        it "modifies a reference to a tape" $ do
+            let declTape = TapeDecl "tape1" "xyz"
+                body     = Write (Literal '1') "inputTape"
+                funcDecl = FuncDecl "modifyTape" ["inputTape"] body
+                comp     = Comp funcDecl (Call "modifyTape" ["tape1"])
+                result   = evalSemantics comp Config.empty
+
+            shouldRead result "tape1" "1yz"
+
 compSpec :: Spec
 compSpec = do
     let testConfig = Config.fromString "tape" "abc"
