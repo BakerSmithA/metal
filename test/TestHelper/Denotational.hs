@@ -60,12 +60,12 @@ shouldReturnFunc r name args body = shouldSatisfy r predicate where
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
-shouldBeAt :: IO (Machine Config) -> TapeName -> Pos -> H.Expectation
+shouldBeAt :: IO (Machine Config) -> VarName -> Pos -> H.Expectation
 shouldBeAt r name p = shouldSatisfy r predicate where
     predicate c = pos (fromJust (getTape name c)) == p
 
 -- Asserts that the tape has the string `str` at the start of the tape.
-shouldRead :: IO (Machine Config) -> TapeName -> [TapeSymbol] -> H.Expectation
+shouldRead :: IO (Machine Config) -> VarName -> [TapeSymbol] -> H.Expectation
 shouldRead r name syms = shouldSatisfy r predicate where
     predicate c = contents (fromJust (getTape name c)) == contents (T.fromString syms)
 

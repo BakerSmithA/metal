@@ -14,26 +14,26 @@ import State.Tape as Tape
 import Syntax.Tree
 
 -- Attempt to modify the tape, and throw if the tape does not exist.
-modify :: (Monad m) => (Tape -> Tape) -> TapeName -> Config -> App m Config
+modify :: (Monad m) => (Tape -> Tape) -> VarName -> Config -> App m Config
 modify f tapeName c = tryMaybe (modifyTape tapeName f c) (UndefTape tapeName)
 
 -- Evaluates moving the read-write head one cell to the left.
-evalLeft :: (Monad m) => TapeName -> Config -> App m Config
+evalLeft :: (Monad m) => VarName -> Config -> App m Config
 evalLeft = modify left
 
 -- Evaluates moving the read-write head one cell to the right.
-evalRight :: (Monad m) => TapeName -> Config -> App m Config
+evalRight :: (Monad m) => VarName -> Config -> App m Config
 evalRight = modify right
 
 -- Evaluates writing to the tape.
-evalWrite :: (Monad m) => TapeName -> DerivedSymbol -> Config -> App m Config
+evalWrite :: (Monad m) => VarName -> DerivedSymbol -> Config -> App m Config
 evalWrite tapeName sym c = do
     val <- derivedSymbolVal sym c
     modify (setSym val) tapeName c
 
 -- Evalutes writing a string to the tape. This is the same as individually
 -- writing many symbols to the tape, and moving right in between writes.
-evalWriteStr :: (Monad m) => TapeName -> [TapeSymbol] -> Config -> App m Config
+evalWriteStr :: (Monad m) => VarName -> [TapeSymbol] -> Config -> App m Config
 evalWriteStr tapeName []       config = return config
 evalWriteStr tapeName [s]      config = evalWrite tapeName (Literal s) config
 evalWriteStr tapeName (s:rest) config = do
@@ -61,7 +61,7 @@ evalVarDecl name sym config = do
     return (putVar name val config)
 
 -- Evalutes a tape declaration.
-evalTapeDecl :: (Monad m) => TapeName -> String -> Config -> App m Config
+evalTapeDecl :: (Monad m) => VarName -> String -> Config -> App m Config
 evalTapeDecl name contents config = return (putTape name tape config) where
     tape = Tape.fromString contents
 
@@ -102,7 +102,7 @@ evalComp :: (MonadOutput m) => Stm -> Stm -> Config -> App m Config
 evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 
 -- Evaluates printing the current symbol.
-evalPrintRead :: (MonadOutput m) => TapeName -> Config -> App m Config
+evalPrintRead :: (MonadOutput m) => VarName -> Config -> App m Config
 evalPrintRead tapeName c = do
     sym <- derivedSymbolVal (Read tapeName) c
     output' [sym] c

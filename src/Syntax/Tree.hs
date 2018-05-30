@@ -6,9 +6,6 @@ type TapeSymbol = Char
 -- Variable name, i.e. reference to a symbol.
 type VarName = String
 
--- Tape name, i.e. a reference to a tape.
-type TapeName = String
-
 -- Function name.
 type FuncName = String
 
@@ -23,7 +20,7 @@ type FuncCallArgs = [DerivedSymbol]
 
 -- Derived symbol, i.e. either a literal tape symbol, or a symbol read from
 -- under the read/write head.
-data DerivedSymbol = Read TapeName
+data DerivedSymbol = Read VarName
                    | Var VarName
                    | Literal TapeSymbol
                    deriving (Eq, Show)
@@ -40,20 +37,20 @@ data Bexp = TRUE
           deriving (Eq, Show)
 
 -- Syntax tree for statements.
-data Stm = MoveLeft TapeName
-         | MoveRight TapeName
-         | Write DerivedSymbol TapeName
-         | WriteStr [TapeSymbol] TapeName
+data Stm = MoveLeft VarName
+         | MoveRight VarName
+         | Write DerivedSymbol VarName
+         | WriteStr [TapeSymbol] VarName
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
          | VarDecl VarName DerivedSymbol
-         | TapeDecl TapeName String
+         | TapeDecl VarName String
          | FuncDecl FuncName FuncDeclArgs Stm
          | Call FuncName FuncCallArgs
          | Comp Stm Stm
-         | PrintRead TapeName
+         | PrintRead VarName
          | PrintStr String
          deriving (Eq, Show)
 

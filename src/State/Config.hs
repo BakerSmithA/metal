@@ -6,7 +6,7 @@ import Syntax.Tree
 
 -- A configuration of a Turing machine.
 data Config = Config {
-    tapes :: Map TapeName Tape                -- The tape of the Turing machine.
+    tapes :: Map VarName Tape                -- The tape of the Turing machine.
   , vars  :: Map VarName TapeSymbol           -- The environment of variable declarations.
   , funcs :: Map FuncName (FuncDeclArgs, Stm) -- The environment of function declarations.
 } deriving (Eq)
@@ -23,20 +23,20 @@ empty = Config Map.empty Map.empty Map.empty
 
 -- A configuration in which the read-write head is in the zeroed position, and
 -- `str` is at the start of the tape.
-fromString :: TapeName -> String -> Config
+fromString :: VarName -> String -> Config
 fromString tapeName str = State.Config.empty { tapes = ts } where
     ts = singleton tapeName (Tape.fromString str)
 
 -- Looks up a tape in an environment.
-getTape :: TapeName -> Config -> Maybe Tape
+getTape :: VarName -> Config -> Maybe Tape
 getTape name (Config ts _ _) = Map.lookup name ts
 
 -- Sets a tape in the environment.
-putTape :: TapeName -> Tape -> Config -> Config
+putTape :: VarName -> Tape -> Config -> Config
 putTape name tape c = c { tapes = Map.insert name tape (tapes c) }
 
 -- Retrieves and then modifies a tape in the environment.
-modifyTape :: TapeName -> (Tape -> Tape) -> Config -> Maybe Config
+modifyTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
 modifyTape name f config = do
     tape <- getTape name config
     return $ putTape name (f tape) config

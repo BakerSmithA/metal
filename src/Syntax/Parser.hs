@@ -14,7 +14,7 @@ import Text.Megaparsec.String
 --  Digit         : '0' | '1' | ... | '9'
 --  String        : " (LowerChar | UpperChar | Digit)* "
 --  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
---  TapeName      : LowerChar (LowerChar | UpperChar | Digit)*
+--  VarName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  ArgName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
@@ -32,24 +32,24 @@ import Text.Megaparsec.String
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
---  FuncDeclArgs  : ArgName (',' ArgName)* | ε
+--  FuncDeclArgs  : ArgName (' ' ArgName)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
 --  FuncCallArgs  : DerivedSymbol (',' DerivedSymbol) | ε
 --  Call          : FuncName FuncCallArgs
---  Stm           : 'left' TapeName
---                | 'right' TapeName
---                | 'write' DerivedSymbol TapeName
---                | 'write' String TapeName
+--  Stm           : 'left' VarName
+--                | 'right' VarName
+--                | 'write' DerivedSymbol VarName
+--                | 'write' String VarName
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedSymbol
---                | 'let' TapeName '=' '"' TapeSymbol* '"'
+--                | 'let' VarName '=' '"' TapeSymbol* '"'
 --                | If
 --                | 'while' Bexp '{' Stm '}'
 --                | FuncDecl
 --                | Call
 --                | Stm '\n' Stm
---                | 'print' TapeName
+--                | 'print' VarName
 --                | 'print' String
 --  Import        : 'import ' String
 --  Program       : Import* Stm
@@ -186,7 +186,7 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> els
     elseClause = optional (tok "else" *> braces stmComp)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
---  FuncDeclArgs : ArgName (',' ArgName)* | ε
+--  FuncDeclArgs : ArgName (' ' ArgName)* | ε
 funcDeclArgs :: Parser FuncDeclArgs
 funcDeclArgs = argName `sepBy` whitespace
 
