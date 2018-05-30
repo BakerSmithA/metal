@@ -6,7 +6,7 @@ import State.ConfigSpec
 import Semantics.DerivedSymbolSpec
 import Semantics.BexpSpec
 import Semantics.StmSpec
--- import Semantics.ProgramSpec
+import Semantics.ProgramSpec
 import Test.Hspec
 
 main :: IO ()
@@ -18,4 +18,4 @@ main = hspec specs where
         derivedSymbolValSpec
         bexpValSpec
         stmSpec
-        -- programSpec
+        programSpec
