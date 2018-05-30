@@ -62,7 +62,7 @@ evalVarDecl name sym config = do
 
 -- Evalutes a tape declaration.
 evalTapeDecl :: (Monad m) => VarName -> String -> Config -> App m Config
-evalTapeDecl name contents config = return (putTape name tape config) where
+evalTapeDecl name contents config = return (newTape name tape config) where
     tape = Tape.fromString contents
 
 -- Evaluates a function declaration.
