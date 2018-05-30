@@ -340,6 +340,17 @@ funcCallSpec = do
 
             shouldRead result "tape1" "1yz"
 
+        it "removes the tape reference once the function is exited" $ do
+            let declTape = TapeDecl "tape1" "xyz"
+                body     = Write (Literal '1') "inputTape"
+                funcDecl = FuncDecl "modifyTape" ["inputTape"] body
+                comp1    = Comp funcDecl (Call "modifyTape" [Var "tape1"])
+                -- Try writing to the name of the tape used as function argument.
+                comp2    = Comp comp1 (Write (Literal 'x') "inputTape")
+                result   = evalSemantics comp2 Config.empty
+
+            result `shouldThrow` (== UndefTape "inputTape")
+
 compSpec :: Spec
 compSpec = do
     let testConfig = Config.fromString "tape" "abc"
