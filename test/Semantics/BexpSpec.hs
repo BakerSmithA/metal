@@ -1,15 +1,15 @@
 module Semantics.BexpSpec where
 
 import State.Config as Config
-import State.Tape()
 import Syntax.Tree
+import TestHelper.Config
 import TestHelper.Denotational
 import Test.Hspec hiding (shouldReturn, shouldThrow, shouldContain)
 
 bexpValSpec :: Spec
 bexpValSpec = do
-    let testConfig  = right (Config.fromString "abc")
-        testConfig' = addVar "x" '1' testConfig
+    let testConfig  = right (Config.fromString "tape" "abc")
+        testConfig' = putVar "x" '1' testConfig
 
     describe "bexpVal" $ do
         it "evaluates TRUE" $ do
@@ -47,8 +47,8 @@ bexpValSpec = do
             tt `shouldReturn` True
 
         it "evaluates <=" $ do
-            let b1      = Le (Read) (Literal 'c') -- The current symbol is 'b'.
-                b2      = Le (Read) (Literal 'a')
+            let b1      = Le (Read "tape") (Literal 'c') -- The current symbol is 'b'.
+                b2      = Le (Read "tape") (Literal 'a')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
@@ -56,8 +56,8 @@ bexpValSpec = do
             result2 `shouldReturn` False
 
         it "evaluates ==" $ do
-            let b1      = Eq (Read) (Literal 'b') -- The current symbol is 'b'.
-                b2      = Eq (Read) (Literal '#')
+            let b1      = Eq (Read "tape") (Literal 'b') -- The current symbol is 'b'.
+                b2      = Eq (Read "tape") (Literal '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
@@ -65,8 +65,8 @@ bexpValSpec = do
             result2 `shouldReturn` False
 
         it "evaluates !=" $ do
-            let b1      = Ne (Read) (Literal 'b') -- The current symbol is 'b'.
-                b2      = Ne (Read) (Literal '#')
+            let b1      = Ne (Read "tape") (Literal 'b') -- The current symbol is 'b'.
+                b2      = Ne (Read "tape") (Literal '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
