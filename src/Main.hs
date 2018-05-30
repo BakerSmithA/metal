@@ -32,4 +32,4 @@ main = do
     parsedProg <- parseContents sourceCode
     let startDir = takeDirectory filePath
     result <- evalSemantics startDir parsedProg tapeSyms
-    putStrLn (show result)
+    putStrLn $ "\n" ++ (show result)
