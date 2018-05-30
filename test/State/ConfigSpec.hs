@@ -12,6 +12,7 @@ configSpec = do
         tapeSpec
         varSpec
         funcSpec
+        resetEnvSpec
 
 tapeSpec :: Spec
 tapeSpec = do
@@ -85,3 +86,38 @@ funcSpec = do
             let env  = putFunc "f" [] (MoveRight "tape") Config.empty
                 env' = putFunc "f" [] (MoveLeft "tape") env
             getFunc "f" env' `shouldBe` Just ([], (MoveLeft "tape"))
+
+resetEnvSpec :: Spec
+resetEnvSpec = do
+    describe "reset env" $ do
+        it "resets the symbol definitions" $ do
+            let env1 = putSym "x" '1' Config.empty
+                env2 = putSym "y" '2' env1
+                env3 = resetEnv env1 env2
+
+            getSym "x" env3 `shouldBe` Just '1'
+            getSym "y" env3 `shouldBe` Nothing
+
+        it "resets new tape definitions" $ do
+            let env1 = newTape "x" (Tape.fromString "abc") Config.empty
+                env2 = newTape "y" (Tape.fromString "xyz") env1
+                env3 = resetEnv env1 env2
+
+            getTape "x" env3 `shouldBe` Just (Tape.fromString "abc")
+            getTape "y" env3 `shouldBe` Nothing
+
+        it "resets references to exisiting tapes" $ do
+            let env1 = newTape "x" (Tape.fromString "abc") Config.empty
+                env2 = fromJust $ putTapeRef "y" "x" env1
+                env3 = resetEnv env1 env2
+
+            getTape "x" env3 `shouldBe` Just (Tape.fromString "abc")
+            getTape "y" env3 `shouldBe` Nothing
+
+        it "resets function definitions" $ do
+            let env1 = putFunc "f1" [] (MoveRight "tape") Config.empty
+                env2 = putFunc "f2" [] (MoveLeft "tape") env1
+                env3 = resetEnv env1 env2
+
+            getFunc "f1" env3 `shouldBe` Just ([], MoveRight "tape")
+            getFunc "f2" env3 `shouldBe` Nothing
