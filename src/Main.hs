@@ -5,7 +5,6 @@ import Semantics.Program
 import State.App
 import State.Config as Config
 import State.Machine
-import State.Tape
 import Syntax.Tree
 import System.Environment
 import System.FilePath
@@ -19,9 +18,9 @@ parseArgs _            = throw (userError "Incorrect number of arguments, expect
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: String -> Program -> [TapeSymbol] -> IO (Machine Tape Config)
+evalSemantics :: String -> Program -> [TapeSymbol] -> IO (Machine Config)
 evalSemantics startDir s syms = do
-    let config = Config.fromString syms
+    let config = Config.fromString "main" syms
     app <- evalProg (ioTree startDir) s config
     evalApp app
 
