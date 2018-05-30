@@ -76,6 +76,14 @@ checkNumArgs name ds cs config | (length ds) == (length cs) = return config
                                | otherwise = throw err where
                                    err = WrongNumArgs name ds cs
 
+-- Binds function arguments to values supplied to the function.
+bindFuncArg :: (Monad m) => (FuncDeclArg, DerivedSymbol) -> App m Config -> App m Config
+bindFuncArg ((FuncDeclArg name    SymType),  sym)          app = app >>= evalVarDecl name sym
+bindFuncArg ((FuncDeclArg newName TapeType), Var tapeName) app = do
+    config <- app
+    tryMaybe (putTapeRef newName tapeName config) (UndefTape tapeName)
+bindFuncArg _ app = error "types"
+
 -- Evaluates the body of a function, after adding any arguments to the variable
 -- environment. The variable and function environments are reset after executing
 -- the body.
@@ -84,9 +92,9 @@ evalFuncBody name ds cs body config = do
     -- Check the number of arguments to the function is the correct.
     let app = checkNumArgs name ds cs config
     let zippedArgs = zip ds cs
-    let f (name', sym) app' = evalVarDecl name' sym =<< app'
+    --let f (name', sym) app' = evalVarDecl name' sym =<< app'
     -- A config where the arguments have been added to the environment.
-    addedVarsConfig <- foldr f app zippedArgs
+    addedVarsConfig <- foldr bindFuncArg app zippedArgs
     block (evalStm body) addedVarsConfig
 
 -- Evaluates a function call.

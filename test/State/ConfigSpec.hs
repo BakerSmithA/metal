@@ -77,8 +77,9 @@ funcSpec = do
             getFunc "f" env `shouldBe` Just ([], (MoveRight "tape"))
 
         it "allows functions with arguments to be added and retrieved" $ do
-            let env = putFunc "f" ["a", "b"] (MoveRight "tape") Config.empty
-            getFunc "f" env `shouldBe` Just (["a", "b"], (MoveRight "tape"))
+            let args = [FuncDeclArg "a" SymType, FuncDeclArg "b" TapeType]
+                env = putFunc "f" args (MoveRight "tape") Config.empty
+            getFunc "f" env `shouldBe` Just (args, (MoveRight "tape"))
 
         it "overrides previous function declarations" $ do
             let env  = putFunc "f" [] (MoveRight "tape") Config.empty

@@ -52,7 +52,8 @@ testResetVarEnv makeControlStruct invoke = do
 testResetFuncEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetFuncEnv makeControlStruct invoke = do
     let outerFBody = (MoveRight "tape")
-        outerFDecl = FuncDecl "f" ["x"] outerFBody
+        args       = [FuncDeclArg "x" SymType]
+        outerFDecl = FuncDecl "f" args outerFBody
         innerFBody = Write (Literal '#') "tape"
         innerFDecl = FuncDecl "f" [] innerFBody
         fCall      = Call "f" []
@@ -63,7 +64,7 @@ testResetFuncEnv makeControlStruct invoke = do
         testConfig = Config.fromString "tape" "abc"
         result     = evalSemantics comp testConfig
 
-    shouldReturnFunc result "f" ["x"] outerFBody
+    shouldReturnFunc result "f" args outerFBody
 
 stmSpec :: Spec
 stmSpec = do
@@ -287,7 +288,8 @@ funcCallSpec = do
                 boolY    = Eq (Var "y") (Literal '2')
                 boolAnd  = And boolX boolY
                 ifStm    = If boolAnd (MoveLeft "tape") [] (Just (MoveRight "tape"))
-                funcDecl = FuncDecl "f" ["x", "y"] ifStm
+                args     = [FuncDeclArg "x" SymType, FuncDeclArg "y" SymType]
+                funcDecl = FuncDecl "f" args ifStm
                 call1    = Comp funcDecl (Call "f" [Literal '1', Literal '2'])
                 call2    = Comp funcDecl (Call "f" [Literal '1', Literal '3'])
                 config   = right (Config.fromString "tape" "abc")
@@ -296,9 +298,10 @@ funcCallSpec = do
             shouldBeAt (evalSemantics call2 config) "tape" 2
 
         it "throws an error if the number of arguments is incorrect" $ do
-            let funcDecl = FuncDecl "f" ["a", "b"] Accept
+            let args     = [FuncDeclArg "a" SymType, FuncDeclArg "b" SymType]
+                funcDecl = FuncDecl "f" args Accept
                 comp     = Comp funcDecl (Call "f" [Literal '1'])
-                expected = WrongNumArgs "f" ["a", "b"] [Literal '1']
+                expected = WrongNumArgs "f" args [Literal '1']
             evalSemantics comp testConfig `shouldThrow` (== expected)
 
         it "evaluates a recursive function" $ do
@@ -334,7 +337,7 @@ funcCallSpec = do
         it "modifies a reference to a tape" $ do
             let declTape = TapeDecl "tape1" "xyz"
                 body     = Write (Literal '1') "inputTape"
-                funcDecl = FuncDecl "modifyTape" ["inputTape"] body
+                funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
                 comp     = Comp funcDecl (Call "modifyTape" [Var "tape1"])
                 result   = evalSemantics comp Config.empty
 
@@ -343,7 +346,7 @@ funcCallSpec = do
         it "removes the tape reference once the function is exited" $ do
             let declTape = TapeDecl "tape1" "xyz"
                 body     = Write (Literal '1') "inputTape"
-                funcDecl = FuncDecl "modifyTape" ["inputTape"] body
+                funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
                 comp1    = Comp funcDecl (Call "modifyTape" [Var "tape1"])
                 -- Try writing to the name of the tape used as function argument.
                 comp2    = Comp comp1 (Write (Literal 'x') "inputTape")
