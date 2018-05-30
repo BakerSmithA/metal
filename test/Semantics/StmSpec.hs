@@ -338,7 +338,7 @@ funcCallSpec = do
             let declTape = TapeDecl "tape1" "xyz"
                 body     = Write (Literal '1') "inputTape"
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp     = Comp funcDecl (Call "modifyTape" [Var "tape1"])
+                comp     = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
                 result   = evalSemantics comp Config.empty
 
             shouldRead result "tape1" "1yz"
@@ -347,11 +347,11 @@ funcCallSpec = do
             let declTape = TapeDecl "tape1" "xyz"
                 body     = Write (Literal '1') "inputTape"
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp1    = Comp funcDecl (Call "modifyTape" [Var "tape1"])
-                -- Try writing to the name of the tape used as function argument.
-                comp2    = Comp comp1 (Write (Literal 'x') "inputTape")
+                comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
+                comp2    = Comp comp1 (Write (Literal 'a') "inputTape")
                 result   = evalSemantics comp2 Config.empty
 
+            -- shouldRead result "tape1" "ayz"
             result `shouldThrow` (== UndefTape "inputTape")
 
 compSpec :: Spec
