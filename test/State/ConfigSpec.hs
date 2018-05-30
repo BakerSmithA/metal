@@ -4,6 +4,7 @@ import State.Config as Config
 import qualified State.Tape as Tape
 import Syntax.Tree
 import Test.Hspec
+import Data.Maybe
 
 configSpec :: Spec
 configSpec = do
@@ -18,19 +19,29 @@ tapeSpec = do
         it "returns nothing if the tape is undefined" $ do
             getTape "nothing" Config.empty `shouldBe` Nothing
 
-        it "allows tapes to be added and retrieved" $ do
-            let env = putTape "tape" (Tape.fromString "abc") Config.empty
+        it "allows new tapes to be added and retrieved" $ do
+            let env = newTape "tape" (Tape.fromString "abc") Config.empty
             getTape "tape" env `shouldBe` Just (Tape.fromString "abc")
 
-        it "allows modification of tapes" $ do
-            let env = putTape "tape" (Tape.fromString "abc") Config.empty
+        it "allows modification of existing tapes" $ do
+            let env = newTape "tape" (Tape.fromString "abc") Config.empty
                 expected = Config.fromString "tape" "xbc"
             modifyTape "tape" (Tape.setSym 'x') env `shouldBe` Just expected
 
         it "overrides previous tape declarations" $ do
-            let env  = putTape "tape" (Tape.fromString "abc") Config.empty
-                env' = putTape "tape" (Tape.fromString "xyz") env
+            let env  = newTape "tape" (Tape.fromString "abc") Config.empty
+                env' = newTape "tape" (Tape.fromString "xyz") env
             getTape "tape" env' `shouldBe` Just (Tape.fromString "xyz")
+
+        it "changed to referenced tape changes underlying tape" $ do
+            let env1 = newTape "tape1" (Tape.fromString "abc") Config.empty
+                env2 = fromJust $ putTapeRef "tape2" "tape1" env1
+                env3 = fromJust $ modifyTape "tape2" (Tape.setSym 'x') env2
+            getTape "tape1" env3 `shouldBe` Just (Tape.fromString "xbc")
+
+        it "fails to create a reference to another tape if it does not exist" $ do
+            let env = newTape "tape1" (Tape.fromString "abc") Config.empty
+            putTapeRef "tape2" "nothing" env `shouldBe` Nothing
 
         it "fails if asking for a variable" $ do
             let env = putSym "x" '1' Config.empty
@@ -52,7 +63,7 @@ varSpec = do
             getSym "x" env' `shouldBe` Just '2'
 
         it "fails if asking for a tape" $ do
-            let env = putTape "tape" (Tape.fromString "abc") Config.empty
+            let env = newTape "tape" (Tape.fromString "abc") Config.empty
             getSym "tape" env `shouldBe` Nothing
 
 funcSpec :: Spec
