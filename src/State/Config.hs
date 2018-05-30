@@ -60,4 +60,4 @@ putFunc name args body config = config { funcs = Map.insert name (args, body) (f
 -- Resets the variable and function environment of `cNew` to that provided
 -- by `cOld`.
 resetEnv :: Config -> Config -> Config
-resetEnv cOld cNew = cNew { tapes = tapes cOld, vars = vars cOld, funcs = funcs cOld }
+resetEnv cOld cNew = cNew { vars = vars cOld, funcs = funcs cOld }

@@ -5,7 +5,7 @@ import State.TapeSpec
 import State.ConfigSpec
 import Semantics.DerivedSymbolSpec
 import Semantics.BexpSpec
--- import Semantics.StmSpec
+import Semantics.StmSpec
 -- import Semantics.ProgramSpec
 import Test.Hspec
 
@@ -17,5 +17,5 @@ main = hspec specs where
         configSpec
         derivedSymbolValSpec
         bexpValSpec
-        -- stmSpec
+        stmSpec
         -- programSpec

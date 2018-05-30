@@ -2,8 +2,8 @@ module Semantics.StmSpec (stmSpec) where
 
 import State.Config as Config
 import State.Error
-import State.Tape()
 import Syntax.Tree
+import TestHelper.Config
 import TestHelper.Denotational
 import Test.Hspec
 
@@ -23,12 +23,12 @@ testResetVarEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetVarEnv makeControlStruct invoke = do
     let outerVarDecl = VarDecl "x" (Literal '1')
         innerVarDecl = VarDecl "x" (Literal '2')
-        write        = Write (Literal '#')
+        write        = Write (Literal '#') "tape"
         structBody   = Comp innerVarDecl write
         structDecl   = makeControlStruct structBody
         invoke'      = maybe structDecl (Comp structDecl) invoke
         comp         = Comp outerVarDecl invoke'
-        testConfig   = Config.fromString "abc"
+        testConfig   = Config.fromString "tape" "abc"
         result       = evalSemantics comp testConfig
 
     shouldReturnVar result "x" '1'
@@ -51,16 +51,16 @@ testResetVarEnv makeControlStruct invoke = do
 --  invoke
 testResetFuncEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetFuncEnv makeControlStruct invoke = do
-    let outerFBody = MoveRight
+    let outerFBody = (MoveRight "tape")
         outerFDecl = FuncDecl "f" ["x"] outerFBody
-        innerFBody = Write (Literal '#')
+        innerFBody = Write (Literal '#') "tape"
         innerFDecl = FuncDecl "f" [] innerFBody
         fCall      = Call "f" []
         structBody = Comp innerFDecl fCall
         structDecl = makeControlStruct structBody
         invoke'    = maybe structDecl (Comp structDecl) invoke
         comp       = Comp outerFDecl invoke'
-        testConfig = Config.fromString "abc"
+        testConfig = Config.fromString "tape" "abc"
         result     = evalSemantics comp testConfig
 
     shouldReturnFunc result "f" ["x"] outerFBody
@@ -84,67 +84,67 @@ stmSpec = do
 
 leftSpec :: Spec
 leftSpec = do
-    let testConfig = right (Config.fromString "abc")
+    let testConfig = right (Config.fromString "tape" "abc")
 
     context "left" $ do
         it "moves the read-write head left" $ do
-            evalSemantics (MoveLeft) testConfig `shouldBeAt` 0
+            shouldBeAt (evalSemantics (MoveLeft "tape") testConfig) "tape" 0
 
 rightSpec :: Spec
 rightSpec = do
-    let testConfig = right (Config.fromString "abc")
+    let testConfig = right (Config.fromString "tape" "abc")
 
     context "right" $ do
         it "moves the read-write head right" $ do
-            evalSemantics (MoveRight) testConfig `shouldBeAt` 2
+            shouldBeAt (evalSemantics ((MoveRight "tape")) testConfig) "tape" 2
 
 writeSpec :: Spec
 writeSpec = do
-    let testConfig = right (Config.fromString "abc")
+    let testConfig = right (Config.fromString "tape" "abc")
 
     context "right" $ do
         it "writes to the cell under the read-write head" $ do
-            evalSemantics (Write (Literal '2')) testConfig `shouldRead` "a2c"
+            shouldRead (evalSemantics (Write (Literal '2') "tape") testConfig) "tape" "a2c"
 
 writeStrSpec :: Spec
 writeStrSpec = do
-    let testConfig = Config.fromString "xyz"
+    let testConfig = Config.fromString "tape" "xyz"
 
     context "write string" $ do
         it "writes a string" $ do
-            evalSemantics (WriteStr "abcde") testConfig `shouldRead` "abcde"
+            shouldRead (evalSemantics (WriteStr "abcde" "tape") testConfig) "tape" "abcde"
 
         it "leaves the head at the position of the last written character" $ do
-            evalSemantics (WriteStr "abcde") testConfig `shouldBeAt` 4
+            shouldBeAt (evalSemantics (WriteStr "abcde" "tape") testConfig) "tape" 4
 
 acceptSpec :: Spec
 acceptSpec = do
-    let testConfig = right (Config.fromString "abc")
+    let testConfig = right (Config.fromString "tape" "abc")
 
     context "accept" $ do
         it "accepts after evaluating an accept statement" $ do
-            shouldAccept "abc" $ evalSemantics (Accept) testConfig
+            shouldAccept $ evalSemantics (Accept) testConfig
 
 rejectSpec :: Spec
 rejectSpec = do
-    let testConfig = right (Config.fromString "abc")
+    let testConfig = right (Config.fromString "tape" "abc")
 
     context "reject" $ do
         it "rejects after evaluating an accept statement" $ do
-            shouldReject "abc" $ evalSemantics (Reject) testConfig
+            shouldReject $ evalSemantics (Reject) testConfig
 
 ifSpec :: Spec
 ifSpec = do
-    let testConfig = right (Config.fromString "abc")
+    let testConfig = right (Config.fromString "tape" "abc")
 
     context "evaluating a single if-statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write (Literal '1')) [] Nothing
-            evalSemantics ifStm testConfig `shouldRead` "a1c"
+            let ifStm = If TRUE (Write (Literal '1') "tape") [] Nothing
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs nothing if predicate is false" $ do
-            let ifStm = If FALSE (Write (Literal '1')) [] Nothing
-            evalSemantics ifStm testConfig `shouldRead` "abc"
+            let ifStm = If FALSE (Write (Literal '1') "tape") [] Nothing
+            shouldRead (evalSemantics ifStm testConfig) "tape" "abc"
 
         it "resets the variable environment after executing a branch" $ do
             let makeIf body = If TRUE body [] Nothing
@@ -156,108 +156,108 @@ ifSpec = do
 
     context "evaluating an if-elseif statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] Nothing
-            evalSemantics ifStm testConfig `shouldRead` "a1c"
+            let ifStm = If TRUE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] Nothing
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] Nothing
-            evalSemantics ifStm testConfig `shouldRead` "a2c"
+            let ifStm = If FALSE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] Nothing
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a2c"
 
         it "performs the third branch" $ do
-            let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2')), (TRUE, Write (Literal '3'))] Nothing
-            evalSemantics ifStm testConfig `shouldRead` "a3c"
+            let ifStm = If FALSE (Write (Literal '1') "tape") [(FALSE, Write (Literal '2') "tape"), (TRUE, Write (Literal '3') "tape")] Nothing
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a3c"
 
         it "resets the variable environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1')) [(TRUE, body)] Nothing
+            let makeIf body = If FALSE (Write (Literal '1') "tape") [(TRUE, body)] Nothing
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1')) [(TRUE, body)] Nothing
+            let makeIf body = If FALSE (Write (Literal '1') "tape") [(TRUE, body)] Nothing
             testResetFuncEnv makeIf Nothing
 
     context "evaluating an if-elseif-else statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
-            evalSemantics ifStm testConfig `shouldRead` "a1c"
+            let ifStm = If TRUE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] (Just (Write (Literal '3') "tape"))
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write (Literal '1')) [(TRUE, Write (Literal '2'))] (Just (Write (Literal '3')))
-            evalSemantics ifStm testConfig `shouldRead` "a2c"
+            let ifStm = If FALSE (Write (Literal '1') "tape") [(TRUE, Write (Literal '2') "tape")] (Just (Write (Literal '3') "tape"))
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a2c"
 
         it "performs the else branch" $ do
-            let ifStm = If FALSE (Write (Literal '1')) [(FALSE, Write (Literal '2'))] (Just (Write (Literal '3')))
-            evalSemantics ifStm testConfig `shouldRead` "a3c"
+            let ifStm = If FALSE (Write (Literal '1') "tape") [(FALSE, Write (Literal '2') "tape")] (Just (Write (Literal '3') "tape"))
+            shouldRead (evalSemantics ifStm testConfig) "tape" "a3c"
 
         it "resets the variable environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1')) [] (Just body)
+            let makeIf body = If FALSE (Write (Literal '1') "tape") [] (Just body)
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write (Literal '1')) [] (Just body)
+            let makeIf body = If FALSE (Write (Literal '1') "tape") [] (Just body)
             testResetFuncEnv makeIf Nothing
 
 whileSpec :: Spec
 whileSpec = do
-    let testConfig = Config.fromString "Ab5#"
+    let testConfig = Config.fromString "tape" "Ab5#"
 
     context "evaluating while loop" $ do
         it "does not loop if the condition is false" $ do
-            let loop = While FALSE (Write (Literal '1'))
-            evalSemantics loop testConfig `shouldRead` "Ab5#"
+            let loop = While FALSE (Write (Literal '1') "tape")
+            shouldRead (evalSemantics loop testConfig) "tape" "Ab5#"
 
         it "performs a loop" $ do
             -- Move right until a '#' character is reached, overwriting each
             -- character with 'X'.
-            let cond   = Not (Eq Read (Literal '#'))
-                comp   = Comp (Write (Literal 'X')) MoveRight
+            let cond   = Not (Eq (Read "tape") (Literal '#'))
+                comp   = Comp (Write (Literal 'X') "tape") (MoveRight "tape")
                 loop   = While cond comp
                 result = evalSemantics loop testConfig
 
-            result `shouldBeAt` 3
-            result `shouldRead` "XXX#"
+            shouldBeAt result "tape" 3
+            shouldRead result "tape" "XXX#"
 
         it "resets the variable environment after executing a branch" $ do
-            let cond        = Not (Eq Read (Literal '#'))
-                makeIf body = While cond (Comp MoveRight body)
+            let cond        = Not (Eq (Read "tape") (Literal '#'))
+                makeIf body = While cond (Comp (MoveRight "tape") body)
 
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let cond        = Not (Eq Read (Literal '#'))
-                makeIf body = While cond (Comp MoveRight body)
+            let cond        = Not (Eq (Read "tape") (Literal '#'))
+                makeIf body = While cond (Comp (MoveRight "tape") body)
 
             testResetFuncEnv makeIf Nothing
 
         it "breaks by rejecting" $ do
             let loop = While TRUE Reject
-            shouldReject "Ab5#" (evalSemantics loop testConfig)
+            shouldReject (evalSemantics loop testConfig)
 
         it "breaks by accepting" $ do
             let loop = While TRUE Accept
-            shouldAccept "Ab5#" (evalSemantics loop testConfig)
+            shouldAccept (evalSemantics loop testConfig)
 
 varDeclSpec :: Spec
 varDeclSpec = do
-    let testConfig = Config.fromString "abc"
+    let testConfig = Config.fromString "tape" "abc"
 
     context "evaluating a variable declaration" $ do
         it "adds the variable to the environment" $ do
             let decl   = VarDecl "y" (Literal '1')
-                ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#')) [] Nothing
+                ifStm  = If (Eq (Var "y") (Literal '1')) (Write (Literal '#') "tape") [] Nothing
                 comp   = Comp decl ifStm
 
-            evalSemantics comp testConfig `shouldRead` "#bc"
+            shouldRead (evalSemantics comp testConfig) "tape" "#bc"
 
 funcCallSpec :: Spec
 funcCallSpec = do
-    let testConfig = Config.fromString "abc"
+    let testConfig = Config.fromString "tape" "abc"
 
     context "evaluating a function call" $ do
         it "performs the function" $ do
-            let decl = FuncDecl "f" [] MoveRight
+            let decl = FuncDecl "f" [] (MoveRight "tape")
                 call = Call "f" []
                 comp = Comp decl call
-            evalSemantics comp testConfig `shouldBeAt` 1
+            shouldBeAt (evalSemantics comp testConfig) "tape" 1
 
         it "fails if the function has not been defined" $ do
             let call = Call "f" []
@@ -286,14 +286,14 @@ funcCallSpec = do
             let boolX    = Eq (Var "x") (Literal '1')
                 boolY    = Eq (Var "y") (Literal '2')
                 boolAnd  = And boolX boolY
-                ifStm    = If boolAnd MoveLeft [] (Just MoveRight)
+                ifStm    = If boolAnd (MoveLeft "tape") [] (Just (MoveRight "tape"))
                 funcDecl = FuncDecl "f" ["x", "y"] ifStm
                 call1    = Comp funcDecl (Call "f" [Literal '1', Literal '2'])
                 call2    = Comp funcDecl (Call "f" [Literal '1', Literal '3'])
-                config   = right (Config.fromString "abc")
+                config   = right (Config.fromString "tape" "abc")
 
-            evalSemantics call1 config `shouldBeAt` 0
-            evalSemantics call2 config `shouldBeAt` 2
+            shouldBeAt (evalSemantics call1 config) "tape" 0
+            shouldBeAt (evalSemantics call2 config) "tape" 2
 
         it "throws an error if the number of arguments is incorrect" $ do
             let funcDecl = FuncDecl "f" ["a", "b"] Accept
@@ -318,94 +318,95 @@ funcCallSpec = do
             --      }
             --  }
             --  f
-            let b1            = Eq Read (Literal '#')
-                b2            = Eq Read (Literal ' ')
+            let b1            = Eq (Read "tape") (Literal '#')
+                b2            = Eq (Read "tape") (Literal ' ')
                 elseIfClauses = [(b2, Reject)]
-                elseClause    = Just (Comp MoveRight (Call "f" []))
+                elseClause    = Just (Comp (MoveRight "tape") (Call "f" []))
                 ifStm         = If b1 Accept elseIfClauses elseClause
                 funcDecl      = FuncDecl "f" [] ifStm
-                termConfig    = Config.fromString "abc#"
-                nonTermConfig = Config.fromString "abc"
+                termConfig    = Config.fromString "tape" "abc#"
+                nonTermConfig = Config.fromString "tape" "abc"
                 comp          = Comp funcDecl (Call "f" [])
 
-            shouldAccept "abc#" (evalSemantics comp termConfig)
-            shouldReject "abc"  (evalSemantics comp nonTermConfig)
+            shouldAccept (evalSemantics comp termConfig)
+            shouldReject (evalSemantics comp nonTermConfig)
 
 compSpec :: Spec
 compSpec = do
-    let testConfig = Config.fromString "abc"
+    let testConfig = Config.fromString "tape" "abc"
 
     context "evaluating a function composition" $ do
         it "composes two statements 1" $ do
-            let comp   = Comp MoveRight (Write (Literal '#'))
+            let comp   = Comp (MoveRight "tape") (Write (Literal '#') "tape")
                 result = evalSemantics comp testConfig
-            result `shouldBeAt` 1
-            result `shouldRead` "a#c"
+            shouldBeAt result "tape" 1
+            shouldRead result "tape" "a#c"
 
         it "composes two statements 2" $ do
-            let ifStm = If (Eq (Read) (Literal 'b')) (Write (Literal '#')) [] Nothing
-                comp  = Comp MoveRight ifStm
-            evalSemantics comp testConfig `shouldRead` "a#c"
+            let ifStm  = If (Eq ((Read "tape")) (Literal 'b')) (Write (Literal '#') "tape") [] Nothing
+                comp   = Comp (MoveRight "tape") ifStm
+                result = evalSemantics comp testConfig
+            shouldRead result "tape" "a#c"
 
 printReadSpec :: Spec
 printReadSpec = do
-    let testConfig = Config.fromString "abc"
+    let testConfig = Config.fromString "tape" "abc"
 
     context "evaluating printing the current symbol" $ do
         it "prints the current symbol" $ do
-            let result = evalSemantics PrintRead testConfig
+            let result = evalSemantics (PrintRead "tape") testConfig
             result `shouldOutput` ["a"]
 
         it "prints multiple symbols in the correct order" $ do
-            let comp   = Comp PrintRead (Comp PrintRead PrintRead)
+            let comp   = Comp (PrintRead "tape") (Comp (PrintRead "tape") (PrintRead "tape"))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "a"]
 
         it "prints multiple symbols in the correct order using movement" $ do
-            let comp   = Comp PrintRead (Comp MoveRight (Comp PrintRead (Comp MoveRight PrintRead)))
+            let comp   = Comp (PrintRead "tape") (Comp (MoveRight "tape") (Comp (PrintRead "tape") (Comp (MoveRight "tape") (PrintRead "tape"))))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
     context "evaluating printing the current symbol using an if" $ do
         it "prints using an if" $ do
-            let comp   = If TRUE PrintRead [] Nothing
+            let comp   = If TRUE (PrintRead "tape") [] Nothing
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a"]
 
         it "does not print anything before the if multiple times" $ do
-            let ifStm  = If TRUE PrintRead [] Nothing
-                comp   = Comp PrintRead ifStm
+            let ifStm  = If TRUE (PrintRead "tape") [] Nothing
+                comp   = Comp (PrintRead "tape") ifStm
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a"]
 
     context "evaluating printing the current symbol using a loop" $ do
         it "prints multiple using a loop" $ do
-            let comp = While (Not (Eq Read (Literal ' '))) (Comp PrintRead MoveRight)
+            let comp = While (Not (Eq (Read "tape") (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
         it "does not print anything before the loop multiple times" $ do
-            let loop = While (Not (Eq Read (Literal ' '))) (Comp PrintRead MoveRight)
-                comp = Comp PrintRead loop
+            let loop = While (Not (Eq (Read "tape") (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
+                comp = Comp (PrintRead "tape") loop
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "b", "c"]
 
     context "evaluating printing using a function" $ do
         it "prints multiple using a function" $ do
-            let decl   = FuncDecl "f" [] PrintRead
+            let decl   = FuncDecl "f" [] (PrintRead "tape")
                 comp   = Comp decl (Call "f" [])
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a"]
 
         it "does not print anything before the function multiple times" $ do
-            let decl   = FuncDecl "f" [] PrintRead
-                comp   = Comp PrintRead (Comp decl (Call "f" []))
+            let decl   = FuncDecl "f" [] (PrintRead "tape")
+                comp   = Comp (PrintRead "tape") (Comp decl (Call "f" []))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a"]
 
 printStrSpec :: Spec
 printStrSpec = do
-    let testConfig = Config.fromString "abc"
+    let testConfig = Config.fromString "tape" "abc"
 
     context "evaluating printing the current symbol" $ do
         it "prints a string" $ do

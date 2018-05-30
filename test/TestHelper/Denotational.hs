@@ -12,6 +12,7 @@ import Semantics.Stm
 import Semantics.Program
 import qualified Test.Hspec as H
 import Data.Maybe
+import TestHelper.Output
 
 type AppResult m a = m (Machine a)
 
@@ -66,7 +67,7 @@ shouldBeAt r name p = shouldSatisfy r predicate where
 -- Asserts that the tape has the string `str` at the start of the tape.
 shouldRead :: IO (Machine Config) -> TapeName -> [TapeSymbol] -> H.Expectation
 shouldRead r name syms = shouldSatisfy r predicate where
-    predicate c = (fromJust (getTape name c)) == T.fromString syms
+    predicate c = contents (fromJust (getTape name c)) == contents (T.fromString syms)
 
 -- Asserts that the machine halted in the accepting state.
 shouldAccept :: IO (Machine Config) -> H.Expectation
@@ -75,3 +76,7 @@ shouldAccept r = r >>= (`H.shouldBe` HaltA)
 -- Asserts that the machine halted in the rejecting state.
 shouldReject :: IO (Machine Config) -> H.Expectation
 shouldReject r = r >>= (`H.shouldBe` HaltR)
+
+-- Asserts that the machine outputted the given strings.
+shouldOutput :: TestM (Machine Config) -> [String] -> H.Expectation
+shouldOutput r expected = logTestM r `H.shouldBe` expected
