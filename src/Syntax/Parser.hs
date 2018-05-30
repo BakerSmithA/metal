@@ -32,7 +32,9 @@ import Text.Megaparsec.String
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
---  FuncDeclArgs  : ArgName (' ' ArgName)* | ε
+--  FuncArgType   : 'Tape' | 'Sym'
+--  FuncDeclArg   : FuncDeclArg : ArgName ':' FuncArgType
+--  FuncDeclArgs  : FuncDeclArg (' ' FuncDeclArg)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
 --  FuncCallArgs  : DerivedSymbol (',' DerivedSymbol) | ε
 --  Call          : FuncName FuncCallArgs
@@ -185,10 +187,21 @@ ifStm = If <$ tok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> els
         return (bool, statement)
     elseClause = optional (tok "else" *> braces stmComp)
 
+-- Type of data passed to a function, the EBNF of which is:
+--  FuncArgType   : 'Tape' | 'Sym'
+dataType :: Parser DataType
+dataType = SymType <$ tok "Sym"
+       <|> TapeType <$ tok "Tape"
+
+-- Argument to a function, the EBNF is:
+--  FuncDeclArg : ArgName ':' FuncArgType
+funcDeclArg :: Parser FuncDeclArg
+funcDeclArg = FuncDeclArg <$> argName <* tok ":" <*> dataType
+
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
---  FuncDeclArgs : ArgName (' ' ArgName)* | ε
+--  FuncDeclArgs : FuncDeclArg (' ' FuncDeclArg)* | ε
 funcDeclArgs :: Parser FuncDeclArgs
-funcDeclArgs = argName `sepBy` whitespace
+funcDeclArgs = funcDeclArg `sepBy` whitespace
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'

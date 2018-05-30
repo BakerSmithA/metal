@@ -334,8 +334,9 @@ programSpec = describe "program" $ do
             parse program "" "func fName { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
-            let expected = FuncDecl "fName" ["a", "bb", "ccc"] (MoveRight "tape")
-            parse program "" "func fName a bb ccc { right tape }" `shouldParseStm` expected
+            let args = [FuncDeclArg "a" SymType, FuncDeclArg "bb" TapeType]
+                expected = FuncDecl "fName" args (MoveRight "tape")
+            parse program "" "func fName a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
             let expected = FuncDecl "leftUntil" [] (MoveRight "tape")

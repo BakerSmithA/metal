@@ -12,8 +12,16 @@ type FuncName = String
 -- Function argument name.
 type ArgName = String
 
+-- Types that can be passed to functions.
+data DataType = SymType
+              | TapeType
+              deriving (Eq, Show)
+
+-- Argument to a function.
+data FuncDeclArg = FuncDeclArg ArgName DataType deriving (Eq, Show)
+
 -- All the declared arguments to a function.
-type FuncDeclArgs = [ArgName]
+type FuncDeclArgs = [FuncDeclArg]
 
 -- All the arguments passed to a function call.
 type FuncCallArgs = [DerivedSymbol]
