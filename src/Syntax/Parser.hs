@@ -232,6 +232,7 @@ stm' = try funcCall
    <|> funcDecl
    <|> try (PrintStr <$ tok "print" <*> quotedString)
    <|> try (PrintRead <$ tok "print" <* whitespace <*> tapeName)
+   <|> DebugPrintTape <$ tok "_printTape" <*> varName
    <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 

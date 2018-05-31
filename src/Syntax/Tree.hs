@@ -60,6 +60,7 @@ data Stm = MoveLeft VarName
          | Comp Stm Stm
          | PrintRead VarName
          | PrintStr String
+         | DebugPrintTape VarName
          deriving (Eq, Show)
 
 -- Path of a Metal file to be imported.

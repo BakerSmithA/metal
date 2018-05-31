@@ -122,6 +122,13 @@ evalPrintRead tapeName c = do
 evalPrintStr :: (MonadOutput m) => String -> Config -> App m Config
 evalPrintStr = output'
 
+-- Evalutes debug printing the contents of a tape.
+evalDebugPrintTape :: (MonadOutput m) => VarName -> Config -> App m Config
+evalDebugPrintTape name c = do
+    tape <- tryMaybe (getTape name c) (UndefTape name)
+    output' (toString tape) c
+    return c
+
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: (MonadOutput m) => Stm -> Config -> App m Config
 evalStm (MoveLeft tapeName)       = evalLeft tapeName
@@ -139,3 +146,4 @@ evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
 evalStm (PrintRead tapeName)      = evalPrintRead tapeName
 evalStm (PrintStr str)            = evalPrintStr str
+evalStm (DebugPrintTape tapeName) = evalDebugPrintTape tapeName
