@@ -379,6 +379,10 @@ programSpec = describe "program" $ do
             let expected = Call "leftUntil" []
             parse program "" "leftUntil" `shouldParseStm` expected
 
+        it "parses tape literal arguments" $ do
+            let expected = Call "f" [TapeLiteral "abcd", TapeLiteral "xyz"]
+            parse program "" "f \"abcd\" \"xyz\"" `shouldParseStm` expected
+
     context "parsing composition" $ do
         it "parses composition" $ do
             parse program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))

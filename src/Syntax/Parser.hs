@@ -218,6 +218,7 @@ tapeLiteral = quoted (many tapeSymbol)
 --  FuncCallArg : DerivedValue | TapeLiteral
 funcCallArg :: Parser FuncCallArg
 funcCallArg = Derived <$> derivedSymbol
+          <|> TapeLiteral <$> tapeLiteral
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
