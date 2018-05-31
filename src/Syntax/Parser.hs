@@ -61,7 +61,7 @@ import Text.Megaparsec.String
 reservedKeywords :: [String]
 reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
                     "right", "write", "reject", "accept", "let", "if", "else",
-                    "while", "print", "func", "import"]
+                    "while", "print", "func", "import", "_printTape"]
 
 -- Produces a whitespace consumer using `sc` as the space consumer. Consumes
 -- whole line and in-line comments. The syntax for both comment types are the
