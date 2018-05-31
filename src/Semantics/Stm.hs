@@ -82,6 +82,9 @@ bindFuncArg _ ((FuncDeclArg name    SymType),  Derived sym)            app = app
 bindFuncArg _ ((FuncDeclArg newName TapeType), Derived (Var tapeName)) app = do
     config <- app
     tryMaybe (putTapeRef newName tapeName config) (UndefTape tapeName)
+bindFuncArg _ ((FuncDeclArg name TapeType), TapeLiteral cs) app = do
+    config <- app
+    return $ newTape name (Tape.fromString cs) config
 bindFuncArg fName ((FuncDeclArg name dataType), arg) _ = throw (MismatchedTypes name fName dataType arg)
 
 -- Evaluates the body of a function, after adding any arguments to the variable

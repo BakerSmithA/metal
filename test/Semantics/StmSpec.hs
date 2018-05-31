@@ -373,6 +373,24 @@ funcCallSpec = do
 
             result `shouldThrow` (== MismatchedTypes "x" "f" TapeType (Derived (Literal 'x')))
 
+        it "accepts a tape literal as argument" $ do
+            let funcDecl = FuncDecl "f" [FuncDeclArg "t" TapeType] (PrintRead "t")
+                call     = Call "f" [TapeLiteral "xyz"]
+                comp     = Comp funcDecl call
+                result   = evalSemantics comp Config.empty
+
+            result `shouldOutput` ["x"]
+
+        it "removes tape literals after function exited" $ do
+            let body     = Write "inputTape" (Literal '1')
+                funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
+                comp1    = Comp funcDecl (Call "modifyTape" [TapeLiteral "xyz"])
+                -- Attempt to use inputTape which was only declared as an argument of the function.
+                comp2    = Comp comp1 (Write "inputTape" (Literal 'a'))
+                result   = evalSemantics comp2 Config.empty
+
+            result `shouldThrow` (== UndefTape "inputTape")
+
 compSpec :: Spec
 compSpec = do
     let testConfig = Config.fromString "tape" "abc"
