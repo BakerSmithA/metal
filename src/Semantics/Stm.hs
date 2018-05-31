@@ -3,7 +3,7 @@ module Semantics.Stm (evalStm) where
 import Control.Exception
 import Data.Maybe (maybeToList)
 import Semantics.Bexp
-import Semantics.DerivedSymbol
+import Semantics.DerivedValue
 import Semantics.Helpers
 import State.App
 import State.Config
@@ -26,9 +26,9 @@ evalRight :: (Monad m) => VarName -> Config -> App m Config
 evalRight = modify right
 
 -- Evaluates writing to the tape.
-evalWrite :: (Monad m) => VarName -> DerivedSymbol -> Config -> App m Config
+evalWrite :: (Monad m) => VarName -> DerivedValue -> Config -> App m Config
 evalWrite tapeName sym c = do
-    val <- derivedSymbolVal sym c
+    val <- derivedVal sym c
     modify (setSym val) tapeName c
 
 -- Evalutes writing a string to the tape. This is the same as individually
@@ -55,9 +55,9 @@ evalWhile b body = fix f where
         evalLoop c = block (evalStm body) c >>= loop
 
 -- Evaluates a variable declaration.
-evalVarDecl :: (Monad m) => VarName -> DerivedSymbol -> Config -> App m Config
+evalVarDecl :: (Monad m) => VarName -> DerivedValue -> Config -> App m Config
 evalVarDecl name sym config = do
-    val <- derivedSymbolVal sym config
+    val <- derivedVal sym config
     return (putSym name val config)
 
 -- Evalutes a tape declaration.
@@ -77,7 +77,7 @@ checkNumArgs name ds cs config | (length ds) == (length cs) = return config
                                    err = WrongNumArgs name ds cs
 
 -- Binds function arguments to values supplied to the function.
-bindFuncArg :: (Monad m) => FuncName -> (FuncDeclArg, DerivedSymbol) -> App m Config -> App m Config
+bindFuncArg :: (Monad m) => FuncName -> (FuncDeclArg, DerivedValue) -> App m Config -> App m Config
 bindFuncArg _ ((FuncDeclArg name    SymType),  sym)          app = app >>= evalVarDecl name sym
 bindFuncArg _ ((FuncDeclArg newName TapeType), Var tapeName) app = do
     config <- app
@@ -115,7 +115,7 @@ evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 -- Evaluates printing the current symbol.
 evalPrintRead :: (MonadOutput m) => VarName -> Config -> App m Config
 evalPrintRead tapeName c = do
-    sym <- derivedSymbolVal (Read tapeName) c
+    sym <- derivedVal (Read tapeName) c
     output' [sym] c
 
 -- Evaluates printing a string.
@@ -126,8 +126,8 @@ evalPrintStr = output'
 evalDebugPrintTape :: (MonadOutput m) => VarName -> Config -> App m Config
 evalDebugPrintTape name c = do
     tape <- tryMaybe (getTape name c) (UndefTape name)
-    output' (toString tape) c
-    return c
+    c' <- output' (toString tape) c
+    return c'
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: (MonadOutput m) => Stm -> Config -> App m Config

@@ -2,7 +2,7 @@ module Semantics.Bexp (bexpVal) where
 
 import State.App
 import State.Config
-import Semantics.DerivedSymbol
+import Semantics.DerivedValue
 import Syntax.Tree
 
 notVal :: (Monad m) => Bexp -> Config -> App m Bool
@@ -23,6 +23,6 @@ bexpVal (FALSE) = const (return False)
 bexpVal (Not b) = notVal b
 bexpVal (And b1 b2) = binaryOp (&&) bexpVal b1 b2
 bexpVal (Or b1 b2) = binaryOp (||) bexpVal b1 b2
-bexpVal (Eq s1 s2) = binaryOp (==) derivedSymbolVal s1 s2
-bexpVal (Le s1 s2) = binaryOp (<=) derivedSymbolVal s1 s2
-bexpVal (Ne s1 s2) = binaryOp (/=) derivedSymbolVal s1 s2
+bexpVal (Eq s1 s2) = binaryOp (==) derivedVal s1 s2
+bexpVal (Le s1 s2) = binaryOp (<=) derivedVal s1 s2
+bexpVal (Ne s1 s2) = binaryOp (/=) derivedVal s1 s2

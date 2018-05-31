@@ -12,7 +12,7 @@ derivedSymbolValSpec = do
     let testConfig  = right (Config.fromString "tape" "abc")
         testConfig' = putSym "x" '1' testConfig
 
-    describe "derivedSymbolVal" $ do
+    describe "derivedVal" $ do
         it "reads the symbol under the read-write head" $ do
             let result = evalDerivedSymbol (Read "tape") testConfig'
             result `shouldReturn` 'b'

@@ -7,7 +7,7 @@ import State.Config as Config
 import State.Machine
 import State.Output
 import Semantics.Bexp
-import Semantics.DerivedSymbol
+import Semantics.DerivedValue
 import Semantics.Stm
 import Semantics.Program
 import qualified Test.Hspec as H
@@ -19,9 +19,9 @@ type AppResult m a = m (Machine a)
 evalWith :: (a -> Config -> App m b) -> a -> Config -> AppResult m b
 evalWith f x config = evalApp (f x config)
 
--- Runs `derivedSymbolVal` with `sym` in the given config and environment.
-evalDerivedSymbol :: (Monad m) => DerivedSymbol -> Config -> AppResult m TapeSymbol
-evalDerivedSymbol = evalWith derivedSymbolVal
+-- Runs `derivedVal` with `sym` in the given config and environment.
+evalDerivedSymbol :: (Monad m) => DerivedValue -> Config -> AppResult m TapeSymbol
+evalDerivedSymbol = evalWith derivedVal
 
 -- Runs `bexpVal` with `b` in the given config and environment.
 evalBexp :: (Monad m) => Bexp -> Config -> AppResult m Bool

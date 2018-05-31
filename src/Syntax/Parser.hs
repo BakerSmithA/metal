@@ -18,7 +18,7 @@ import Text.Megaparsec.String
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  ArgName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
---  DerivedSymbol : 'read'
+--  DerivedValue : 'read'
 --                | VarName
 --                | \' TapeSymbol \'
 --  Bexp          : 'True'
@@ -26,9 +26,9 @@ import Text.Megaparsec.String
 --                | 'not' Bexp
 --                | Bexp 'and' Bexp
 --                | Bexp 'or' Bexp
---                | DerivedSymbol '==' DerivedSymbol
---                | DerivedSymbol '<=' DerivedSymbol
---                | DerivedSymbol '!=' DerivedSymbol
+--                | DerivedValue '==' DerivedValue
+--                | DerivedValue '<=' DerivedValue
+--                | DerivedValue '!=' DerivedValue
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
@@ -36,15 +36,15 @@ import Text.Megaparsec.String
 --  FuncDeclArg   : FuncDeclArg : ArgName ':' FuncArgType
 --  FuncDeclArgs  : FuncDeclArg (' ' FuncDeclArg)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
---  FuncCallArgs  : DerivedSymbol (',' DerivedSymbol) | ε
+--  FuncCallArgs  : DerivedValue (',' DerivedValue) | ε
 --  Call          : FuncName FuncCallArgs
 --  Stm           : 'left' VarName
 --                | 'right' VarName
---                | 'write' VarName DerivedSymbol
+--                | 'write' VarName DerivedValue
 --                | 'write' VarName String
 --                | 'reject'
 --                | 'accept'
---                | 'let' VarName '=' DerivedSymbol
+--                | 'let' VarName '=' DerivedValue
 --                | 'let' VarName '=' '"' TapeSymbol* '"'
 --                | If
 --                | 'while' Bexp '{' Stm '}'
@@ -138,10 +138,10 @@ argName :: Parser ArgName
 argName = identifier
 
 -- Parses a derived symbol, the EBNF syntax of which is:
---  DerivedSymbol : 'read'
+--  DerivedValue : 'read'
 --                | VarName
 --                | \' TapeSymbol \'
-derivedSymbol :: Parser DerivedSymbol
+derivedSymbol :: Parser DerivedValue
 derivedSymbol = Read <$ tok "read" <* whitespace <*> tapeName
             <|> Var <$> varName
             <|> Literal <$> between (char '\'') (tok "\'") tapeSymbol
@@ -170,8 +170,8 @@ bexpOps = [[Prefix (Not <$ tok "not")],
 --       | 'not' Bexp
 --       | Bexp 'and' Bexp
 --       | Bexp 'or' Bexp
---       | DerivedSymbol '==' DerivedSymbol
---       | DerivedSymbol '<=' DerivedSymbol
+--       | DerivedValue '==' DerivedValue
+--       | DerivedValue '<=' DerivedValue
 bexp :: Parser Bexp
 bexp = makeExprParser bexp' bexpOps
 
@@ -209,7 +209,7 @@ funcDecl :: Parser Stm
 funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stmComp
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
---  FuncCallArgs : DerivedSymbol (',' DerivedSymbol) | ε
+--  FuncCallArgs : DerivedValue (',' DerivedValue) | ε
 funcCallArgs :: Parser FuncCallArgs
 funcCallArgs = derivedSymbol `sepBy` whitespace
 
@@ -253,10 +253,10 @@ stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
 -- fail if not all input is consumed.
 --  Stm : 'left'
 --      | 'right'
---      | 'write' DerivedSymbol
+--      | 'write' DerivedValue
 --      | 'reject'
 --      | 'accept'
---      | 'let' VarName '=' DerivedSymbol
+--      | 'let' VarName '=' DerivedValue
 --      | If
 --      | 'while' Bexp '{' Stm '}'
 --      | FuncDecl

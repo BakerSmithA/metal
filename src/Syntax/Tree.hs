@@ -24,14 +24,14 @@ data FuncDeclArg = FuncDeclArg ArgName DataType deriving (Eq, Show)
 type FuncDeclArgs = [FuncDeclArg]
 
 -- All the arguments passed to a function call.
-type FuncCallArgs = [DerivedSymbol]
+type FuncCallArgs = [DerivedValue]
 
--- Derived symbol, i.e. either a literal tape symbol, or a symbol read from
--- under the read/write head.
-data DerivedSymbol = Read VarName
-                   | Var VarName
-                   | Literal TapeSymbol
-                   deriving (Eq, Show)
+-- Derived value, i.e. either a literal tape symbol, or a symbol read from
+-- under the read/write head, or the value of a variable.
+data DerivedValue = Read VarName
+                  | Var VarName
+                  | Literal TapeSymbol
+                  deriving (Eq, Show)
 
 -- Syntax tree for boolean expressions.
 data Bexp = TRUE
@@ -39,21 +39,21 @@ data Bexp = TRUE
           | Not Bexp
           | And Bexp Bexp
           | Or Bexp Bexp
-          | Eq DerivedSymbol DerivedSymbol
-          | Le DerivedSymbol DerivedSymbol
-          | Ne DerivedSymbol DerivedSymbol
+          | Eq DerivedValue DerivedValue
+          | Le DerivedValue DerivedValue
+          | Ne DerivedValue DerivedValue
           deriving (Eq, Show)
 
 -- Syntax tree for statements.
 data Stm = MoveLeft VarName
          | MoveRight VarName
-         | Write VarName DerivedSymbol
+         | Write VarName DerivedValue
          | WriteStr VarName [TapeSymbol]
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
-         | VarDecl VarName DerivedSymbol
+         | VarDecl VarName DerivedValue
          | TapeDecl VarName String
          | FuncDecl FuncName FuncDeclArgs Stm
          | Call FuncName FuncCallArgs
