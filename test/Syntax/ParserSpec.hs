@@ -359,19 +359,19 @@ programSpec = describe "program" $ do
             parse program "" "fName" `shouldParseStm` (Call "fName" [])
 
         it "parses function calls with arguments" $ do
-            let expected = Call "fName" [(Read "tape"), Var "x", Literal '#']
+            let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
             parse program "" "fName (read tape) x '#'" `shouldParseStm` expected
 
         it "parses function calls with multiple spaces between arguments" $ do
-            let expected = Call "fName" [(Read "tape"), Var "x", Literal '#']
+            let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
             parse program "" "fName   (read tape)  x  '#'" `shouldParseStm` expected
 
         it "parses function calls with tabs between arguments" $ do
-            let expected = Call "fName" [(Read "tape"), Var "x", Literal '#']
+            let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
             parse program "" "fName \t(read tape)\tx\t'#'" `shouldParseStm` expected
 
         it "parses function calls followed by another statement" $ do
-            let call = Call "fName" [Read "tape"]
+            let call = Call "fName" [Derived (Read "tape")]
                 expected = Comp call ((MoveLeft "tape"))
             parse program "" "fName (read tape) \n left tape" `shouldParseStm` expected
 

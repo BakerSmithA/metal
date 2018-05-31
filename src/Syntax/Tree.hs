@@ -23,8 +23,13 @@ data FuncDeclArg = FuncDeclArg ArgName DataType deriving (Eq, Show)
 -- All the declared arguments to a function.
 type FuncDeclArgs = [FuncDeclArg]
 
+-- Argument to a function when invoking.
+data FuncCallArg = Derived DerivedValue
+                 | TapeLiteral String
+                 deriving (Eq, Show)
+
 -- All the arguments passed to a function call.
-type FuncCallArgs = [DerivedValue]
+type FuncCallArgs = [FuncCallArg]
 
 -- Derived value, i.e. either a literal tape symbol, or a symbol read from
 -- under the read/write head, or the value of a variable.

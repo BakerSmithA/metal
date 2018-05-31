@@ -14,11 +14,12 @@ import Text.Megaparsec.String
 --  Digit         : '0' | '1' | ... | '9'
 --  String        : " (LowerChar | UpperChar | Digit)* "
 --  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
---  VarName      : LowerChar (LowerChar | UpperChar | Digit)*
+--  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
 --  ArgName       : LowerChar (LowerChar | UpperChar | Digit)*
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
---  DerivedValue : 'read'
+--  TapeLiteral   : '"' TapeSymbol* '"'
+--  DerivedValue  : 'read'
 --                | VarName
 --                | \' TapeSymbol \'
 --  Bexp          : 'True'
@@ -36,7 +37,8 @@ import Text.Megaparsec.String
 --  FuncDeclArg   : FuncDeclArg : ArgName ':' FuncArgType
 --  FuncDeclArgs  : FuncDeclArg (' ' FuncDeclArg)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
---  FuncCallArgs  : DerivedValue (',' DerivedValue) | ε
+--  FuncCallArg   : DerivedSymbol | TapeLiteral
+--  FuncCallArgs  : FuncCallArg (',' FuncCallArg) | ε
 --  Call          : FuncName FuncCallArgs
 --  Stm           : 'left' VarName
 --                | 'right' VarName
@@ -45,7 +47,7 @@ import Text.Megaparsec.String
 --                | 'reject'
 --                | 'accept'
 --                | 'let' VarName '=' DerivedValue
---                | 'let' VarName '=' '"' TapeSymbol* '"'
+--                | 'let' VarName '=' TapeLiteral
 --                | If
 --                | 'while' Bexp '{' Stm '}'
 --                | FuncDecl
@@ -208,10 +210,19 @@ funcDeclArgs = funcDeclArg `sepBy` whitespace
 funcDecl :: Parser Stm
 funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stmComp
 
+-- Parsers the contents of a tape literal, e.g. "abcd"
+tapeLiteral :: Parser String
+tapeLiteral = quoted (many tapeSymbol)
+
+-- Parses an argument to a function call, the EBNF syntax of which is:
+--  FuncCallArg : DerivedValue | TapeLiteral
+funcCallArg :: Parser FuncCallArg
+funcCallArg = Derived <$> derivedSymbol
+
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
---  FuncCallArgs : DerivedValue (',' DerivedValue) | ε
+--  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: Parser FuncCallArgs
-funcCallArgs = derivedSymbol `sepBy` whitespace
+funcCallArgs = funcCallArg `sepBy` whitespace
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
@@ -228,7 +239,7 @@ stm' = try funcCall
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> try (VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol)
-   <|> TapeDecl <$ tok "let" <*> tapeName <* tok "=" <*> quoted (many tapeSymbol)
+   <|> TapeDecl <$ tok "let" <*> tapeName <* tok "=" <*> tapeLiteral
    <|> funcDecl
    <|> try (PrintStr <$ tok "print" <*> quotedString)
    <|> try (PrintRead <$ tok "print" <* whitespace <*> tapeName)

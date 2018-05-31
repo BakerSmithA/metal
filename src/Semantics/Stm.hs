@@ -77,9 +77,9 @@ checkNumArgs name ds cs config | (length ds) == (length cs) = return config
                                    err = WrongNumArgs name ds cs
 
 -- Binds function arguments to values supplied to the function.
-bindFuncArg :: (Monad m) => FuncName -> (FuncDeclArg, DerivedValue) -> App m Config -> App m Config
-bindFuncArg _ ((FuncDeclArg name    SymType),  sym)          app = app >>= evalVarDecl name sym
-bindFuncArg _ ((FuncDeclArg newName TapeType), Var tapeName) app = do
+bindFuncArg :: (Monad m) => FuncName -> (FuncDeclArg, FuncCallArg) -> App m Config -> App m Config
+bindFuncArg _ ((FuncDeclArg name    SymType),  Derived sym)            app = app >>= evalVarDecl name sym
+bindFuncArg _ ((FuncDeclArg newName TapeType), Derived (Var tapeName)) app = do
     config <- app
     tryMaybe (putTapeRef newName tapeName config) (UndefTape tapeName)
 bindFuncArg fName ((FuncDeclArg name dataType), arg) _ = throw (MismatchedTypes name fName dataType arg)

@@ -290,8 +290,8 @@ funcCallSpec = do
                 ifStm    = If boolAnd (MoveLeft "tape") [] (Just (MoveRight "tape"))
                 args     = [FuncDeclArg "x" SymType, FuncDeclArg "y" SymType]
                 funcDecl = FuncDecl "f" args ifStm
-                call1    = Comp funcDecl (Call "f" [Literal '1', Literal '2'])
-                call2    = Comp funcDecl (Call "f" [Literal '1', Literal '3'])
+                call1    = Comp funcDecl (Call "f" [Derived (Literal '1'), Derived (Literal '2')])
+                call2    = Comp funcDecl (Call "f" [Derived (Literal '1'), Derived (Literal '3')])
                 config   = right (Config.fromString "tape" "abc")
 
             shouldBeAt (evalSemantics call1 config) "tape" 0
@@ -300,8 +300,8 @@ funcCallSpec = do
         it "throws an error if the number of arguments is incorrect" $ do
             let args     = [FuncDeclArg "a" SymType, FuncDeclArg "b" SymType]
                 funcDecl = FuncDecl "f" args Accept
-                comp     = Comp funcDecl (Call "f" [Literal '1'])
-                expected = WrongNumArgs "f" args [Literal '1']
+                comp     = Comp funcDecl (Call "f" [Derived (Literal '1')])
+                expected = WrongNumArgs "f" args [Derived (Literal '1')]
             evalSemantics comp testConfig `shouldThrow` (== expected)
 
         it "evaluates a recursive function" $ do
@@ -338,7 +338,7 @@ funcCallSpec = do
             let declTape = TapeDecl "tape1" "xyz"
                 body     = Write "inputTape" (Literal '1')
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp     = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
+                comp     = Comp declTape (Comp funcDecl (Call "modifyTape" [Derived (Var "tape1")]))
                 result   = evalSemantics comp Config.empty
 
             shouldRead result "tape1" "1yz"
@@ -347,7 +347,7 @@ funcCallSpec = do
             let declTape = TapeDecl "tape1" "xyz"
                 body     = Write "inputTape" (Literal '1')
                 funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
+                comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Derived (Var "tape1")]))
                 -- Attempt to use inputTape which was only declared as an argument of the function.
                 comp2    = Comp comp1 (Write "inputTape" (Literal 'a'))
                 result   = evalSemantics comp2 Config.empty
@@ -358,7 +358,7 @@ funcCallSpec = do
             let declSym  = VarDecl "x" (Literal '1')
                 body     = PrintStr "hello"
                 funcDecl = FuncDecl "f" [FuncDeclArg "y" SymType] body
-                comp1    = Comp declSym (Comp funcDecl (Call "f" [Var "x"]))
+                comp1    = Comp declSym (Comp funcDecl (Call "f" [Derived (Var "x")]))
                 -- Attempt to use y which was only declared as an argument of the function.
                 comp2    = Comp comp1 (VarDecl "new" (Var "y"))
                 result   = evalSemantics comp2 Config.empty
@@ -367,11 +367,11 @@ funcCallSpec = do
 
         it "fails if incorrect types are supplied" $ do
             let funcDecl = FuncDecl "f" [FuncDeclArg "x" TapeType] (PrintStr "hello")
-                call     = Call "f" [Literal 'x']
+                call     = Call "f" [Derived (Literal 'x')]
                 comp     = Comp funcDecl call
                 result   = evalSemantics comp Config.empty
 
-            result `shouldThrow` (== MismatchedTypes "x" "f" TapeType (Literal 'x'))
+            result `shouldThrow` (== MismatchedTypes "x" "f" TapeType (Derived (Literal 'x')))
 
 compSpec :: Spec
 compSpec = do
