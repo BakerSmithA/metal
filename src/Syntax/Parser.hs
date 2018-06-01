@@ -1,7 +1,7 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
-import Control.Monad.State.Lazy
+import Control.Monad.State.Lazy (StateT, evalStateT, get, put)
 import Syntax.Tree
 import Syntax.ParseState as S
 import Text.Megaparsec hiding (State)
@@ -119,9 +119,9 @@ tapeSymbol = noneOf "\'\""
 identifier :: Parser String
 identifier = (str >>= check) <* whitespace where
     str        = (:) <$> lowerChar <*> many alphaNumChar
-    check word = if word `elem` reservedKeywords
-                    then fail $ "keyword " ++ show word ++ " cannot be an identifier"
-                    else return word
+    check word = if not (word `elem` reservedKeywords)
+                    then return word
+                    else fail $ "keyword " ++ show word ++ " cannot be an identifier"
 
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists.
@@ -131,11 +131,12 @@ varDeclId :: Parser String
 varDeclId = do
     state <- get
     varId <- identifier
-    if S.isTaken varId state
-        then fail $ "variable " ++ show varId ++ " already declared"
-        else do
+    if not (S.isTaken varId state)
+        then do
             put (S.putVar varId state)
             return varId
+        else
+            fail $ "variable " ++ show varId ++ " already declared"
 
 -- Attempts to use a declared variable. If the variable does not exist then
 -- parsing fails.
@@ -146,8 +147,8 @@ varUseId = do
     state <- get
     varId <- identifier
     if S.canRef varId state
-        then fail $ "variable " ++ show varId ++ " not declared"
-        else return varId
+        then return varId
+        else fail $ "variable " ++ show varId ++ " not declared"
 
 -- Parses a function name, the EBNF syntax of which is:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
