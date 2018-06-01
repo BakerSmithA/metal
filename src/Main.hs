@@ -32,7 +32,7 @@ main = do
     sourceCode <- readFile filePath
     let mainTapeName = "main"
     let parseState = S.fromList [mainTapeName]
-    parsedProg <- parseContents parseState sourceCode
+    parsedProg <- parseContents filePath parseState sourceCode
     let startDir = takeDirectory filePath
     result <- evalSemantics mainTapeName parseState startDir parsedProg tapeSyms
     putStrLn $ "\n" ++ (show result)

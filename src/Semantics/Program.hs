@@ -9,12 +9,13 @@ import State.Config
 import State.Output
 import Semantics.Stm
 import System.FilePath
+import Text.Megaparsec.Error
 
 -- Parses the contents of source file, returning either the parsed program, or
 -- the parse error.
-parseContents :: ParseState -> String -> IO Program
-parseContents initialState contents = do
-    let result = parseState initialState program "" contents
+parseContents :: String -> ParseState -> String -> IO Program
+parseContents sourceFileName initialState contents = do
+    let result = parseState initialState program sourceFileName contents
     either throw return result
 
 -- Describes a path in the tree, this could represent a file system path.
@@ -38,7 +39,7 @@ ioTree parseState dirPath path = do
     let fullPath = dirPath </> addExtension path "al"
     contents <- readFile fullPath
 
-    Program imports body <- parseContents parseState contents
+    Program imports body <- parseContents fullPath parseState contents
 
     let importPath = takeDirectory path
     let fullImports = map (importPath </>) imports
