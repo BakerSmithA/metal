@@ -235,7 +235,14 @@ funcDeclArgs = funcDeclArg `sepBy` whitespace
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> braces stmComp
+funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> body where
+    body = do
+        -- Variable names can be overwritten inside functions.
+        declaredIds <- get
+        put []
+        parsedBody <- braces stmComp
+        put declaredIds
+        return parsedBody
 
 -- Parsers the contents of a tape literal, e.g. "abcd"
 tapeLiteral :: Parser String

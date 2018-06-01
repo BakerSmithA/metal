@@ -310,12 +310,32 @@ programSpec = describe "program" $ do
         it "fails if the same variable is declared twice in the same scope" $ do
             parseM program "" `shouldFailOn` "let x = 'a'\nlet x = 'b'"
 
+        it "parses variables overwriting inside functions" $ do
+            let decl     = VarDecl "x" (Literal 'x')
+                func     = FuncDecl "f" [] (VarDecl "x" (Literal 'y'))
+                expected = Comp decl func
+            parseM program "" "let x = 'x' \n func f { let x = 'y' }" `shouldParseStm` expected
+
+        it "resets variable environment after exiting function parse" $ do
+            let s = "let x = 'x' \n func f { let x = 'y' } \n let x = 'z'"
+            parseM program ""  `shouldFailOn` s
+
     context "parsing tape declarations" $ do
         it "parses tape declarations" $ do
             parseM program "" "let tape = \"abcd\"" `shouldParseStm` TapeDecl "tape" "abcd"
 
         it "fails if the same variable is declared twice in the same scope" $ do
-            parseM program "" `shouldFailOn` "let tape = \"abc\"\nlet tape = \"xyz\""
+            parseM program "" `shouldFailOn` "let x = \"abc\"\nlet x = \"xyz\""
+
+        it "parses variables overwriting inside functions" $ do
+            let decl     = TapeDecl "x" "abc"
+                func     = FuncDecl "f" [] (TapeDecl "x" "xyz")
+                expected = Comp decl func
+            parseM program "" "let x = \"abc\" \n func f { let x = \"xyz\" }" `shouldParseStm` expected
+
+        it "resets variable environment after exiting function parse" $ do
+            let s = "let x = \"abc\" \n func f { let x = \"abc\" } \n let x = \"abc\""
+            parseM program ""  `shouldFailOn` s
 
     context "parsing WHILE statements" $ do
         it "parses WHILE" $ do
