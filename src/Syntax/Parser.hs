@@ -3,14 +3,13 @@ module Syntax.Parser where
 import Control.Monad (void)
 import Control.Monad.State.Lazy
 import Syntax.Tree
+import Syntax.ParseState as S
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
 import qualified Text.Megaparsec.String as M
-import Debug.Trace
 
-type ParseState = State [String]
-type Parser = StateT [String] M.Parser
+type Parser = StateT ParseState M.Parser
 
 -- Abstract Grammar
 --
@@ -126,35 +125,29 @@ identifier = (str >>= check) <* whitespace where
 
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists.
+-- EBNF:
+--  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 varDeclId :: Parser String
 varDeclId = do
-    declaredIds <- get
+    state <- get
     varId <- identifier
-    trace (varId ++ ", " ++ (show declaredIds) ++ " = " ++ (show $ varId `elem` declaredIds)) $ if varId `elem` declaredIds
+    if S.isTaken varId state
         then fail $ "variable " ++ show varId ++ " already declared"
         else do
-            put (varId:declaredIds)
+            put (S.putVar varId state)
             return varId
 
 -- Attempts to use a declared variable. If the variable does not exist then
 -- parsing fails.
+-- EBNF:
+--  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 varUseId :: Parser String
 varUseId = do
-    declaredIds <- get
+    state <- get
     varId <- identifier
-    if not (varId `elem` declaredIds)
+    if S.canRef varId state
         then fail $ "variable " ++ show varId ++ " not declared"
         else return varId
-
--- Parses a variable name, the EBNF syntax of which is:
---  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-varName :: Parser VarName
-varName = identifier
-
--- Parses a tape name, the EBNF syntax of which is:
---  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-tapeName :: Parser VarName
-tapeName = identifier
 
 -- Parses a function name, the EBNF syntax of which is:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
@@ -171,8 +164,8 @@ argName = identifier
 --                | VarName
 --                | \' TapeSymbol \'
 derivedSymbol :: Parser DerivedValue
-derivedSymbol = Read <$ tok "read" <* whitespace <*> tapeName
-            <|> Var <$> varName
+derivedSymbol = Read <$ tok "read" <* whitespace <*> varUseId
+            <|> Var <$> varUseId
             <|> Literal <$> between (char '\'') (tok "\'") tapeSymbol
             <|> parens derivedSymbol
 
@@ -238,10 +231,10 @@ funcDecl :: Parser Stm
 funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> body where
     body = do
         -- Variable names can be overwritten inside functions.
-        declaredIds <- get
-        put []
+        currState <- get
+        put (descendScope currState)
         parsedBody <- braces stmComp
-        put declaredIds
+        put currState
         return parsedBody
 
 -- Parsers the contents of a tape literal, e.g. "abcd"
@@ -267,18 +260,18 @@ funcCall = Call <$> funcName <*> funcCallArgs
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = try funcCall
-   <|> MoveLeft <$ tok "left" <* whitespace <*> tapeName
-   <|> MoveRight <$ tok "right" <* whitespace <*> tapeName
-   <|> try (Write <$ tok "write" <*> tapeName <* whitespace <*> derivedSymbol)
-   <|> WriteStr <$ tok "write" <*> tapeName <* whitespace <*> quotedString
+   <|> MoveLeft <$ tok "left" <* whitespace <*> varUseId
+   <|> MoveRight <$ tok "right" <* whitespace <*> varUseId
+   <|> try (Write <$ tok "write" <*> varUseId <* whitespace <*> derivedSymbol)
+   <|> WriteStr <$ tok "write" <*> varUseId <* whitespace <*> quotedString
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
    <|> try (VarDecl <$ tok "let" <*> varDeclId <* tok "=" <*> derivedSymbol)
    <|> TapeDecl <$ tok "let" <*> varDeclId <* tok "=" <*> tapeLiteral
    <|> funcDecl
    <|> try (PrintStr <$ tok "print" <*> quotedString)
-   <|> try (PrintRead <$ tok "print" <* whitespace <*> tapeName)
-   <|> DebugPrintTape <$ tok "_printTape" <*> varName
+   <|> try (PrintRead <$ tok "print" <* whitespace <*> varUseId)
+   <|> DebugPrintTape <$ tok "_printTape" <*> varUseId
    <|> While <$ tok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 
@@ -326,6 +319,8 @@ program :: Parser Program
 program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline
 
--- Run a parser and extract the result it from the parse state.
+parseState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
+parseState initialState p src s = parse (evalStateT p initialState) src s
+
 parseM :: Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
-parseM p src s = parse (evalStateT p []) src s
+parseM = parseState S.empty
