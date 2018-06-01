@@ -295,6 +295,7 @@ program :: Parser Program
 program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline
 
+-- Run a parser and extract the result it from the parse state.
 parseM :: ParsecT e s ParseState a -> String -> s -> Either (ParseError (Token s) e) a
 parseM p sourceFileName s = stateResult where
     (stateResult, _) = runState parseResult []
