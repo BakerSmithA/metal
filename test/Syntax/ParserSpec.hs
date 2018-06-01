@@ -2,7 +2,6 @@ module Syntax.ParserSpec (parserSpec) where
 
 import Syntax.Tree
 import Syntax.Parser
-import Text.Megaparsec
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import TestHelper.Parser
@@ -33,10 +32,10 @@ encasedStringSpec = do
         it "parses strings enclosed in double quotes that contain spaces" $ do
             parseM quotedString "" "\"This is a string\"" `shouldParse` "This is a string"
 
-        it "fails to parseM if a starting quote is missing" $ do
+        it "fails to parse if a starting quote is missing" $ do
             parseM quotedString "" `shouldFailOn` "str\""
 
-        it "fails to parseM if an ending quote is missing" $ do
+        it "fails to parse if an ending quote is missing" $ do
             parseM quotedString "" `shouldFailOn` "\"str"
 
 tapeSymbolSpec :: Spec
@@ -57,7 +56,7 @@ tapeSymbolSpec = do
             parseM tapeSymbol "" "<" `shouldParse` '<'
             parseM tapeSymbol "" "{" `shouldParse` '{'
 
-        it "does not parseM single quotes" $ do
+        it "does not parse single quotes" $ do
             parseM tapeSymbol "" `shouldFailOn` "\'"
 
 varNameSpec :: Spec
@@ -164,7 +163,7 @@ bexpSpec = describe "bexp" $ do
         it "parses AND" $ do
             parseM bexp "" "True and False" `shouldParse` (And TRUE FALSE)
 
-        it "parseM to be left associative" $ do
+        it "parse to be left associative" $ do
             parseM bexp "" "True and False and False" `shouldParse` (And (And TRUE FALSE) FALSE)
 
     context "parsing OR operator" $ do
@@ -178,21 +177,21 @@ bexpSpec = describe "bexp" $ do
         it "parses EQ" $ do
             parseM bexp "" "x == read tape" `shouldParse` (Eq (Var "x") (Read "tape"))
 
-        it "fails to parseM chains" $ do
+        it "fails to parse chains" $ do
             parseM bexp "" "'x' == y == z" `shouldParse` (Eq (Literal 'x') (Var "y"))
 
     context "parsing LE operator" $ do
         it "parses LE" $ do
             parseM bexp "" "x <= read tape" `shouldParse` (Le (Var "x") (Read "tape"))
 
-        it "fails to parseM chains" $ do
+        it "fails to parse chains" $ do
             parseM bexp "" "x <= y <= z" `shouldParse` (Le (Var "x") (Var "y"))
 
     context "parsing NE operator" $ do
         it "parses NE" $ do
             parseM bexp "" "x != read tape" `shouldParse` (Ne (Var "x") (Read "tape"))
 
-        it "fails to parseM chains" $ do
+        it "fails to parse chains" $ do
             parseM bexp "" "x != y != z" `shouldParse` (Ne (Var "x") (Var "y"))
 
     context "parsing boolean expressions with parenthesis" $ do
@@ -208,16 +207,16 @@ ifStmSpec = describe "ifStm" $ do
         it "parses IF" $ do
             parseM program "" "if True { right tape }" `shouldParseStm` (If TRUE (MoveRight "tape") [] Nothing)
 
-        it "fails to parseM if a boolean expression is missing" $ do
+        it "fails to parse if a boolean expression is missing" $ do
             parseM program "" `shouldFailOn` "if { right tape }"
 
-        it "fails to parseM if the first brace is missing" $ do
+        it "fails to parse if the first brace is missing" $ do
             parseM program "" `shouldFailOn` "if True right tape }"
 
-        it "fails to parseM if the second brace is missing" $ do
+        it "fails to parse if the second brace is missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape"
 
-        it "fails to parseM if both braces are missing" $ do
+        it "fails to parse if both braces are missing" $ do
             parseM program "" `shouldFailOn` "if True right tape"
 
     context "parsing an IF-ELSEIF" $ do
@@ -231,16 +230,16 @@ ifStmSpec = describe "ifStm" $ do
                 expected = If TRUE (MoveRight "tape") [(FALSE, (MoveLeft "tape")), (TRUE, Accept)] Nothing
             parseM program "" str `shouldParseStm` expected
 
-        it "fails to parseM if ELSE-IF is before IF" $ do
+        it "fails to parse if ELSE-IF is before IF" $ do
             parseM program "" `shouldFailOn` "else if True { right tape } if True right tape }"
 
-        it "fails to parseM if the first brace is missing" $ do
+        it "fails to parse if the first brace is missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape } else if True right tape }"
 
-        it "fails to parseM if the second brace is missing" $ do
+        it "fails to parse if the second brace is missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape } else if True { right tape"
 
-        it "fails to parseM if both braces are missing" $ do
+        it "fails to parse if both braces are missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape } else if True right rape"
 
     context "parsing an ELSE clause" $ do
@@ -254,16 +253,16 @@ ifStmSpec = describe "ifStm" $ do
                 expected = If TRUE (MoveRight "tape") [(FALSE, (MoveLeft "tape"))] (Just Accept)
             parseM program "" str `shouldParseStm` expected
 
-        it "fails to parseM if the ELSE is before IF" $ do
+        it "fails to parse if the ELSE is before IF" $ do
             parseM program "" `shouldFailOn` "else { accept } if { left tape }"
 
-        it "fails to parseM if the first brace is missing" $ do
+        it "fails to parse if the first brace is missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape } else right tape }"
 
-        it "fails to parseM if the second brace is missing" $ do
+        it "fails to parse if the second brace is missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape } else { right tape"
 
-        it "fails to parseM if both braces are missing" $ do
+        it "fails to parse if both braces are missing" $ do
             parseM program "" `shouldFailOn` "if True { right tape } else right tape"
 
 importStmSpec :: Spec
@@ -308,24 +307,30 @@ programSpec = describe "program" $ do
         it "fails if a derived symbol is missing" $ do
             parseM program "" `shouldFailOn` "let x ="
 
+        it "fails if the same variable is declared twice in the same scope" $ do
+            parseM program "" `shouldFailOn` "let x = 'a'\nlet x = 'b'"
+
     context "parsing tape declarations" $ do
         it "parses tape declarations" $ do
             parseM program "" "let tape = \"abcd\"" `shouldParseStm` TapeDecl "tape" "abcd"
+
+        it "fails if the same variable is declared twice in the same scope" $ do
+            parseM program "" `shouldFailOn` "let tape = \"abc\"\nlet tape = \"xyz\""
 
     context "parsing WHILE statements" $ do
         it "parses WHILE" $ do
             parseM program "" "while True { right tape }" `shouldParseStm` (While TRUE (MoveRight "tape"))
 
-        it "fails to parseM if a boolean expression is missing" $ do
+        it "fails to parse if a boolean expression is missing" $ do
             parseM program "" `shouldFailOn` "while { right tape }"
 
-        it "fails to parseM if the first brace is missing" $ do
+        it "fails to parse if the first brace is missing" $ do
             parseM program "" `shouldFailOn` "while True right tape }"
 
-        it "fails to parseM if the second brace is missing" $ do
+        it "fails to parse if the second brace is missing" $ do
             parseM program "" `shouldFailOn` "while True { right tape"
 
-        it "fails to parseM if both braces are missing" $ do
+        it "fails to parse if both braces are missing" $ do
             parseM program "" `shouldFailOn` "while True right tape"
 
     context "parsing function declarations" $ do
@@ -342,16 +347,16 @@ programSpec = describe "program" $ do
             let expected = FuncDecl "leftUntil" [] (MoveRight "tape")
             parseM program "" "func leftUntil { right tape }" `shouldParseStm` expected
 
-        it "fails to parseM if a function name is missing" $ do
+        it "fails to parse if a function name is missing" $ do
             parseM program "" `shouldFailOn` "func { right tape }"
 
-        it "fails to parseM if the first brace is missing" $ do
+        it "fails to parse if the first brace is missing" $ do
             parseM program "" `shouldFailOn` "func fName right tape }"
 
-        it "fails to parseM if the second brace is missing" $ do
+        it "fails to parse if the second brace is missing" $ do
             parseM program "" `shouldFailOn` "func fName { right tape"
 
-        it "fails to parseM if both braces are missing" $ do
+        it "fails to parse if both braces are missing" $ do
             parseM program "" `shouldFailOn` "func fName right tape"
 
     context "parsing function calls" $ do
@@ -395,10 +400,10 @@ programSpec = describe "program" $ do
             parseM program "" "left tape \n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
             parseM program "" "left tape \n\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
-        it "fails if parsing the first statements fails to parseM" $ do
+        it "fails if parsing the first statements fails to parse" $ do
             parseM program "" `shouldFailOn` "left tape \n if"
 
-        it "fails if parsing the second statements fails to parseM" $ do
+        it "fails if parsing the second statements fails to parse" $ do
             parseM program "" `shouldFailOn `"if \n left tape"
 
     context "parsing printing" $ do
@@ -462,7 +467,7 @@ programSpec = describe "program" $ do
                 parseM program "" "left tape  " `shouldParseStm` (MoveLeft "tape")
 
             it "ignores newlines at the end of a statement" $ do
-                parseM program "" "left tape\n\n " `shouldParseStm` (MoveLeft "tape")
+                parseM program "" "left tape\n\n" `shouldParseStm` (MoveLeft "tape")
 
             it "ignores tabs" $ do
                 parseM program "" "left tape\t" `shouldParseStm` (MoveLeft "tape")

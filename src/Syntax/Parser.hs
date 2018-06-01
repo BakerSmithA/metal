@@ -6,9 +6,11 @@ import Syntax.Tree
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
+import qualified Text.Megaparsec.String as M
+import Debug.Trace
 
 type ParseState = State [String]
-type Parser = ParsecT Dec String ParseState
+type Parser = StateT [String] M.Parser
 
 -- Abstract Grammar
 --
@@ -121,6 +123,28 @@ identifier = (str >>= check) <* whitespace where
     check word = if word `elem` reservedKeywords
                     then fail $ "keyword " ++ show word ++ " cannot be an identifier"
                     else return word
+
+-- Attempts to parse an identifier used to declare a new variable.
+-- Fails if the variable already exists.
+varDeclId :: Parser String
+varDeclId = do
+    declaredIds <- get
+    varId <- identifier
+    trace (varId ++ ", " ++ (show declaredIds) ++ " = " ++ (show $ varId `elem` declaredIds)) $ if varId `elem` declaredIds
+        then fail $ "variable " ++ show varId ++ " already declared"
+        else do
+            put (varId:declaredIds)
+            return varId
+
+-- Attempts to use a declared variable. If the variable does not exist then
+-- parsing fails.
+varUseId :: Parser String
+varUseId = do
+    declaredIds <- get
+    varId <- identifier
+    if not (varId `elem` declaredIds)
+        then fail $ "variable " ++ show varId ++ " not declared"
+        else return varId
 
 -- Parses a variable name, the EBNF syntax of which is:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
@@ -242,8 +266,8 @@ stm' = try funcCall
    <|> WriteStr <$ tok "write" <*> tapeName <* whitespace <*> quotedString
    <|> Reject <$ tok "reject"
    <|> Accept <$ tok "accept"
-   <|> try (VarDecl <$ tok "let" <*> varName <* tok "=" <*> derivedSymbol)
-   <|> TapeDecl <$ tok "let" <*> tapeName <* tok "=" <*> tapeLiteral
+   <|> try (VarDecl <$ tok "let" <*> varDeclId <* tok "=" <*> derivedSymbol)
+   <|> TapeDecl <$ tok "let" <*> varDeclId <* tok "=" <*> tapeLiteral
    <|> funcDecl
    <|> try (PrintStr <$ tok "print" <*> quotedString)
    <|> try (PrintRead <$ tok "print" <* whitespace <*> tapeName)
@@ -257,7 +281,7 @@ compose []  = error "Compose failed: expected a statement"
 compose [x] = x
 compose xs  = foldr1 Comp xs
 
--- Parses statements separated by newlines into a composition of statements.
+-- Parses statements separated by newlines into a composition of statements.stmComp :: Parser Stm
 stmComp :: Parser Stm
 stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
     stms :: Parser [Stm]
@@ -296,7 +320,5 @@ program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline
 
 -- Run a parser and extract the result it from the parse state.
-parseM :: ParsecT e s ParseState a -> String -> s -> Either (ParseError (Token s) e) a
-parseM p sourceFileName s = stateResult where
-    (stateResult, _) = runState parseResult []
-    parseResult = runParserT p sourceFileName s
+parseM :: Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
+parseM p src s = parse (evalStateT p []) src s

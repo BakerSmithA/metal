@@ -7,7 +7,6 @@ import State.App
 import State.Config
 import State.Output
 import Semantics.Stm
-import qualified Text.Megaparsec as M
 import System.FilePath
 
 -- Parses the contents of source file, returning either the parsed program, or
