@@ -6,6 +6,7 @@ import State.App
 import State.Config as Config
 import State.Machine
 import Syntax.Tree
+import qualified Syntax.ParseState as S (ParseState, fromList)
 import System.Environment
 import System.FilePath
 
@@ -18,10 +19,10 @@ parseArgs _            = throw (userError "Incorrect number of arguments, expect
 
 -- Given a program statement, the program is run with an initially
 -- empty environment, and tape containing `syms`.
-evalSemantics :: String -> Program -> [TapeSymbol] -> IO (Machine Config)
-evalSemantics startDir s syms = do
-    let config = Config.fromString "main" syms
-    app <- evalProg (ioTree startDir) s config
+evalSemantics :: String -> S.ParseState -> String -> Program -> [TapeSymbol] -> IO (Machine Config)
+evalSemantics mainTapeName parseState startDir s syms = do
+    let config = Config.fromString mainTapeName syms
+    app <- evalProg (ioTree parseState startDir) s config
     evalApp app
 
 main :: IO ()
@@ -29,7 +30,9 @@ main = do
     args <- getArgs
     (filePath, tapeSyms) <- parseArgs args
     sourceCode <- readFile filePath
-    parsedProg <- parseContents sourceCode
+    let mainTapeName = "main"
+    let parseState = S.fromList [mainTapeName]
+    parsedProg <- parseContents parseState sourceCode
     let startDir = takeDirectory filePath
-    result <- evalSemantics startDir parsedProg tapeSyms
+    result <- evalSemantics mainTapeName parseState startDir parsedProg tapeSyms
     putStrLn $ "\n" ++ (show result)

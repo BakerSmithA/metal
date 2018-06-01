@@ -2,6 +2,7 @@ module Semantics.Program where
 
 import Control.Exception
 import Syntax.Tree
+import Syntax.ParseState (ParseState)
 import Syntax.Parser
 import State.App
 import State.Config
@@ -11,9 +12,9 @@ import System.FilePath
 
 -- Parses the contents of source file, returning either the parsed program, or
 -- the parse error.
-parseContents :: String -> IO Program
-parseContents contents = do
-    let result = parseM program "" contents
+parseContents :: ParseState -> String -> IO Program
+parseContents initialState contents = do
+    let result = parseState initialState program "" contents
     either throw return result
 
 -- Describes a path in the tree, this could represent a file system path.
@@ -31,13 +32,13 @@ importStms tree (path:rest) = do
     return (childrenStms ++ [body] ++ restStms)
 
 -- Uses the file system to read a Metal file and parse the input.
-ioTree :: String -> ImportPath -> IO ([ImportPath], Stm)
-ioTree dirPath path = do
+ioTree :: ParseState -> String -> ImportPath -> IO ([ImportPath], Stm)
+ioTree parseState dirPath path = do
     -- Add Metal ".al" extension to end of file.
     let fullPath = dirPath </> addExtension path "al"
     contents <- readFile fullPath
 
-    Program imports body <- parseContents contents
+    Program imports body <- parseContents parseState contents
 
     let importPath = takeDirectory path
     let fullImports = map (importPath </>) imports
