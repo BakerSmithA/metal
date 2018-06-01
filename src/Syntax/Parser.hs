@@ -1,11 +1,14 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
+import Control.Monad.State.Lazy
 import Syntax.Tree
-import Text.Megaparsec
+import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
-import Text.Megaparsec.String
+
+type ParseState = State [String]
+type Parser = ParsecT Dec String ParseState
 
 -- Abstract Grammar
 --
@@ -291,3 +294,8 @@ importStm = tok "import" *> many (noneOf "\n\r")
 program :: Parser Program
 program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
     imports = many (importStm <* newline) <* whitespaceNewline
+
+parseM :: ParsecT e s ParseState a -> String -> s -> Either (ParseError (Token s) e) a
+parseM p sourceFileName s = stateResult where
+    (stateResult, _) = runState parseResult []
+    parseResult = runParserT p sourceFileName s

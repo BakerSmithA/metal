@@ -14,7 +14,7 @@ import System.FilePath
 -- the parse error.
 parseContents :: String -> IO Program
 parseContents contents = do
-    let result = M.runParser program "" contents
+    let result = parseM program "" contents
     either throw return result
 
 -- Describes a path in the tree, this could represent a file system path.
