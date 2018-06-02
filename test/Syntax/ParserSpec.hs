@@ -19,7 +19,7 @@ parserSpec = do
         bexpSpec
         ifStmSpec
         programSpec
-        importStmSpec
+        importPathsSpec
 
 encasedStringSpec :: Spec
 encasedStringSpec = do
@@ -266,16 +266,38 @@ ifStmSpec = describe "ifStm" $ do
         it "fails to parse if both braces are missing" $ do
             parseState (S.fromList ["tape"]) program "" `shouldFailOn` "if True { right tape } else right tape"
 
-importStmSpec :: Spec
-importStmSpec = describe "importStm" $ do
-    it "parses just a file name" $ do
-        parseM importStm "" "import FileName" `shouldParse` "FileName"
+importPathsSpec :: Spec
+importPathsSpec =
+    describe "importPaths" $ do
+        it "parses just a file name" $ do
+            parseM importPaths "" "import FileName" `shouldParse` ["FileName"]
 
-    it "parses a file path" $ do
-        parseM importStm "" "import Dir/SubDir/FileName" `shouldParse` "Dir/SubDir/FileName"
+        it "parses a file path" $ do
+            parseM importPaths "" "import Dir/SubDir/FileName" `shouldParse` ["Dir/SubDir/FileName"]
 
-    it "parses when there is a backup dir" $ do
-        parseM importStm "" "import ../Dir/../FileName" `shouldParse` "../Dir/../FileName"
+        it "parses when there is a backup dir" $ do
+            parseM importPaths "" "import ../Dir/../FileName" `shouldParse` ["../Dir/../FileName"]
+
+        it "parses multiple imports followed by a statement" $ do
+            let expected = ["A/B", "C"]
+            parseM importPaths "" "import A/B\nimport C\nright tape" `shouldParse` expected
+
+        it "parses when there are multiple newlines between imports" $ do
+            let expected = ["A", "B"]
+            parseM importPaths "" "import A\n\nimport B\nleft" `shouldParse` expected
+
+        context "removing whitespace and comments" $ do
+            it "ignores spaces" $ do
+                parseM importPaths "" " import A\nleft tape" `shouldParse` ["A"]
+
+            it "ignores newlines" $ do
+                parseM importPaths "" "\n\nimport A\nleft tape" `shouldParse` ["A"]
+
+            it "ignores whole-line comments" $ do
+                parseM importPaths "" "//Comment\nimportA\nleft tape" `shouldParse` ["A"]
+
+            it "ignores in-line" $ do
+                parseM importPaths "" "/* Comment */\nimportA\nleft tape" `shouldParse` ["A"]
 
 programSpec :: Spec
 programSpec = describe "program" $ do
@@ -434,14 +456,6 @@ programSpec = describe "program" $ do
         it "parses printing the symbol read from the tape" $ do
             parseState (S.fromList ["tape"]) program "" "print tape" `shouldParseStm` (PrintRead "tape")
 
-    context "imports" $ do
-        it "parses imports followed by a statement" $ do
-            let expected = Program ["A/B", "C"] (MoveRight "tape")
-            parseState (S.fromList ["tape"]) program "" "import A/B\nimport C\nright tape" `shouldParse` expected
-
-        it "fails if there is more than one newline between imports" $ do
-            parseM program "" `shouldFailOn` "import A\n\nimport B\nleft"
-
     context "removing whitespace and comments" $ do
         context "before statements" $ do
             it "ignores spaces" $ do
@@ -458,23 +472,6 @@ programSpec = describe "program" $ do
 
             it "ignores tabs" $ do
                 parseState (S.fromList ["tape"]) program "" "\tleft tape" `shouldParseStm` (MoveLeft "tape")
-
-        context "before imports" $ do
-            it "ignores spaces" $ do
-                let expected = Program ["A"] (MoveLeft "tape")
-                parseState (S.fromList ["tape"]) program "" " import A\nleft tape" `shouldParse` expected
-
-            it "ignores newlines" $ do
-                let expected = Program ["A"] (MoveLeft "tape")
-                parseState (S.fromList ["tape"]) program "" "\n\nimport A\nleft tape" `shouldParse` expected
-
-            it "ignores whole-line comments" $ do
-                let expected = Program ["A"] (MoveLeft "tape")
-                parseState (S.fromList ["tape"]) program "" "//Comment\nimportA\nleft tape" `shouldParse` expected
-
-            it "ignores in-line" $ do
-                let expected = Program ["A"] (MoveLeft "tape")
-                parseState (S.fromList ["tape"]) program "" "/* Comment */\nimportA\nleft tape" `shouldParse` expected
 
         context "interspersed with statements" $ do
             it "ignores whole line comments" $ do

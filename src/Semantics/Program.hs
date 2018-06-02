@@ -19,12 +19,12 @@ parseContents sourceFileName initialState contents = do
     either throw return result
 
 -- Describes a path in the tree, this could represent a file system path.
-type Tree m = (ImportPath -> m ([ImportPath], Stm))
+type Tree m = (ImportPath -> m ([ImportPath], String))
 
 -- Perfoms a DF search resolving imports into the statement in those files.
 -- `tree` describes the shape of the tree by giving a list of branches
 -- (import statements) in that file.
-importStms :: (Monad m) => Tree m -> [ImportPath] -> m [Stm]
+importStms :: (Monad m) => Tree m -> [ImportPath] -> m [String]
 importStms _ [] = return []
 importStms tree (path:rest) = do
     (imports, body) <- tree path
@@ -33,7 +33,7 @@ importStms tree (path:rest) = do
     return (childrenStms ++ [body] ++ restStms)
 
 -- Uses the file system to read a Metal file and parse the input.
-ioTree :: ParseState -> String -> ImportPath -> IO ([ImportPath], Stm)
+ioTree :: ParseState -> String -> ImportPath -> IO ([ImportPath], String)
 ioTree parseState dirPath path = do
     -- Add Metal ".al" extension to end of file.
     let fullPath = dirPath </> addExtension path "al"

@@ -60,7 +60,8 @@ type Parser = StateT ParseState M.Parser
 --                | 'print' VarName
 --                | 'print' String
 --  Import        : 'import ' String
---  Program       : Import* Stm
+--  Imports       : ('import ' String '\n'+)*
+--  Program       : Imports Stm
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -308,17 +309,22 @@ stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
 stm :: Parser Stm
 stm = stmComp <* whitespaceNewline
 
--- Parses an import statement, the EBNF syntax of which is given below. An
--- example of a valid file path is: Directory.SubDirectory.File
+-- Parses an import statement, the EBNF syntax of which is given below.
 --  Import : 'import ' String
-importStm :: Parser ImportPath
-importStm = tok "import" *> many (noneOf "\n\r")
+importPath :: Parser ImportPath
+importPath = tok "import" *> many (noneOf "\n\r")
+
+-- Parses many import statements seperated by newlines.
+--  Imports : ('import ' String '\n'+)*
+importPaths :: Parser [ImportPath]
+importPaths = whitespaceNewline *> paths <* whitespaceNewline where
+    paths = try (many (importPath <* some newline))
+        <|> (:) <$> importPath <*> pure []
 
 -- Parses a program, the EBNF syntax of which is:
 --  Program : Import* Stm
 program :: Parser Program
-program = Program <$ whitespaceNewline <*> imports <*> stm <* eof where
-    imports = many (importStm <* newline) <* whitespaceNewline
+program = Program <$ importPaths <*> stm <* eof
 
 parseState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
 parseState initialState p src s = parse (evalStateT p initialState) src s

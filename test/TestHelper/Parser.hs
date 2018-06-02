@@ -9,4 +9,4 @@ import Test.HUnit.Lang
 shouldParseStm :: (Show t, Show e) => Either (ParseError t e) Program -> Stm -> Expectation
 shouldParseStm result stm = either handleErr success result where
     handleErr err  = assertFailure ("Expected program, got error: " ++ (show err))
-    success (Program _ body) = body `shouldBe` stm
+    success (Program body) = body `shouldBe` stm

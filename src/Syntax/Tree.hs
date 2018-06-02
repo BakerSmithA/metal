@@ -72,4 +72,4 @@ data Stm = MoveLeft VarName
 type ImportPath = String
 
 -- A type that represents a parsed program.
-data Program = Program [ImportPath] Stm deriving (Eq, Show)
+data Program = Program Stm deriving (Eq, Show)
