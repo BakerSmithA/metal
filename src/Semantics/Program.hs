@@ -9,14 +9,13 @@ import State.Config
 import State.Output
 import Semantics.Stm
 import System.FilePath
-import Text.Megaparsec.Error
-
--- Parses the contents of source file, returning either the parsed program, or
--- the parse error.
-parseContents :: String -> ParseState -> String -> IO Program
-parseContents sourceFileName initialState contents = do
-    let result = parseState initialState program sourceFileName contents
-    either throw return result
+--
+-- -- Parses the contents of source file, returning either the parsed program, or
+-- -- the parse error.
+-- parseContents :: String -> ParseState -> String -> IO Program
+-- parseContents sourceFileName initialState contents = do
+--     let result = parseState initialState program sourceFileName contents
+--     either throw return result
 
 -- Describes a path in the tree, this could represent a file system path.
 type Tree m = (ImportPath -> m ([ImportPath], String))
@@ -33,13 +32,14 @@ importStms tree (path:rest) = do
     return (childrenStms ++ [body] ++ restStms)
 
 -- Uses the file system to read a Metal file and parse the input.
-ioTree :: ParseState -> String -> ImportPath -> IO ([ImportPath], String)
-ioTree parseState dirPath path = do
+ioTree :: String -> ImportPath -> IO ([ImportPath], String)
+ioTree dirPath path = do
     -- Add Metal ".al" extension to end of file.
     let fullPath = dirPath </> addExtension path "al"
     contents <- readFile fullPath
 
-    Program imports body <- parseContents fullPath parseState contents
+    -- Program imports body <- parseContents fullPath parseState contents
+    imports <- parseM 
 
     let importPath = takeDirectory path
     let fullImports = map (importPath </>) imports
@@ -48,9 +48,9 @@ ioTree parseState dirPath path = do
 
 -- Evalutes the program, and defaults to accepting if no terminating state is
 -- reached.
-evalProg :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (App m Config)
-evalProg tree (Program imports body) config = do
-    imported <- importStms tree imports
-    let allStms = imported ++ [body]
-    let allComp = compose allStms
-    return $ evalStm (Comp allComp Accept) config
+-- evalProg :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (App m Config)
+-- evalProg tree (Program imports body) config = do
+--     imported <- importStms tree imports
+--     let allStms = imported ++ [body]
+--     let allComp = compose allStms
+--     return $ evalStm (Comp allComp Accept) config

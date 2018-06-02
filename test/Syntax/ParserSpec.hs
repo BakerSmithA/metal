@@ -6,6 +6,7 @@ import Syntax.Parser
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import TestHelper.Parser
+import Text.Megaparsec (parse)
 
 parserSpec :: Spec
 parserSpec = do
@@ -270,34 +271,34 @@ importPathsSpec :: Spec
 importPathsSpec =
     describe "importPaths" $ do
         it "parses just a file name" $ do
-            parseM importPaths "" "import FileName" `shouldParse` ["FileName"]
+            parse importPaths "" "import FileName" `shouldParse` ["FileName"]
 
         it "parses a file path" $ do
-            parseM importPaths "" "import Dir/SubDir/FileName" `shouldParse` ["Dir/SubDir/FileName"]
+            parse importPaths "" "import Dir/SubDir/FileName" `shouldParse` ["Dir/SubDir/FileName"]
 
         it "parses when there is a backup dir" $ do
-            parseM importPaths "" "import ../Dir/../FileName" `shouldParse` ["../Dir/../FileName"]
+            parse importPaths "" "import ../Dir/../FileName" `shouldParse` ["../Dir/../FileName"]
 
         it "parses multiple imports followed by a statement" $ do
             let expected = ["A/B", "C"]
-            parseM importPaths "" "import A/B\nimport C\nright tape" `shouldParse` expected
+            parse importPaths "" "import A/B\nimport C\nright tape" `shouldParse` expected
 
         it "parses when there are multiple newlines between imports" $ do
             let expected = ["A", "B"]
-            parseM importPaths "" "import A\n\nimport B\nleft" `shouldParse` expected
+            parse importPaths "" "import A\n\nimport B\nleft" `shouldParse` expected
 
         context "removing whitespace and comments" $ do
             it "ignores spaces" $ do
-                parseM importPaths "" " import A\nleft tape" `shouldParse` ["A"]
+                parse importPaths "" " import A\nleft tape" `shouldParse` ["A"]
 
             it "ignores newlines" $ do
-                parseM importPaths "" "\n\nimport A\nleft tape" `shouldParse` ["A"]
+                parse importPaths "" "\n\nimport A\nleft tape" `shouldParse` ["A"]
 
             it "ignores whole-line comments" $ do
-                parseM importPaths "" "//Comment\nimportA\nleft tape" `shouldParse` ["A"]
+                parse importPaths "" "//Comment\nimportA\nleft tape" `shouldParse` ["A"]
 
             it "ignores in-line" $ do
-                parseM importPaths "" "/* Comment */\nimportA\nleft tape" `shouldParse` ["A"]
+                parse importPaths "" "/* Comment */\nimportA\nleft tape" `shouldParse` ["A"]
 
 programSpec :: Spec
 programSpec = describe "program" $ do

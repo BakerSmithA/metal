@@ -1,7 +1,7 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
-import Control.Monad.State.Lazy (StateT, evalStateT, get, put)
+import Control.Monad.State.Lazy (StateT, evalStateT, get, put, lift)
 import Syntax.Tree
 import Syntax.ParseState as S
 import Text.Megaparsec hiding (State)
@@ -74,34 +74,45 @@ reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
 -- whole line and in-line comments. The syntax for both comment types are the
 -- same as C, with '//' indicating a whole line comment and '/* ... */'
 -- indicating an in-line comment.
-whitespaceConsumer :: Parser Char -> Parser ()
+whitespaceConsumer :: M.Parser Char -> M.Parser ()
 whitespaceConsumer sc = L.space (void sc) lineCmnt blockCmnt
   where lineCmnt  = L.skipLineComment "//" <* void (many newline)
         blockCmnt = L.skipBlockComment "/*" "*/" <* void (many newline)
 
 -- Comsumes whitespace and comments, but not newlines.
-whitespace :: Parser ()
+whitespace :: M.Parser ()
 whitespace = whitespaceConsumer (oneOf "\t ")
 
--- Consumes whitespace, comments, and newlines.
-whitespaceNewline :: Parser ()
+lWhitespace :: Parser ()
+lWhitespace = lift whitespace
+
+whitespaceNewline :: M.Parser ()
 whitespaceNewline = whitespaceConsumer spaceChar
+
+-- Consumes whitespace, comments, and newlines.
+lWhitespaceNewline :: Parser ()
+lWhitespaceNewline = lift whitespaceNewline
 
 -- Succeeds if the specified string can be parsed, followed by any ignored
 -- whitespace or comments.
-tok :: String -> Parser String
+tok :: String -> M.Parser String
 tok s = string s <* whitespace
+
+-- Succeeds if the specified string can be parsed, followed by any ignored
+-- whitespace or comments.
+lTok :: String -> Parser String
+lTok = lift . tok
 
 -- Parses a string enclosed in parenthesis.
 parens :: Parser a -> Parser a
-parens = between (tok "(") (tok ")")
+parens = between (lTok "(") (lTok ")")
 
 -- Parses a string enclosed in curly braces.
 braces :: Parser a -> Parser a
-braces = between (tok "{" <* whitespaceNewline) (tok "}")
+braces = between (lTok "{" <* lWhitespaceNewline) (lTok "}")
 
 quoted :: Parser a -> Parser a
-quoted = between (tok "\"") (tok "\"")
+quoted = between (lTok "\"") (lTok "\"")
 
 -- Parses a string encased in double quotes.
 quotedString :: Parser String
@@ -118,7 +129,7 @@ tapeSymbol = noneOf "\'\""
 -- A practical consideration when parsing identifiers is that they do not
 -- conflict with reserved keywords.
 identifier :: Parser String
-identifier = (str >>= check) <* whitespace where
+identifier = (str >>= check) <* lWhitespace where
     str        = (:) <$> lowerChar <*> many alphaNumChar
     check word = if not (word `elem` reservedKeywords)
                     then return word
@@ -166,26 +177,26 @@ argName = identifier
 --                | VarName
 --                | \' TapeSymbol \'
 derivedSymbol :: Parser DerivedValue
-derivedSymbol = Read <$ tok "read" <* whitespace <*> varUseId
+derivedSymbol = Read <$ lTok "read" <* lWhitespace <*> varUseId
             <|> Var <$> varUseId
-            <|> Literal <$> between (char '\'') (tok "\'") tapeSymbol
+            <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
             <|> parens derivedSymbol
 
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.
 bexp' :: Parser Bexp
 bexp' = try (parens bexp)
-    <|> TRUE  <$ tok "True"
-    <|> FALSE <$ tok "False"
-    <|> try (Eq <$> derivedSymbol <* tok "==" <*> derivedSymbol)
-    <|> try (Le <$> derivedSymbol <* tok "<=" <*> derivedSymbol)
-    <|> try (Ne <$> derivedSymbol <* tok "!=" <*> derivedSymbol)
+    <|> TRUE  <$ lTok "True"
+    <|> FALSE <$ lTok "False"
+    <|> try (Eq <$> derivedSymbol <* lTok "==" <*> derivedSymbol)
+    <|> try (Le <$> derivedSymbol <* lTok "<=" <*> derivedSymbol)
+    <|> try (Ne <$> derivedSymbol <* lTok "!=" <*> derivedSymbol)
 
 -- The operators that can work on boolean expressions. There is no precedence,
 -- instead the expression is evaualted from left to right.
 bexpOps :: [[Operator Parser Bexp]]
-bexpOps = [[Prefix (Not <$ tok "not")],
-           [InfixL (And <$ tok "and"), InfixL (Or <$ tok "or")]]
+bexpOps = [[Prefix (Not <$ lTok "not")],
+           [InfixL (And <$ lTok "and"), InfixL (Or <$ lTok "or")]]
 
 -- Parses a boolean expression, allowing for parenthesis to specify the
 -- intended parse. The EBNF syntax of boolean expressions is:
@@ -204,33 +215,33 @@ bexp = makeExprParser bexp' bexpOps
 --  ElseIf : 'else if' { Stm } ElseIf | Else
 --  Else   : 'else' { Stm } | ε
 ifStm :: Parser Stm
-ifStm = If <$ tok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> elseClause where
+ifStm = If <$ lTok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> elseClause where
     elseIfClause = do
-        bool <- tok "else if" *> bexp
+        bool <- lTok "else if" *> bexp
         statement <- braces stmComp
         return (bool, statement)
-    elseClause = optional (tok "else" *> braces stmComp)
+    elseClause = optional (lTok "else" *> braces stmComp)
 
 -- Type of data passed to a function, the EBNF of which is:
 --  FuncArgType   : 'Tape' | 'Sym'
 dataType :: Parser DataType
-dataType = SymType <$ tok "Sym"
-       <|> TapeType <$ tok "Tape"
+dataType = SymType <$ lTok "Sym"
+       <|> TapeType <$ lTok "Tape"
 
 -- Argument to a function, the EBNF is:
 --  FuncDeclArg : ArgName ':' FuncArgType
 funcDeclArg :: Parser FuncDeclArg
-funcDeclArg = FuncDeclArg <$> argName <* tok ":" <*> dataType
+funcDeclArg = FuncDeclArg <$> argName <* lTok ":" <*> dataType
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs : FuncDeclArg (' ' FuncDeclArg)* | ε
 funcDeclArgs :: Parser FuncDeclArgs
-funcDeclArgs = funcDeclArg `sepBy` whitespace
+funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ tok "func" <*> funcName <*> funcDeclArgs <*> body where
+funcDecl = FuncDecl <$ lTok "func" <*> funcName <*> funcDeclArgs <*> body where
     body = do
         -- Variable names can be overwritten inside functions.
         currState <- get
@@ -252,7 +263,7 @@ funcCallArg = Derived <$> derivedSymbol
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: Parser FuncCallArgs
-funcCallArgs = funcCallArg `sepBy` whitespace
+funcCallArgs = funcCallArg `sepBy` lWhitespace
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
@@ -262,19 +273,19 @@ funcCall = Call <$> funcName <*> funcCallArgs
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = try funcCall
-   <|> MoveLeft <$ tok "left" <* whitespace <*> varUseId
-   <|> MoveRight <$ tok "right" <* whitespace <*> varUseId
-   <|> try (Write <$ tok "write" <*> varUseId <* whitespace <*> derivedSymbol)
-   <|> WriteStr <$ tok "write" <*> varUseId <* whitespace <*> quotedString
-   <|> Reject <$ tok "reject"
-   <|> Accept <$ tok "accept"
-   <|> try (VarDecl <$ tok "let" <*> varDeclId <* tok "=" <*> derivedSymbol)
-   <|> TapeDecl <$ tok "let" <*> varDeclId <* tok "=" <*> tapeLiteral
+   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> varUseId
+   <|> MoveRight <$ lTok "right" <* lWhitespace <*> varUseId
+   <|> try (Write <$ lTok "write" <*> varUseId <* lWhitespace <*> derivedSymbol)
+   <|> WriteStr <$ lTok "write" <*> varUseId <* lWhitespace <*> quotedString
+   <|> Reject <$ lTok "reject"
+   <|> Accept <$ lTok "accept"
+   <|> try (VarDecl <$ lTok "let" <*> varDeclId <* lTok "=" <*> derivedSymbol)
+   <|> TapeDecl <$ lTok "let" <*> varDeclId <* lTok "=" <*> tapeLiteral
    <|> funcDecl
-   <|> try (PrintStr <$ tok "print" <*> quotedString)
-   <|> try (PrintRead <$ tok "print" <* whitespace <*> varUseId)
-   <|> DebugPrintTape <$ tok "_printTape" <*> varUseId
-   <|> While <$ tok "while" <*> bexp <*> braces stmComp
+   <|> try (PrintStr <$ lTok "print" <*> quotedString)
+   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> varUseId)
+   <|> DebugPrintTape <$ lTok "_printTape" <*> varUseId
+   <|> While <$ lTok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 
 -- Composes a list of statements using Comp.
@@ -285,9 +296,9 @@ compose xs  = foldr1 Comp xs
 
 -- Parses statements separated by newlines into a composition of statements.stmComp :: Parser Stm
 stmComp :: Parser Stm
-stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
+stmComp = (stms <* lWhitespaceNewline) >>= (return . compose) where
     stms :: Parser [Stm]
-    stms = try ((:) <$> (stm' <* some (newline <* whitespace)) <*> stms)
+    stms = try ((:) <$> (stm' <* some (newline <* lWhitespace)) <*> stms)
        <|> (:) <$> stm' <*> pure []
 
 -- Parses a statement, the EBNF syntax of which is given below. The parser will
@@ -307,16 +318,16 @@ stmComp = (stms <* whitespaceNewline) >>= (return . compose) where
 --      | 'print' String
 --      | Import
 stm :: Parser Stm
-stm = stmComp <* whitespaceNewline
+stm = stmComp <* lWhitespaceNewline
 
 -- Parses an import statement, the EBNF syntax of which is given below.
 --  Import : 'import ' String
-importPath :: Parser ImportPath
+importPath :: M.Parser ImportPath
 importPath = tok "import" *> many (noneOf "\n\r")
 
 -- Parses many import statements seperated by newlines.
 --  Imports : ('import ' String '\n'+)*
-importPaths :: Parser [ImportPath]
+importPaths :: M.Parser [ImportPath]
 importPaths = whitespaceNewline *> paths <* whitespaceNewline where
     paths = try (many (importPath <* some newline))
         <|> (:) <$> importPath <*> pure []
@@ -324,7 +335,7 @@ importPaths = whitespaceNewline *> paths <* whitespaceNewline where
 -- Parses a program, the EBNF syntax of which is:
 --  Program : Import* Stm
 program :: Parser Program
-program = Program <$ importPaths <*> stm <* eof
+program = Program <$ lift importPaths <*> stm <* eof
 
 parseState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
 parseState initialState p src s = parse (evalStateT p initialState) src s
