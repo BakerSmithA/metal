@@ -4,7 +4,7 @@ import Control.Exception
 import Control.Monad.Error
 import Syntax.Tree
 import Syntax.ParseState (ParseState)
-import Syntax.Parser (importPaths, parseState, parseState', program)
+import Syntax.Parser (importPaths, parseEvalState, parseRunState, program)
 import State.App
 import State.Config
 import State.Output
@@ -49,7 +49,7 @@ ioTree dirPath importPath = do
 foldFiles :: (Monad m) => ParseState -> [FileData] -> m Stm
 foldFiles initialState []                          = return Accept
 foldFiles initialState ((filePath, contents):rest) = do
-    (stm, state') <- tryParse $ parseState' initialState program filePath contents
+    (stm, state') <- tryParse $ parseRunState initialState program filePath contents
     stms <- foldFiles state' rest
     return (Comp stm stms)
 

@@ -337,12 +337,15 @@ importPaths = whitespaceNewline *> paths <* whitespaceNewline where
 program :: Parser Stm
 program = lift importPaths *> stm <* eof
 
-parseState' :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) (a, ParseState)
-parseState' initialState parser fileName fileContents = parse p fileName fileContents where
+-- Parses using the initial parse state, returning the new parse state.
+parseRunState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) (a, ParseState)
+parseRunState initialState parser fileName fileContents = parse p fileName fileContents where
     p = runStateT parser initialState
 
-parseState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
-parseState initialState parser fileName fileContents = liftM fst (parseState' initialState parser fileName fileContents)
+-- Parses using the initial parse state, discarding the new parse state.
+parseEvalState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
+parseEvalState initialState parser fileName fileContents = liftM fst (parseRunState initialState parser fileName fileContents)
 
-parseM :: Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
-parseM = parseState S.empty
+-- Parses using an empty initial parse state, discarding the new parse state.
+parseEmptyState :: Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
+parseEmptyState = parseEvalState S.empty
