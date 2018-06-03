@@ -70,6 +70,3 @@ data Stm = MoveLeft VarName
 
 -- Path of a Metal file to be imported.
 type ImportPath = String
-
--- A type that represents a parsed program.
-data Program = Program Stm deriving (Eq, Show)

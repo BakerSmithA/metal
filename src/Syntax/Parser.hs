@@ -334,8 +334,8 @@ importPaths = whitespaceNewline *> paths <* whitespaceNewline where
 
 -- Parses a program, the EBNF syntax of which is:
 --  Program : Import* Stm
-program :: Parser Program
-program = Program <$ lift importPaths <*> stm <* eof
+program :: Parser Stm
+program = lift importPaths *> stm <* eof
 
 parseState' :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) (a, ParseState)
 parseState' initialState parser fileName fileContents = parse p fileName fileContents where

@@ -49,7 +49,7 @@ ioTree dirPath importPath = do
 foldFiles :: (Monad m) => ParseState -> [FileData] -> m Stm
 foldFiles initialState []                          = return Accept
 foldFiles initialState ((filePath, contents):rest) = do
-    (Program stm, state') <- tryParse $ parseState' initialState program filePath contents
+    (stm, state') <- tryParse $ parseState' initialState program filePath contents
     stms <- foldFiles state' rest
     return (Comp stm stms)
 

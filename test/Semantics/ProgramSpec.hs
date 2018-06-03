@@ -25,7 +25,15 @@ import Test.Hspec
 -- testTree2 _       = error "No file"
 
 programSpec :: Spec
-programSpec = undefined
+programSpec = do
+    describe "program" $ do
+        foldFilesSpec
+
+foldFilesSpec :: Spec
+foldFilesSpec = do
+    describe "foldFiles" $ do
+        it "F" $ do
+            pending
 
 -- programSpec :: Spec
 -- programSpec = do
