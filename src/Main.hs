@@ -20,7 +20,7 @@ main :: IO ()
 main = do
     args <- getArgs
     (filePath, tapeSyms) <- parseArgs args
-    let mainTapeName = "main"
+    let mainTapeName = "main" -- tape to which command line input is written
     let parseState = S.fromList [mainTapeName]
     let config = Config.fromString mainTapeName tapeSyms
     let startDir = takeDirectory filePath
