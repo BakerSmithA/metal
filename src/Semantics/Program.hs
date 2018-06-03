@@ -1,10 +1,10 @@
 module Semantics.Program where
 
 import Control.Exception
-import Control.Monad.Error
+import Control.Monad.Except
 import Syntax.Tree
 import Syntax.ParseState (ParseState)
-import Syntax.Parser (importPaths, parseEvalState, parseRunState, program)
+import Syntax.Parser (importPaths, parseRunState, program)
 import State.App
 import State.Config
 import State.Output
@@ -47,7 +47,7 @@ ioTree dirPath importPath = do
 -- Places an accept statement at the end of all the files, therefore the program
 -- defaults to accepting if not specified otherwise.
 foldFiles :: (Monad m) => ParseState -> [FileData] -> m Stm
-foldFiles initialState []                          = return Accept
+foldFiles _ [] = return Accept
 foldFiles initialState ((filePath, contents):rest) = do
     (stm, state') <- tryParse $ parseRunState initialState program filePath contents
     stms <- foldFiles state' rest
