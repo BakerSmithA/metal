@@ -4,34 +4,32 @@ import Control.Exception
 import Control.Monad.Error
 import Syntax.Tree
 import Syntax.ParseState (ParseState)
-import Syntax.Parser (importPaths)
+import Syntax.Parser (importPaths, parseState, parseState', program)
 import State.App
 import State.Config
 import State.Output
+import State.Tree
 import Semantics.Stm
 import System.FilePath
 import Text.Megaparsec as M
---
--- -- Parses the contents of source file, returning either the parsed program, or
--- -- the parse error.
--- parseContents :: String -> ParseState -> String -> IO Program
--- parseContents sourceFileName initialState contents = do
---     let result = parseState initialState program sourceFileName contents
---     either throw return result
 
--- Describes a path in the tree, this could represent a file system path.
-type Tree m = (ImportPath -> m ([ImportPath], String))
+type FileContents = String
+type FileData = (ImportPath, FileContents)
+type ImportTree m = Tree m ImportPath FileData
+
+-- Throws an error if parsing is unsucessful.
+tryParse :: (Monad m) => Either (ParseError Char Dec) a -> m a
+tryParse = either throw return
 
 -- Parses the import statements from the contents of a file, or throws a
 -- parse error if unsuccessful.
-parseImports :: (MonadError e m) => FilePath -> String -> m [ImportPath]
-parseImports sourceFileName contents = do
-    let result = M.parse importPaths sourceFileName contents
-    either throw return result
+parseImports :: (MonadError e m) => FilePath -> FileContents -> m [ImportPath]
+parseImports sourceFileName contents = tryParse parsed where
+    parsed = M.parse importPaths sourceFileName contents
 
 -- Uses the file system to read a Metal file and return any files the read file
 -- imports, along with the contents of the file.
-ioTree :: FilePath -> ImportPath -> IO ([ImportPath], String)
+ioTree :: FilePath -> ImportPath -> IO ([ImportPath], FileData)
 ioTree dirPath importPath = do
     -- Add Metal ".al" extension to end of file.
     let fullPath = dirPath </> addExtension importPath "al"
@@ -42,44 +40,22 @@ ioTree dirPath importPath = do
     let importDirPath = takeDirectory importPath
     let fullImports = map (importDirPath </>) imports
 
-    return (fullImports, contents)
+    return (fullImports, (fullPath, contents))
 
--- Perfoms a DF search resolving imports into the conents in those files.
--- `tree` describes the shape of the tree by giving a list of branches
--- (import statements) in that file.
-importStms :: (Monad m) => Tree m -> [ImportPath] -> m [String]
-importStms _ [] = return []
-importStms tree (path:rest) = do
-    (imports, body) <- tree path
-    childrenStms <- importStms tree imports
-    restStms <- importStms tree rest
-    return (childrenStms ++ [body] ++ restStms)
+-- Combines the dependenices such that variables/functions declared can be
+-- used by further files.
+-- Places an accept statement at the end of all the files, therefore the program
+-- defaults to accepting if not specified otherwise.
+foldFiles :: (Monad m) => ParseState -> [FileData] -> m Stm
+foldFiles initialState []                          = return Accept
+foldFiles initialState ((filePath, contents):rest) = do
+    (Program stm, state') <- tryParse $ parseState' initialState program filePath contents
+    stms <- foldFiles state' rest
+    return (Comp stm stms)
 
--- importStms _ [] = return []
--- importStms tree (path:rest) = do
---     (imports, body) <- tree path
---     childrenStms <- importStms tree imports
---     restStms <- importStms tree rest
---     return (childrenStms ++ [body] ++ restStms)
-
--- ioTree dirPath path = do
---     -- Add Metal ".al" extension to end of file.
---     let fullPath = dirPath </> addExtension path "al"
---     contents <- readFile fullPath
---
---     -- Program imports body <- parseContents fullPath parseState contents
---     imports <- parse
---
---     let importPath = takeDirectory path
---     let fullImports = map (importPath </>) imports
---
---     return (fullImports, body)
-
--- Evalutes the program, and defaults to accepting if no terminating state is
--- reached.
--- evalProg :: (MonadOutput m, Monad t) => Tree t -> Program -> Config -> t (App m Config)
--- evalProg tree (Program imports body) config = do
---     imported <- importStms tree imports
---     let allStms = imported ++ [body]
---     let allComp = compose allStms
---     return $ evalStm (Comp allComp Accept) config
+-- Parses the initial file and evaulates it, possibly importing other files too.
+evalProg :: (MonadOutput m, Monad t) => ImportTree t -> ImportPath -> ParseState -> Config -> t (App m Config)
+evalProg tree filePath initialState config = do
+    fileDatas <- dfFlattenTree tree [filePath]
+    stm <- foldFiles initialState fileDatas
+    return (evalStm stm config)

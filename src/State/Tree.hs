@@ -14,12 +14,12 @@ type Tree m a b = (a -> m ([a], b))
 type VisitedNodes a = Set a
 
 -- Uses Depth First Search to flatten all the data contained in the tree.
-dfFlattenTree :: (Show a, Monad m, Eq a, Ord a) => Tree m a b -> [a] -> m [b]
+dfFlattenTree :: (Monad m, Eq a, Ord a) => Tree m a b -> [a] -> m [b]
 dfFlattenTree tree start = fmap fst (dfFlattenTreeCycle Set.empty tree start)
 
 -- Flattens the tree using DFS whilst checking for cycles. If cycles are
 -- encountered the nodes will not be visited again.
-dfFlattenTreeCycle :: (Show a, Monad m, Eq a, Ord a) => VisitedNodes a -> Tree m a b -> [a] -> m ([b], VisitedNodes a)
+dfFlattenTreeCycle :: (Monad m, Eq a, Ord a) => VisitedNodes a -> Tree m a b -> [a] -> m ([b], VisitedNodes a)
 dfFlattenTreeCycle visited _ [] = return ([], visited)
 dfFlattenTreeCycle visited tree (node:restPaths) = do
     if node `elem` visited then do

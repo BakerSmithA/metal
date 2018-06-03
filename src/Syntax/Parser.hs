@@ -1,15 +1,13 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
-import Control.Monad.State.Lazy (StateT, evalStateT, get, put, lift)
+import Control.Monad.State.Lazy (StateT, evalStateT, get, put, lift, runStateT, liftM)
 import Syntax.Tree
 import Syntax.ParseState as S
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
 import qualified Text.Megaparsec.String as M
-
-type Parser = StateT ParseState M.Parser
 
 -- Abstract Grammar
 --
@@ -62,6 +60,8 @@ type Parser = StateT ParseState M.Parser
 --  Import        : 'import ' String
 --  Imports       : ('import ' String '\n'+)*
 --  Program       : Imports Stm
+
+type Parser = StateT ParseState M.Parser
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -337,8 +337,12 @@ importPaths = whitespaceNewline *> paths <* whitespaceNewline where
 program :: Parser Program
 program = Program <$ lift importPaths <*> stm <* eof
 
+parseState' :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) (a, ParseState)
+parseState' initialState parser fileName fileContents = parse p fileName fileContents where
+    p = runStateT parser initialState
+
 parseState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
-parseState initialState p src s = parse (evalStateT p initialState) src s
+parseState initialState parser fileName fileContents = liftM fst (parseState' initialState parser fileName fileContents)
 
 parseM :: Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
 parseM = parseState S.empty
