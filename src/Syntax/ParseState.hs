@@ -1,7 +1,7 @@
 module Syntax.ParseState where
 
 import Syntax.Env as E
-import Syntax.Tree (VarName)
+import Syntax.Tree (VarName, FuncName)
 
 -- Keeps track of used variable and function names to avoid invalid programs.
 data ParseState = ParseState {
@@ -13,9 +13,17 @@ data ParseState = ParseState {
 empty :: ParseState
 empty = ParseState E.empty E.empty
 
--- A parse state containing variables with the given names.
+-- A parse state containing variables and functions with the given names.
+fromLists :: [VarName] -> [FuncName] -> ParseState
+fromLists vars funcs = ParseState (E.fromList vars) (E.fromList funcs)
+
+-- A parse state containing only variables with the given names.
 fromVarList :: [VarName] -> ParseState
-fromVarList vars = ParseState (E.fromList vars) E.empty
+fromVarList vars = fromLists vars []
+
+-- A parse state containing only functions with the given names.
+fromFuncList :: [VarName] -> ParseState
+fromFuncList funcs = fromLists [] funcs
 
 -- Applies f to both the variable and function environments.
 modifyEnvs :: (Env -> Env) -> ParseState -> ParseState

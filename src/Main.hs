@@ -5,7 +5,7 @@ import Semantics.Program
 import State.App
 import State.Config as Config
 import Syntax.Tree
-import qualified Syntax.ParseState as S (fromList)
+import qualified Syntax.ParseState as S (fromVarList)
 import System.Environment
 import System.FilePath
 
@@ -21,7 +21,7 @@ main = do
     args <- getArgs
     (filePath, tapeSyms) <- parseArgs args
     let mainTapeName = "main" -- tape to which command line input is written
-    let parseState = S.fromList [mainTapeName]
+    let parseState = S.fromVarList [mainTapeName]
     let config = Config.fromString mainTapeName tapeSyms
     let startDir = takeDirectory filePath
     app <- evalProg (ioTree startDir) filePath parseState config
