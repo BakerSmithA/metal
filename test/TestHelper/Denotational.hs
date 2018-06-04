@@ -9,7 +9,6 @@ import State.Output
 import Semantics.Bexp
 import Semantics.DerivedValue
 import Semantics.Stm
-import Semantics.Program
 import qualified Test.Hspec as H
 import Data.Maybe
 import TestHelper.Output

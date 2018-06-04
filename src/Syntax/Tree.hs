@@ -3,14 +3,17 @@ module Syntax.Tree where
 -- Tape symbol, i.e. a symbol contained in a cell of the machine's tape.
 type TapeSymbol = Char
 
+-- Can be used as a reference to a piece of memory, e.g. symbol, tape, function.
+type Identifier = String
+
 -- Variable name, i.e. reference to a symbol.
-type VarName = String
+type VarName = Identifier
 
 -- Function name.
-type FuncName = String
+type FuncName = Identifier
 
 -- Function argument name.
-type ArgName = String
+type ArgName = Identifier
 
 -- Types that can be passed to functions.
 data DataType = SymType
@@ -70,3 +73,6 @@ data Stm = MoveLeft VarName
 
 -- Path of a Metal file to be imported.
 type ImportPath = String
+
+-- The contents of a metal file.
+type FileContents = String

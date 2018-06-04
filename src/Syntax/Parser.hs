@@ -1,7 +1,7 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
-import Control.Monad.State.Lazy (StateT, evalStateT, get, put, lift, runStateT, liftM)
+import Control.Monad.State.Lazy (StateT, get, put, lift, runStateT, liftM)
 import Syntax.Tree
 import Syntax.ParseState as S
 import Syntax.Env as E
@@ -339,14 +339,14 @@ program :: Parser Stm
 program = lift importPaths *> stm <* eof
 
 -- Parses using the initial parse state, returning the new parse state.
-parseRunState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) (a, ParseState)
+parseRunState :: ParseState -> Parser a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) (a, ParseState)
 parseRunState initialState parser fileName fileContents = parse p fileName fileContents where
     p = runStateT parser initialState
 
 -- Parses using the initial parse state, discarding the new parse state.
-parseEvalState :: ParseState -> Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
+parseEvalState :: ParseState -> Parser a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) a
 parseEvalState initialState parser fileName fileContents = liftM fst (parseRunState initialState parser fileName fileContents)
 
 -- Parses using an empty initial parse state, discarding the new parse state.
-parseEmptyState :: Parser a -> String -> String -> Either (ParseError (Token String) Dec) a
+parseEmptyState :: Parser a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) a
 parseEmptyState = parseEvalState S.empty

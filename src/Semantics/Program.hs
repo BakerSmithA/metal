@@ -13,7 +13,6 @@ import Semantics.Stm
 import System.FilePath
 import Text.Megaparsec as M
 
-type FileContents = String
 type FileData = (ImportPath, FileContents)
 type ImportTree m = Tree m ImportPath FileData
 
