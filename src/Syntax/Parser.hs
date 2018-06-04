@@ -4,7 +4,7 @@ import Control.Monad (void)
 import Control.Monad.State.Lazy (StateT, get, put, lift, runStateT, liftM)
 import Syntax.Tree
 import Syntax.ParseState as S
-import Syntax.Env as E
+import qualified Syntax.Env as E
 import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Lexer as L
@@ -146,7 +146,7 @@ varDeclId = do
     varId <- identifier
     if not (E.isTaken varId (varEnv state))
         then do
-            put $ modifyVarEnv (E.putVar varId) state
+            put $ modifyVarEnv (E.put varId) state
             return varId
         else
             fail $ "variable " ++ show varId ++ " already declared"
@@ -246,7 +246,7 @@ funcDecl = FuncDecl <$ lTok "func" <*> funcName <*> funcDeclArgs <*> body where
     body = do
         -- Variable names can be overwritten inside functions.
         currState <- get
-        put (modifyEnvs descendScope currState)
+        put (modifyEnvs E.descendScope currState)
         parsedBody <- braces stmComp
         put currState
         return parsedBody
