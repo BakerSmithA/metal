@@ -1,35 +1,29 @@
 module Syntax.ParseState where
 
+import Syntax.Env as E
+
 -- Keeps track of used variable and function names to avoid invalid programs.
 data ParseState = ParseState {
-    -- Variables named in the scope above, these can be overwritten.
-    aboveScope :: [String],
-    -- Variables in the current scope, these **cannot** be overwritten.
-    used :: [String]
+    varEnv :: Env,
+    funcEnv :: Env
 }
 
--- Contains no variables.
+-- A parse state containing no variables or functions.
 empty :: ParseState
-empty = ParseState [] []
+empty = ParseState E.empty E.empty
 
--- State containing the list of used variable names at the current scope.
-fromList :: [String] -> ParseState
-fromList used = ParseState [] used
+-- A parse state containing variables with the given names.
+fromVarList :: [String] -> ParseState
+fromVarList vars = ParseState (E.fromList vars) E.empty
 
--- Adds a variable name to the current scope.
-putVar :: String -> ParseState -> ParseState
-putVar varId (ParseState above used) = ParseState above (varId:used)
+-- Applies f to both the variable and function environments.
+modifyEnvs :: (Env -> Env) -> ParseState -> ParseState
+modifyEnvs f (ParseState ve fe) = ParseState (f ve) (f fe)
 
--- Moves any used names into the scope above.
-descendScope :: ParseState -> ParseState
-descendScope (ParseState above used) = ParseState (above ++ used) []
+-- Applies f to the variable environment only.
+modifyVarEnv :: (Env -> Env) -> ParseState -> ParseState
+modifyVarEnv f (ParseState ve fe) = ParseState (f ve) fe
 
--- Returns whether a variable name can be used to declare a new variable, i.e.
--- if the name is in use at this scope.
-isTaken :: String -> ParseState -> Bool
-isTaken varId (ParseState _ used) = varId `elem` used
-
--- Returns whether a variable name can be used, i.e. if the variable has been
--- declared in this scope or the scope above.
-canRef :: String -> ParseState -> Bool
-canRef varId (ParseState above used) = varId `elem` (above ++ used)
+-- Applies f to the function environment only.
+modifyFuncEnv :: (Env -> Env) -> ParseState -> ParseState
+modifyFuncEnv f (ParseState ve fe) = ParseState ve (f fe)
