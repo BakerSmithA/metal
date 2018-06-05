@@ -140,25 +140,30 @@ identifier = (str >>= check) <* lWhitespace where
                     then return word
                     else fail $ "keyword " ++ show word ++ " cannot be an identifier"
 
--- Parses an identifier, and ensures the the predicate is True.
-guardId :: (Identifier -> E.Env a -> Bool) -> GetEnv a -> Parser Identifier
-guardId checkId getEnv = do
-    i <- identifier
-    env <- liftM getEnv get
-    when (not $ checkId i env) (fail $ i ++ " cannot be used as an identifier")
-    return i
-
 -- Parses an identifier if the identifier has **not** already been declared.
 newId :: GetEnv a -> Parser Identifier
-newId = guardId E.isAvailable
+newId getEnv = do
+    i <- identifier
+    env <- liftM getEnv get
+    when (E.isTaken i env) (fail $ i ++ " already exists")
+    return i
 
--- Parses an identifier if the identifier already exists.
-refId :: GetEnv a -> Parser Identifier
-refId = guardId E.canRef
+-- Parses an identifier if the identifier already exists, returning the new
+-- id and its type.
+refId :: GetEnv a -> Parser (Identifier, a)
+refId getEnv = do
+    i <- identifier
+    env <- liftM getEnv get
+    case E.get i env of
+        Nothing     -> fail $ i ++ " does not exist"
+        Just idType -> return (i, idType)
 
 -- Parses an identifier if the identifier exists and has the expected type.
 refTypedId :: (Eq a) => a -> GetEnv a -> Parser Identifier
-refTypedId expectedType = guardId (E.hasMatchingType expectedType)
+refTypedId expectedType getEnv = do
+    (i, idType) <- refId getEnv
+    when (expectedType /= idType) (fail "mistmatched types")
+    return i
 
 -- Parses an identifier if has not already been declared, and puts it in the
 -- environment.
@@ -191,7 +196,7 @@ newFunc = newId funcEnv
 -- Attempts to use a declared variable, but does **not** check for matching
 -- types. If the variable does not exist then parsing fails. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-refFunc :: Parser FuncName
+refFunc :: Parser (FuncName, [DataType])
 refFunc = refId funcEnv
 
 -- Parses a function argument, the EBNF syntax of which is:
@@ -312,8 +317,8 @@ funcCallArgs expectedTypes = foldl combine (return []) parseArgs where
 --  Call : FuncName FuncCallArgs
 funcCall :: Parser Stm
 funcCall = do
-    name <- refFunc
-    args <- funcCallArgs []
+    (name, expectedArgTypes) <- refFunc
+    args <- funcCallArgs expectedArgTypes
     return (Call name args)
 
 -- Parses the elements of the syntactic class Stm, except for composition.

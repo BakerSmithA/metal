@@ -28,21 +28,16 @@ put :: Identifier -> a -> Env a -> Env a
 put newId idType (Env above used) = Env above used' where
     used' = Map.insert newId idType used
 
+-- Returns whether a identifier can be used, i.e. if the identifier has been
+-- declared in this scope or the scope above.
+get :: Identifier -> Env a -> Maybe a
+get i env = i `Map.lookup` (combinedScopes env)
+
 -- Moves any used names into the scope above.
 descendScope :: Env a -> Env a
 descendScope env = Env (combinedScopes env) Map.empty
 
--- Returns whether a identifier can be used to declare a new variable/functions,
--- i.e. if the name is **not** in use at this scope.
-isAvailable :: Identifier -> Env a -> Bool
-isAvailable i (Env _ used) = i `Map.notMember` used
-
--- Returns whether a identifier can be used, i.e. if the identifier has been
--- declared in this scope or the scope above.
-canRef :: Identifier -> Env a -> Bool
-canRef i env = i `Map.member` (combinedScopes env)
-
--- Returns whether the expected type matches the type of the identifier, or
--- returns False if the identifier does not exist.
-hasMatchingType :: (Eq a) => a -> Identifier -> Env a -> Bool
-hasMatchingType expectedType i env = Map.lookup i (combinedScopes env) == Just expectedType
+-- Returns whether a identifier has already been used to declare a variable/function.
+-- i.e. if the name is in use at this scope.
+isTaken :: Identifier -> Env a -> Bool
+isTaken i (Env _ used) = i `Map.member` used
