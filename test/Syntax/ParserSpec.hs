@@ -482,6 +482,16 @@ programSpec = describe "program" $ do
         it "fails if function has not been declared" $ do
             parseEmptyState program "" `shouldFailOn` "f"
 
+        it "fails if the argument types mismatch" $ do
+            let state = S.fromLists [("x", TapeType), ("y", SymType)] [("f", [TapeType, SymType])]
+            parseEvalState state program "" `shouldFailOn` "f y x"
+
+        it "fails if an incorrect number of arguments are supplied" $ do
+            let state = S.fromLists [("x", TapeType), ("y", SymType)] [("f", [TapeType, SymType])]
+            parseEvalState state program "" `shouldFailOn` "f"
+            parseEvalState state program "" `shouldFailOn` "f x"
+            parseEvalState state program "" `shouldFailOn` "f x y y"
+
     context "parsing composition" $ do
         let state = S.fromVarList [("tape", TapeType)]
 
@@ -560,8 +570,6 @@ programSpec = describe "program" $ do
                 parseEvalState state program "" "left tape\n \nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
         context "whitespace nested in statements" $ do
-            let state = S.fromVarList [("tape", TapeType)]
-
             it "ignores newlines after an opening brace" $ do
                 let expected = While TRUE (MoveLeft "tape")
                 parseEvalState state program "" "while True {\n\n left tape }" `shouldParseStm` expected
