@@ -157,7 +157,7 @@ refId :: GetEnv a -> Parser Identifier
 refId = guardId E.canRef
 
 -- Parses an identifier if the identifier exists and has the expected type.
-refTypedId :: a -> GetEnv a -> Parser Identifier
+refTypedId :: (Eq a) => a -> GetEnv a -> Parser Identifier
 refTypedId expectedType = guardId (E.hasMatchingType expectedType)
 
 -- Parses an identifier if has not already been declared, and puts it in the
@@ -185,14 +185,14 @@ refVar expectedType = refTypedId expectedType varEnv
 -- add the function to the environment if it does not exist. Fails if the
 -- function already exists. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-funcDeclName :: Parser FuncName
-funcDeclName = newId funcEnv
+newFunc :: Parser FuncName
+newFunc = newId funcEnv
 
 -- Attempts to use a declared variable, but does **not** check for matching
 -- types. If the variable does not exist then parsing fails. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-funcUseName :: Parser FuncName
-funcUseName = refId funcEnv
+refFunc :: Parser FuncName
+refFunc = refId funcEnv
 
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
@@ -204,8 +204,8 @@ argName = identifier
 --                | VarName
 --                | \' TapeSymbol \'
 derivedSymbol :: DataType -> Parser DerivedValue
-derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> varUseName TapeType
-                            <|> Var <$> varUseName expectedVarType
+derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> refVar TapeType
+                            <|> Var <$> refVar expectedVarType
                             <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
                             <|> parens (derivedSymbol expectedVarType)
 
@@ -270,7 +270,7 @@ funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 funcDecl :: Parser Stm
 funcDecl = undefined
 
--- funcDecl = FuncDecl <$ lTok "func" <*> funcDeclName <*> funcDeclArgs <*> body where
+-- funcDecl = FuncDecl <$ lTok "func" <*> newFunc <*> funcDeclArgs <*> body where
 --     body = do
 --         -- Variable/function names can be overwritten inside functions.
 --         currState <- get
@@ -303,23 +303,23 @@ funcCallArgs = undefined
 funcCall :: Parser Stm
 funcCall = undefined
 
--- funcCall = Call <$> funcUseName <*> funcCallArgs
+-- funcCall = Call <$> refFunc <*> funcCallArgs
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = try funcCall
-   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> varUseName TapeType
-   <|> MoveRight <$ lTok "right" <* lWhitespace <*> varUseName TapeType
-   <|> try (Write <$ lTok "write" <*> varUseName TapeType <* lWhitespace <*> derivedSymbol SymType)
-   <|> WriteStr <$ lTok "write" <*> varUseName TapeType <* lWhitespace <*> quotedString
+   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> refVar TapeType
+   <|> MoveRight <$ lTok "right" <* lWhitespace <*> refVar TapeType
+   <|> try (Write <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> derivedSymbol SymType)
+   <|> WriteStr <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> quotedString
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
-   <|> try (VarDecl <$ lTok "let" <*> varDeclName SymType <* lTok "=" <*> derivedSymbol SymType)
-   <|> TapeDecl <$ lTok "let" <*> varDeclName TapeType <* lTok "=" <*> tapeLiteral
+   <|> try (VarDecl <$ lTok "let" <*> newVar SymType <* lTok "=" <*> derivedSymbol SymType)
+   <|> TapeDecl <$ lTok "let" <*> newVar TapeType <* lTok "=" <*> tapeLiteral
    <|> funcDecl
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
-   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> varUseName TapeType)
-   <|> DebugPrintTape <$ lTok "_printTape" <*> varUseName TapeType
+   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> refVar TapeType)
+   <|> DebugPrintTape <$ lTok "_printTape" <*> refVar TapeType
    <|> While <$ lTok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 

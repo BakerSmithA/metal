@@ -12,6 +12,10 @@ data Env a = Env {
     used :: Map Identifier a
 }
 
+-- Returns the combination of both scopes to make for easier searching.
+combinedScopes :: Env a -> Map Identifier a
+combinedScopes (Env above used) = Map.union above used
+
 empty :: Env a
 empty = Env Map.empty Map.empty
 
@@ -21,34 +25,24 @@ fromList usedIds = Env Map.empty (Map.fromList usedIds)
 
 -- Adds a variable name to the current scope.
 put :: Identifier -> a -> Env a -> Env a
-put = undefined
-
--- put identifier idType (Env above used) = Env above (new:used) where
---     new = (identifier, idType)
+put newId idType (Env above used) = Env above used' where
+    used' = Map.insert newId idType used
 
 -- Moves any used names into the scope above.
 descendScope :: Env a -> Env a
-descendScope = undefined
-
--- descendScope (Env above used) = Env (above ++ used) []
+descendScope env = Env (combinedScopes env) Map.empty
 
 -- Returns whether a identifier can be used to declare a new variable/functions,
 -- i.e. if the name is **not** in use at this scope.
 isAvailable :: Identifier -> Env a -> Bool
-isAvailable = undefined
-
--- isTaken identifier (Env _ used) = identifier `elem` usedIds where
---     usedIds = map fst
+isAvailable i (Env _ used) = i `Map.notMember` used
 
 -- Returns whether a identifier can be used, i.e. if the identifier has been
 -- declared in this scope or the scope above.
 canRef :: Identifier -> Env a -> Bool
-canRef = undefined
+canRef i env = i `Map.member` (combinedScopes env)
 
 -- Returns whether the expected type matches the type of the identifier, or
 -- returns False if the identifier does not exist.
-hasMatchingType :: a -> Identifier -> Env a -> Bool
-hasMatchingType = undefined
-
--- canRef (identifier, idType) expectedType (Env above used) = (identifier `elem` allIds) and idType == expectedType where
---     allIds = (map fst above) ++ (map fst used)
+hasMatchingType :: (Eq a) => a -> Identifier -> Env a -> Bool
+hasMatchingType expectedType i env = Map.lookup i (combinedScopes env) == Just expectedType

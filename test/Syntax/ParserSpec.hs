@@ -63,51 +63,51 @@ tapeSymbolSpec = do
 
 varNameSpec :: Spec
 varNameSpec = do
-    describe "varDeclName" $ do
+    describe "newVar" $ do
         it "parses names beginning with a lower char" $ do
-            parseEmptyState varDeclName "" "vname" `shouldParse` "vname"
+            parseEmptyState (newVar SymType) "" "vname" `shouldParse` "vname"
 
         it "parses names containing uppcase characters" $ do
-            parseEmptyState varDeclName "" "vNAME" `shouldParse` "vNAME"
+            parseEmptyState (newVar SymType) "" "vNAME" `shouldParse` "vNAME"
 
         it "parses names containing digits" $ do
-            parseEmptyState varDeclName "" "v1234" `shouldParse` "v1234"
+            parseEmptyState (newVar SymType) "" "v1234" `shouldParse` "v1234"
 
         it "parses if the variable name is a superset of a reserved word" $ do
-            parseEmptyState varDeclName "" "trueV" `shouldParse` "trueV"
+            parseEmptyState (newVar SymType) "" "trueV" `shouldParse` "trueV"
 
         it "fails if the start character is uppercase" $ do
-            parseEmptyState varDeclName "" `shouldFailOn` "Vname"
+            parseEmptyState (newVar SymType) "" `shouldFailOn` "Vname"
 
         it "fails if the start character is a digit" $ do
-            parseEmptyState varDeclName "" `shouldFailOn` "1vName"
+            parseEmptyState (newVar SymType) "" `shouldFailOn` "1vName"
 
         it "fails if the function name is a reserved keyword" $ do
-            parseEmptyState varDeclName "" `shouldFailOn` "True"
+            parseEmptyState (newVar SymType) "" `shouldFailOn` "True"
 
 funcNameSpec :: Spec
 funcNameSpec = do
-    describe "funcDeclName" $ do
+    describe "newFunc" $ do
         it "parses names beginning with a lower char" $ do
-            parseEmptyState funcDeclName "" "fname" `shouldParse` "fname"
+            parseEmptyState newFunc "" "fname" `shouldParse` "fname"
 
         it "parses names containing uppcase characters" $ do
-            parseEmptyState funcDeclName "" "fNAME" `shouldParse` "fNAME"
+            parseEmptyState newFunc "" "fNAME" `shouldParse` "fNAME"
 
         it "parses names containing digits" $ do
-            parseEmptyState funcDeclName "" "f1234" `shouldParse` "f1234"
+            parseEmptyState newFunc "" "f1234" `shouldParse` "f1234"
 
         it "parses if the function name is a superset of a reserved word" $ do
-            parseEmptyState funcDeclName "" "trueF" `shouldParse` "trueF"
+            parseEmptyState newFunc "" "trueF" `shouldParse` "trueF"
 
         it "fails if the start character is uppercase" $ do
-            parseEmptyState funcDeclName "" `shouldFailOn` "Fname"
+            parseEmptyState newFunc "" `shouldFailOn` "Fname"
 
         it "fails if the start character is a digit" $ do
-            parseEmptyState funcDeclName "" `shouldFailOn` "1fName"
+            parseEmptyState newFunc "" `shouldFailOn` "1fName"
 
         it "fails if the function name is a reserved keyword" $ do
-            parseEmptyState funcDeclName "" `shouldFailOn` "True"
+            parseEmptyState newFunc "" `shouldFailOn` "True"
 
 argNameSpec :: Spec
 argNameSpec = do
@@ -137,16 +137,26 @@ derivedSymbolSpec :: Spec
 derivedSymbolSpec = do
     describe "derivedSymbol" $ do
         it "parses read" $ do
-            parseEvalState (S.fromVarList ["tape"]) derivedSymbol "" "read tape" `shouldParse` (Read "tape")
+            let state = S.fromVarList [("tape", TapeType)]
+            parseEvalState state (derivedSymbol SymType) "" "read tape" `shouldParse` (Read "tape")
 
-        it "parses variable names" $ do
-            parseEvalState (S.fromVarList ["x"]) derivedSymbol "" "x" `shouldParse` Var "x"
+        it "parses symbol variables" $ do
+            let state = S.fromVarList [("x", SymType)]
+            parseEvalState state (derivedSymbol SymType) "" "x" `shouldParse` Var "x"
+
+        it "parses tape variables" $ do
+            let state = S.fromVarList [("x", TapeType)]
+            parseEvalState state (derivedSymbol TapeType) "" "x" `shouldParse` Var "x"
+
+        it "fails to parse variables if the types mismatch" $ do
+            let state = S.fromVarList [("x", SymType)]
+            parseEvalState state (derivedSymbol TapeType) "" "x" `shouldParse` Var "x"
 
         it "parses literals" $ do
-            parseEmptyState derivedSymbol "" "'b'" `shouldParse` Literal 'b'
-            parseEmptyState derivedSymbol "" "'B'" `shouldParse` Literal 'B'
-            parseEmptyState derivedSymbol "" "'1'" `shouldParse` Literal '1'
-            parseEmptyState derivedSymbol "" "' '" `shouldParse` Literal ' '
+            parseEmptyState (derivedSymbol SymType) "" "'b'" `shouldParse` Literal 'b'
+            parseEmptyState (derivedSymbol SymType) "" "'B'" `shouldParse` Literal 'B'
+            parseEmptyState (derivedSymbol SymType) "" "'1'" `shouldParse` Literal '1'
+            parseEmptyState (derivedSymbol SymType) "" "' '" `shouldParse` Literal ' '
 
 bexpSpec :: Spec
 bexpSpec = describe "bexp" $ do
@@ -177,24 +187,30 @@ bexpSpec = describe "bexp" $ do
 
     context "parsing EQ operator" $ do
         it "parses EQ" $ do
-            parseEvalState (S.fromVarList ["tape", "x"]) bexp "" "x == read tape" `shouldParse` (Eq (Var "x") (Read "tape"))
+            let state = S.fromVarList [("tape", TapeType), ("x", SymType)]
+            parseEvalState state bexp "" "x == read tape" `shouldParse` (Eq (Var "x") (Read "tape"))
 
         it "fails to parse chains" $ do
-            parseEvalState (S.fromVarList ["x", "y", "z"]) bexp "" "'x' == y == z" `shouldParse` (Eq (Literal 'x') (Var "y"))
+            let state = S.fromVarList [("x", SymType), ("y", SymType), ("z", SymType)]
+            parseEvalState state bexp "" "'x' == y == z" `shouldParse` (Eq (Literal 'x') (Var "y"))
 
     context "parsing LE operator" $ do
         it "parses LE" $ do
-            parseEvalState (S.fromVarList ["x", "tape"]) bexp "" "x <= read tape" `shouldParse` (Le (Var "x") (Read "tape"))
+            let state = S.fromVarList [("x", SymType), ("tape", TapeType)]
+            parseEvalState state bexp "" "x <= read tape" `shouldParse` (Le (Var "x") (Read "tape"))
 
         it "fails to parse chains" $ do
-            parseEvalState (S.fromVarList ["x", "y", "z"]) bexp "" "x <= y <= z" `shouldParse` (Le (Var "x") (Var "y"))
+            let state = S.fromVarList [("x", SymType), ("y", SymType), ("z", SymType)]
+            parseEvalState state bexp "" "x <= y <= z" `shouldParse` (Le (Var "x") (Var "y"))
 
     context "parsing NE operator" $ do
         it "parses NE" $ do
-            parseEvalState (S.fromVarList ["x", "tape"]) bexp "" "x != read tape" `shouldParse` (Ne (Var "x") (Read "tape"))
+            let state = S.fromVarList [("x", SymType), ("tape", TapeType)]
+            parseEvalState state bexp "" "x != read tape" `shouldParse` (Ne (Var "x") (Read "tape"))
 
         it "fails to parse chains" $ do
-            parseEvalState (S.fromVarList ["x", "y", "z"]) bexp "" "x != y != z" `shouldParse` (Ne (Var "x") (Var "y"))
+            let state = S.fromVarList [("x", SymType), ("y", SymType), ("z", SymType)]
+            parseEvalState state bexp "" "x != y != z" `shouldParse` (Ne (Var "x") (Var "y"))
 
     context "parsing boolean expressions with parenthesis" $ do
         it "gives precedence to bracketed expressions" $ do
@@ -205,67 +221,69 @@ bexpSpec = describe "bexp" $ do
 
 ifStmSpec :: Spec
 ifStmSpec = describe "ifStm" $ do
+    let state = S.fromVarList [("tape", TapeType)]
+
     context "parsing a single IF" $ do
         it "parses IF" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "if True { right tape }" `shouldParseStm` (If TRUE (MoveRight "tape") [] Nothing)
+            parseEvalState state program "" "if True { right tape }" `shouldParseStm` (If TRUE (MoveRight "tape") [] Nothing)
 
         it "fails to parse if a boolean expression is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if { right tape }"
+            parseEvalState state program "" `shouldFailOn` "if { right tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True right tape }"
+            parseEvalState state program "" `shouldFailOn` "if True right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True right tape"
+            parseEvalState state program "" `shouldFailOn` "if True right tape"
 
     context "parsing an IF-ELSEIF" $ do
         it "parses with a single ELSE-IF clause" $ do
             let str      = "if True { right tape } else if False { left tape }"
                 expected = If TRUE (MoveRight "tape") [(FALSE, (MoveLeft "tape"))] Nothing
-            parseEvalState (S.fromVarList ["tape"]) program "" str `shouldParseStm` expected
+            parseEvalState state program "" str `shouldParseStm` expected
 
         it "parses with multiple ELSE-IF clauses" $ do
             let str      = "if True { right tape } else if False { left tape } else if True { accept }"
                 expected = If TRUE (MoveRight "tape") [(FALSE, (MoveLeft "tape")), (TRUE, Accept)] Nothing
-            parseEvalState (S.fromVarList ["tape"]) program "" str `shouldParseStm` expected
+            parseEvalState state program "" str `shouldParseStm` expected
 
         it "fails to parse if ELSE-IF is before IF" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "else if True { right tape } if True right tape }"
+            parseEvalState state program "" `shouldFailOn` "else if True { right tape } if True right tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape } else if True right tape }"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape } else if True right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape } else if True { right tape"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape } else if True { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape } else if True right rape"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape } else if True right rape"
 
     context "parsing an ELSE clause" $ do
         it "parses ELSE with just an IF" $ do
             let str      = "if True { right tape } else { left tape }"
                 expected = If TRUE (MoveRight "tape") [] (Just (MoveLeft "tape"))
-            parseEvalState (S.fromVarList ["tape"]) program "" str `shouldParseStm` expected
+            parseEvalState state program "" str `shouldParseStm` expected
 
         it "parses ELSE with a preceding ELSE-IF" $ do
             let str      = "if True { right tape } else if False { left tape } else { accept }"
                 expected = If TRUE (MoveRight "tape") [(FALSE, (MoveLeft "tape"))] (Just Accept)
-            parseEvalState (S.fromVarList ["tape"]) program "" str `shouldParseStm` expected
+            parseEvalState state program "" str `shouldParseStm` expected
 
         it "fails to parse if the ELSE is before IF" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "else { accept } if { left tape }"
+            parseEvalState state program "" `shouldFailOn` "else { accept } if { left tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape } else right tape }"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape } else right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape } else { right tape"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape } else { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "if True { right tape } else right tape"
+            parseEvalState state program "" `shouldFailOn` "if True { right tape } else right tape"
 
 importPathsSpec :: Spec
 importPathsSpec =
@@ -303,17 +321,19 @@ importPathsSpec =
 programSpec :: Spec
 programSpec = describe "program" $ do
     context "parsing Turing Machine operators" $ do
+        let state = S.fromVarList [("tape", TapeType)]
+
         it "parses LEFT command" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "left tape" `shouldParseStm` (MoveLeft "tape")
+            parseEvalState state program "" "left tape" `shouldParseStm` (MoveLeft "tape")
 
         it "parses RIGHT command" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "right tape" `shouldParseStm` (MoveRight "tape")
+            parseEvalState state program "" "right tape" `shouldParseStm` (MoveRight "tape")
 
         it "parses WRITE command" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "write tape 'x'" `shouldParseStm` (Write "tape" (Literal 'x'))
+            parseEvalState state program "" "write tape 'x'" `shouldParseStm` (Write "tape" (Literal 'x'))
 
         it "parses a WRITESTR command" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr "tape" "abcd")
+            parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr "tape" "abcd")
 
         it "parses REJECT" $ do
             parseEmptyState program "" "reject" `shouldParseStm` Reject
@@ -322,11 +342,13 @@ programSpec = describe "program" $ do
             parseEmptyState program "" "accept" `shouldParseStm` Accept
 
     context "parsing variable declarations" $ do
+        let state = S.fromVarList [("tape", TapeType)]
+
         it "parses variable declarations" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "let x = read tape" `shouldParseStm` VarDecl "x" (Read "tape")
+            parseEvalState state program "" "let x = read tape" `shouldParseStm` VarDecl "x" (Read "tape")
 
         it "fails if '=' is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "let x read tape"
+            parseEvalState state program "" `shouldFailOn` "let x read tape"
 
         it "fails if a derived symbol is missing" $ do
             parseEmptyState program "" `shouldFailOn` "let x ="
@@ -362,181 +384,204 @@ programSpec = describe "program" $ do
             parseEmptyState program ""  `shouldFailOn` s
 
     context "parsing WHILE statements" $ do
+        let state = S.fromVarList [("tape", TapeType)]
+
         it "parses WHILE" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "while True { right tape }" `shouldParseStm` (While TRUE (MoveRight "tape"))
+            parseEvalState state program "" "while True { right tape }" `shouldParseStm` (While TRUE (MoveRight "tape"))
 
         it "fails to parse if a boolean expression is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "while { right tape }"
+            parseEvalState state program "" `shouldFailOn` "while { right tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "while True right tape }"
+            parseEvalState state program "" `shouldFailOn` "while True right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "while True { right tape"
+            parseEvalState state program "" `shouldFailOn` "while True { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "while True right tape"
+            parseEvalState state program "" `shouldFailOn` "while True right tape"
 
     context "parsing function declarations" $ do
+        let state = S.fromVarList [("tape", TapeType)]
+
         it "parses function delcarations" $ do
             let expected = FuncDecl "fName" [] (MoveRight "tape")
-            parseEvalState (S.fromVarList ["tape"]) program "" "func fName { right tape }" `shouldParseStm` expected
+            parseEvalState state program "" "func fName { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
             let args = [FuncDeclArg "a" SymType, FuncDeclArg "bb" TapeType]
                 expected = FuncDecl "fName" args (MoveRight "tape")
-            parseEvalState (S.fromVarList ["tape"]) program "" "func fName a:Sym bb:Tape { right tape }" `shouldParseStm` expected
+            parseEvalState state program "" "func fName a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
             let expected = FuncDecl "leftUntil" [] (MoveRight "tape")
-            parseEvalState (S.fromVarList ["tape"]) program "" "func leftUntil { right tape }" `shouldParseStm` expected
+            parseEvalState state program "" "func leftUntil { right tape }" `shouldParseStm` expected
 
         it "fails to parse if a function name is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "func { right tape }"
+            parseEvalState state program "" `shouldFailOn` "func { right tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "func fName right tape }"
+            parseEvalState state program "" `shouldFailOn` "func fName right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "func fName { right tape"
+            parseEvalState state program "" `shouldFailOn` "func fName { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "func fName right tape"
+            parseEvalState state program "" `shouldFailOn` "func fName right tape"
 
         it "fails if the same function is declared twice in the same scope" $ do
             parseEmptyState program "" `shouldFailOn` "func f { left main }\nfunc g { left main }"
 
     context "parsing function calls" $ do
         it "parses function calls" $ do
-            parseEvalState (S.fromFuncList ["fName"]) program "" "fName" `shouldParseStm` (Call "fName" [])
+            let state = S.fromFuncList [("fName", [])]
+            parseEvalState state program "" "fName" `shouldParseStm` (Call "fName" [])
 
         it "parses function calls with arguments" $ do
             let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
-                state    = S.fromLists ["tape", "x"] ["fName"]
+                var1     = ("tape", TapeType)
+                var2     = ("x", SymType)
+                func     = ("fName", [SymType, SymType, SymType])
+                state    = S.fromLists [var1, var2] [func]
             parseEvalState state program "" "fName (read tape) x '#'" `shouldParseStm` expected
 
         it "parses function calls with multiple spaces between arguments" $ do
             let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
-                state    = S.fromLists ["tape", "x"] ["fName"]
+                var1     = ("tape", TapeType)
+                var2     = ("x", SymType)
+                func     = ("fName", [SymType, SymType, SymType])
+                state    = S.fromLists [var1, var2] [func]
             parseEvalState state program "" "fName   (read tape)  x  '#'" `shouldParseStm` expected
 
         it "parses function calls with tabs between arguments" $ do
             let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
-                state    = S.fromLists ["tape", "x"] ["fName"]
+                var1     = ("tape", TapeType)
+                var2     = ("x", SymType)
+                func     = ("fName", [SymType, SymType, SymType])
+                state    = S.fromLists [var1, var2] [func]
             parseEvalState state program "" "fName \t(read tape)\tx\t'#'" `shouldParseStm` expected
 
         it "parses function calls followed by another statement" $ do
             let call     = Call "fName" [Derived (Read "tape")]
                 expected = Comp call ((MoveLeft "tape"))
-                state    = S.fromLists ["tape"] ["fName"]
+                var      = ("tape", TapeType)
+                func     = ("fName", [SymType])
+                state    = S.fromLists [var] [func]
             parseEvalState state program "" "fName (read tape) \n left tape" `shouldParseStm` expected
 
         it "parses function calls where the name contains a keyword" $ do
             let expected = Call "leftUntil" []
-                state    = S.fromFuncList ["leftUntil"]
+                state    = S.fromFuncList [("leftUntil", [])]
             parseEvalState state program "" "leftUntil" `shouldParseStm` expected
 
         it "parses tape literal arguments" $ do
             let expected = Call "f" [TapeLiteral "abcd", TapeLiteral "xyz"]
-                state    = S.fromFuncList ["f"]
+                state    = S.fromFuncList [("f", [TapeType, TapeType])]
             parseEvalState state program "" "f \"abcd\" \"xyz\"" `shouldParseStm` expected
 
         it "fails if function has not been declared" $ do
             parseEmptyState program "" `shouldFailOn` "f"
 
     context "parsing composition" $ do
+        let state = S.fromVarList [("tape", TapeType)]
+
         it "parses composition" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+            parseEvalState state program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
         it "parses composition to be right associative" $ do
             let expected = Comp (MoveLeft "tape") (Comp (MoveRight "tape") (Write "tape" (Literal 'x')))
-            parseEvalState (S.fromVarList ["tape"]) program "" "left tape \n right tape \n write tape 'x'" `shouldParseStm` expected
+            parseEvalState state program "" "left tape \n right tape \n write tape 'x'" `shouldParseStm` expected
 
         it "allows for multiple newlines between statements" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "left tape \n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
-            parseEvalState (S.fromVarList ["tape"]) program "" "left tape \n\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+            parseEvalState state program "" "left tape \n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+            parseEvalState state program "" "left tape \n\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
         it "fails if parsing the first statements fails to parse" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn` "left tape \n if"
+            parseEvalState state program "" `shouldFailOn` "left tape \n if"
 
         it "fails if parsing the second statements fails to parse" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" `shouldFailOn `"if \n left tape"
+            parseEvalState state program "" `shouldFailOn `"if \n left tape"
 
     context "parsing printing" $ do
         it "parses printing a string" $ do
             parseEmptyState program "" "print \"This is a string\"" `shouldParseStm` (PrintStr "This is a string")
 
         it "parses printing the symbol read from the tape" $ do
-            parseEvalState (S.fromVarList ["tape"]) program "" "print tape" `shouldParseStm` (PrintRead "tape")
+            let state = S.fromVarList [("tape", TapeType)]
+            parseEvalState state program "" "print tape" `shouldParseStm` (PrintRead "tape")
 
     context "removing whitespace and comments" $ do
+        let state = S.fromVarList [("tape", TapeType)]
+
         context "before statements" $ do
             it "ignores spaces" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" " left tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" " left tape" `shouldParseStm` (MoveLeft "tape")
 
             it "ignores newlines" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "\n\nleft tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "\n\nleft tape" `shouldParseStm` (MoveLeft "tape")
 
             it "ignores whole-line comments" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "//Comment\n left tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "//Comment\n left tape" `shouldParseStm` (MoveLeft "tape")
 
             it "ignores in-line" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "/* Comment */\n left tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "/* Comment */\n left tape" `shouldParseStm` (MoveLeft "tape")
 
             it "ignores tabs" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "\tleft tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "\tleft tape" `shouldParseStm` (MoveLeft "tape")
 
         context "interspersed with statements" $ do
             it "ignores whole line comments" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\n//Comment\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n//Comment\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
             it "ignores in-line comments" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "if /* Comment */ True { left tape }" `shouldParseStm` (If TRUE (MoveLeft "tape") [] Nothing)
+                parseEvalState state program "" "if /* Comment */ True { left tape }" `shouldParseStm` (If TRUE (MoveLeft "tape") [] Nothing)
 
         context "ignores whitespace after of statements" $ do
             it "ignores whitespace at the end of a statement" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape  " `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "left tape  " `shouldParseStm` (MoveLeft "tape")
 
             it "ignores newlines at the end of a statement" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\n\n" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "left tape\n\n" `shouldParseStm` (MoveLeft "tape")
 
             it "ignores tabs" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\t" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "left tape\t" `shouldParseStm` (MoveLeft "tape")
 
         context "composition" $ do
             it "ignores tabs after the newline" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\n\tright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n\tright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
             it "ignores tabs before the newline" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\t\nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\t\nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
             it "ignores tabs alone on lines inbetween statements" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\n\t\nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n\t\nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
             it "ignores spaces alone on lines inbetween statements" $ do
-                parseEvalState (S.fromVarList ["tape"]) program "" "left tape\n \nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n \nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
         context "whitespace nested in statements" $ do
+            let state = S.fromVarList [("tape", TapeType)]
+
             it "ignores newlines after an opening brace" $ do
                 let expected = While TRUE (MoveLeft "tape")
-                parseEvalState (S.fromVarList ["tape"]) program "" "while True {\n\n left tape }" `shouldParseStm` expected
+                parseEvalState state program "" "while True {\n\n left tape }" `shouldParseStm` expected
 
             it "ignores newlines before a closing brace" $ do
                 let expected = While TRUE (MoveLeft "tape")
-                parseEvalState (S.fromVarList ["tape"]) program "" "while True { left tape \n\n }" `shouldParseStm` expected
+                parseEvalState state program "" "while True { left tape \n\n }" `shouldParseStm` expected
 
             it "ignores newlines before and after braces" $ do
                 let expected = While TRUE (MoveLeft "tape")
-                parseEvalState (S.fromVarList ["tape"]) program "" "while True { \n\n left tape \n\n }" `shouldParseStm` expected
+                parseEvalState state program "" "while True { \n\n left tape \n\n }" `shouldParseStm` expected
 
             it "ignores newlines after an opening brace when composing" $ do
                 let expected = While TRUE (Comp (MoveLeft "tape") (MoveRight "tape"))
-                parseEvalState (S.fromVarList ["tape"]) program "" "while True {\n\n left tape \n\n right tape }" `shouldParseStm` expected
+                parseEvalState state program "" "while True {\n\n left tape \n\n right tape }" `shouldParseStm` expected
 
             it "ignores newlines after a closing brace when composing" $ do
                 let expected = While TRUE (Comp (MoveLeft "tape") (MoveRight "tape"))
-                parseEvalState (S.fromVarList ["tape"]) program "" "while True { left tape \n\n right tape \n\n }" `shouldParseStm` expected
+                parseEvalState state program "" "while True { left tape \n\n right tape \n\n }" `shouldParseStm` expected
 
             it "ignores newlines before and after braces when composing" $ do
                 let expected = While TRUE (Comp (MoveLeft "tape") (MoveRight "tape"))
-                parseEvalState (S.fromVarList ["tape"]) program "" "while True { \n\n left tape \n\n right tape \n\n }" `shouldParseStm` expected
+                parseEvalState state program "" "while True { \n\n left tape \n\n right tape \n\n }" `shouldParseStm` expected
