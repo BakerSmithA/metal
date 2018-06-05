@@ -297,10 +297,19 @@ ifStmSpec = describe "ifStm" $ do
             let innerVarDecl = VarDecl "x" (Literal 'a')
                 write        = Write "tape" (Var "x")
                 body         = Comp innerVarDecl write
-                ifStatement = If TRUE body [] Nothing
+                ifStatement  = If TRUE body [] Nothing
                 outerVarDecl = TapeDecl "x" "xyz"
                 comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' \n write tape x }" `shouldParseStm` comp
+
+        it "reverts variables after scope is exited" $ do
+            let innerVarDecl = VarDecl "x" (Literal 'a')
+                ifStatement  = If TRUE innerVarDecl [] Nothing
+                outerVarDecl = TapeDecl "x" "xyz"
+                write        = Write "x" (Literal 'a')
+                comp         = Comp outerVarDecl (Comp ifStatement write)
+            parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
+
 
 importPathsSpec :: Spec
 importPathsSpec =
@@ -435,6 +444,14 @@ programSpec = describe "program" $ do
                     comp         = Comp outerVarDecl while
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
+            it "reverts variables after scope is exited" $ do
+                let innerVarDecl = VarDecl "x" (Literal 'a')
+                    while        = While TRUE innerVarDecl
+                    outerVarDecl = TapeDecl "x" "xyz"
+                    write        = Write "x" (Literal 'a')
+                    comp         = Comp outerVarDecl (Comp while write)
+                parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
+
     context "parsing function declarations" $ do
         let state = S.fromVarList [("tape", TapeType)]
 
@@ -466,6 +483,14 @@ programSpec = describe "program" $ do
                 outerVarDecl = TapeDecl "x" "xyz"
                 comp         = Comp outerVarDecl func
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' \n write tape x }" `shouldParseStm` comp
+
+        it "reverts variables after scope is exited" $ do
+            let innerVarDecl = VarDecl "x" (Literal 'a')
+                func         = FuncDecl "f" [] innerVarDecl
+                outerVarDecl = TapeDecl "x" "xyz"
+                write        = Write "x" (Literal 'a')
+                comp         = Comp outerVarDecl (Comp func write)
+            parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
         it "allows arguments to be used inside the function" $ do
             let args = [FuncDeclArg "t" TapeType, FuncDeclArg "x" SymType]
