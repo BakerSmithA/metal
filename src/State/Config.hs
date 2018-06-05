@@ -33,9 +33,6 @@ empty = Config Map.empty Map.empty Map.empty [0..1000] -- HACK: Infinite list ca
 fromString :: VarName -> String -> Config
 fromString tapeName str = newTape tapeName (Tape.fromString str) State.Config.empty
 
--- fromString tapeName str = State.Config.empty { vars = ts } where
---     ts = singleton tapeName (TapeRef $ Tape.fromString str)
-
 -- Retrieves a tape or symbol from the variable environment.
 getVariable :: VarName -> Config -> Maybe Variable
 getVariable name c = Map.lookup name (vars c)
