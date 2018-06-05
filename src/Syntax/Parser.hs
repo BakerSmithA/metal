@@ -209,6 +209,10 @@ derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> refVar Ta
                             <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
                             <|> parens (derivedSymbol expectedVarType)
 
+-- Parsers the contents of a tape literal, e.g. "abcd"
+tapeLiteral :: Parser String
+tapeLiteral = quoted (many tapeSymbol)
+
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.
 bexp' :: Parser Bexp
@@ -265,45 +269,52 @@ funcDeclArg = FuncDeclArg <$> argName <* lTok ":" <*> dataType
 funcDeclArgs :: Parser FuncDeclArgs
 funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 
+-- Parses the body of a function, descending the scope before parsing.
+funcBody :: Parser Stm
+funcBody = do
+    -- Variable/function names can be overwritten inside functions.
+    savedState <- get
+    modify (modifyVarEnv E.descendScope)
+    modify (modifyFuncEnv E.descendScope)
+    body <- braces stmComp
+    put savedState
+    return body
+
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = undefined
+funcDecl = do
+    _ <- lTok "func"
+    name <- newFunc
+    args <- funcDeclArgs
+    body <- funcBody
 
--- funcDecl = FuncDecl <$ lTok "func" <*> newFunc <*> funcDeclArgs <*> body where
---     body = do
---         -- Variable/function names can be overwritten inside functions.
---         currState <- get
---         put (modifyEnvs E.descendScope currState)
---         parsedBody <- braces stmComp
---         put currState
---         return parsedBody
+    let argTypes = map (\(FuncDeclArg _ argType) -> argType) args
+    modify (modifyFuncEnv (E.put name argTypes))
 
--- Parsers the contents of a tape literal, e.g. "abcd"
-tapeLiteral :: Parser String
-tapeLiteral = quoted (many tapeSymbol)
+    return (FuncDecl name args body)
 
 -- Parses an argument to a function call, the EBNF syntax of which is:
 --  FuncCallArg : DerivedValue | TapeLiteral
-funcCallArg :: Parser FuncCallArg
-funcCallArg = undefined
-
--- funcCallArg = Derived <$> derivedSymbol
---           <|> TapeLiteral <$> tapeLiteral
+funcCallArg :: DataType -> Parser FuncCallArg
+funcCallArg expectedType = arg <* lWhitespace where
+    arg = Derived <$> derivedSymbol expectedType
+      <|> TapeLiteral <$> tapeLiteral
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
-funcCallArgs :: Parser FuncCallArgs
-funcCallArgs = undefined
-
--- funcCallArgs = funcCallArg `sepBy` lWhitespace
+funcCallArgs :: [DataType] -> Parser FuncCallArgs
+funcCallArgs expectedTypes = foldl combine (return []) parseArgs where
+    combine acc arg = (++) <$> acc <*> (fmap (\x -> [x]) arg)
+    parseArgs = zipWith (\x y -> x y) (repeat funcCallArg) expectedTypes
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
 funcCall :: Parser Stm
-funcCall = undefined
-
--- funcCall = Call <$> refFunc <*> funcCallArgs
+funcCall = do
+    name <- refFunc
+    args <- funcCallArgs []
+    return (Call name args)
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm

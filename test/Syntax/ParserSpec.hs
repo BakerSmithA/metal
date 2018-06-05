@@ -150,7 +150,7 @@ derivedSymbolSpec = do
 
         it "fails to parse variables if the types mismatch" $ do
             let state = S.fromVarList [("x", SymType)]
-            parseEvalState state (derivedSymbol TapeType) "" "x" `shouldParse` Var "x"
+            parseEvalState state (derivedSymbol TapeType) "" `shouldFailOn` "x"
 
         it "parses literals" $ do
             parseEmptyState (derivedSymbol SymType) "" "'b'" `shouldParse` Literal 'b'
