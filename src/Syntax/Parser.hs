@@ -116,6 +116,19 @@ parens = between (lTok "(") (lTok ")")
 braces :: Parser a -> Parser a
 braces = between (lTok "{" <* lWhitespaceNewline) (lTok "}")
 
+-- Parses a string enclosed in curly braces, but also allows any variables or
+-- functions inside the block to overwrite definitions outside the block.
+block :: Parser a -> Parser a
+block p = do
+    savedState <- get
+    modify (modifyVarEnv E.descendScope)
+    modify (modifyFuncEnv E.descendScope)
+
+    x <- p
+
+    put savedState
+    return x
+
 quoted :: Parser a -> Parser a
 quoted = between (lTok "\"") (lTok "\"")
 
@@ -251,12 +264,12 @@ bexp = makeExprParser bexp' bexpOps
 --  ElseIf : 'else if' { Stm } ElseIf | Else
 --  Else   : 'else' { Stm } | ε
 ifStm :: Parser Stm
-ifStm = If <$ lTok "if" <*> bexp <*> braces stmComp <*> many elseIfClause <*> elseClause where
+ifStm = If <$ lTok "if" <*> bexp <*> block (braces stmComp) <*> many elseIfClause <*> elseClause where
     elseIfClause = do
         bool <- lTok "else if" *> bexp
-        statement <- braces stmComp
+        statement <- block (braces stmComp)
         return (bool, statement)
-    elseClause = optional (lTok "else" *> braces stmComp)
+    elseClause = optional (lTok "else" *> block (braces stmComp))
 
 -- Type of data passed to a function, the EBNF of which is:
 --  FuncArgType   : 'Tape' | 'Sym'
@@ -279,23 +292,20 @@ funcDeclArg = do
 funcDeclArgs :: Parser FuncDeclArgs
 funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 
+-- Parses the arguments and body of a function.
+funcArgsBody :: Parser (FuncDeclArgs, Stm)
+funcArgsBody = do
+    args <- funcDeclArgs
+    body <- braces stmComp
+    return (args, body)
+
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
 funcDecl = do
     _ <- lTok "func"
     name <- newFunc
-
-    savedState <- get
-    -- Modify the state such variables can be overwritten inside the function.
-    modify (modifyVarEnv E.descendScope)
-    modify (modifyFuncEnv E.descendScope)
-
-    args <- funcDeclArgs
-    body <- braces stmComp
-
-    -- Restore the state so that variables inside the function do not 'leak' out.
-    put savedState
+    (args, body) <- block funcArgsBody
 
     let argTypes = map (\(FuncDeclArg _ argType) -> argType) args
     modify (modifyFuncEnv (E.put name argTypes))
@@ -339,7 +349,7 @@ stm' = try funcCall
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
    <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> refVar TapeType)
    <|> DebugPrintTape <$ lTok "_printTape" <*> refVar TapeType
-   <|> While <$ lTok "while" <*> bexp <*> braces stmComp
+   <|> While <$ lTok "while" <*> bexp <*> block (braces stmComp)
    <|> ifStm
 
 -- Composes a list of statements using Comp.
