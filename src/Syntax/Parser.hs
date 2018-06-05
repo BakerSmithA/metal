@@ -1,7 +1,7 @@
 module Syntax.Parser where
 
 import Control.Monad (void)
-import Control.Monad.State.Lazy (StateT, get, put, lift, runStateT, liftM)
+import Control.Monad.State.Lazy (StateT, when, modify, get, put, lift, runStateT, liftM)
 import Syntax.Tree
 import Syntax.ParseState as S
 import qualified Syntax.Env as E
@@ -63,6 +63,10 @@ import qualified Text.Megaparsec.String as M
 --  Program       : Imports Stm
 
 type Parser = StateT ParseState M.Parser
+-- Retrieve the variable or function environment from the parse state.
+type GetEnv a = ParseState -> E.Env a
+-- Modify the environment in a parse state.
+type ModifyEnv a = (E.Env a -> E.Env a) -> ParseState -> ParseState
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -136,53 +140,59 @@ identifier = (str >>= check) <* lWhitespace where
                     then return word
                     else fail $ "keyword " ++ show word ++ " cannot be an identifier"
 
--- Attempts to parse an identifier used in a declaration, i.e. variable or
--- function. Fails if the variable already exists.
-declId :: (ParseState -> E.Env) -> ((E.Env -> E.Env) -> ParseState -> ParseState) -> Parser String
-declId getEnv modify = do
-    state <- get
-    newId <- identifier
-    let env = getEnv state
-    if not (E.isTaken newId env) then do
-        put $ modify (E.put newId) state
-        return newId
-    else
-        fail $ "identifier" ++ show newId ++ " already declared"
-
--- Attempts to use an identifier which has already been declared. Fails if the
--- identifier has not been declared.
-useId :: (ParseState -> E.Env) -> Parser String
-useId getEnv = do
-    env <- liftM getEnv get
+-- Parses an identifier, and ensures the the predicate is True.
+guardId :: (Identifier -> E.Env a -> Bool) -> GetEnv a -> Parser Identifier
+guardId checkId getEnv = do
     i <- identifier
-    if E.canRef i env then
-        return i
-    else
-        fail $ "identifier " ++ show i ++ " not declared"
+    env <- liftM getEnv get
+    when (not $ checkId i env) (fail $ i ++ " cannot be used as an identifier")
+    return i
+
+-- Parses an identifier if the identifier has **not** already been declared.
+newId :: GetEnv a -> Parser Identifier
+newId = guardId E.isAvailable
+
+-- Parses an identifier if the identifier already exists.
+refId :: GetEnv a -> Parser Identifier
+refId = guardId E.canRef
+
+-- Parses an identifier if the identifier exists and has the expected type.
+refTypedId :: a -> GetEnv a -> Parser Identifier
+refTypedId expectedType = guardId (E.hasMatchingType expectedType)
+
+-- Parses an identifier if has not already been declared, and puts it in the
+-- environment.
+putNewId :: a -> GetEnv a -> ModifyEnv a -> Parser Identifier
+putNewId newType getEnv modifyEnv = do
+    i <- newId getEnv
+    modify (modifyEnv $ E.put i newType)
+    return i
 
 -- Attempts to parse an identifier used to declare a new variable.
--- Fails if the variable already exists. EBNF:
+-- Fails if the variable already exists. If the variable does not exist
+-- it is added to the environment. EBNF:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-varDeclName :: Parser VarName
-varDeclName = declId varEnv modifyVarEnv
+newVar :: DataType -> Parser VarName
+newVar varType = putNewId varType varEnv modifyVarEnv
 
--- Attempts to use a declared variable. If the variable does not exist then
--- parsing fails. EBNF:
+-- Attempts to use a declared variable. If the variable does not exist, or the
+-- types do not match, then parsing fails. EBNF:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-varUseName :: Parser VarName
-varUseName = useId varEnv
+refVar :: DataType -> Parser VarName
+refVar expectedType = refTypedId expectedType varEnv
 
--- Attempts to parse an identifier used to declare a new funciton.
--- Fails if the function already exists. EBNF:
+-- Attempts to parse an identifier used to declare a new function. Does **not**
+-- add the function to the environment if it does not exist. Fails if the
+-- function already exists. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
 funcDeclName :: Parser FuncName
-funcDeclName = declId funcEnv modifyFuncEnv
+funcDeclName = newId funcEnv
 
--- Attempts to use a declared variable. If the variable does not exist then
--- parsing fails. EBNF:
+-- Attempts to use a declared variable, but does **not** check for matching
+-- types. If the variable does not exist then parsing fails. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
 funcUseName :: Parser FuncName
-funcUseName = useId funcEnv
+funcUseName = refId funcEnv
 
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
@@ -193,11 +203,11 @@ argName = identifier
 --  DerivedValue : 'read'
 --                | VarName
 --                | \' TapeSymbol \'
-derivedSymbol :: Parser DerivedValue
-derivedSymbol = Read <$ lTok "read" <* lWhitespace <*> varUseName
-            <|> Var <$> varUseName
-            <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
-            <|> parens derivedSymbol
+derivedSymbol :: DataType -> Parser DerivedValue
+derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> varUseName TapeType
+                            <|> Var <$> varUseName expectedVarType
+                            <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
+                            <|> parens (derivedSymbol expectedVarType)
 
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.
@@ -205,9 +215,9 @@ bexp' :: Parser Bexp
 bexp' = try (parens bexp)
     <|> TRUE  <$ lTok "True"
     <|> FALSE <$ lTok "False"
-    <|> try (Eq <$> derivedSymbol <* lTok "==" <*> derivedSymbol)
-    <|> try (Le <$> derivedSymbol <* lTok "<=" <*> derivedSymbol)
-    <|> try (Ne <$> derivedSymbol <* lTok "!=" <*> derivedSymbol)
+    <|> try (Eq <$> derivedSymbol SymType <* lTok "==" <*> derivedSymbol SymType)
+    <|> try (Le <$> derivedSymbol SymType <* lTok "<=" <*> derivedSymbol SymType)
+    <|> try (Ne <$> derivedSymbol SymType <* lTok "!=" <*> derivedSymbol SymType)
 
 -- The operators that can work on boolean expressions. There is no precedence,
 -- instead the expression is evaualted from left to right.
@@ -258,14 +268,16 @@ funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: Parser Stm
-funcDecl = FuncDecl <$ lTok "func" <*> funcDeclName <*> funcDeclArgs <*> body where
-    body = do
-        -- Variable/function names can be overwritten inside functions.
-        currState <- get
-        put (modifyEnvs E.descendScope currState)
-        parsedBody <- braces stmComp
-        put currState
-        return parsedBody
+funcDecl = undefined
+
+-- funcDecl = FuncDecl <$ lTok "func" <*> funcDeclName <*> funcDeclArgs <*> body where
+--     body = do
+--         -- Variable/function names can be overwritten inside functions.
+--         currState <- get
+--         put (modifyEnvs E.descendScope currState)
+--         parsedBody <- braces stmComp
+--         put currState
+--         return parsedBody
 
 -- Parsers the contents of a tape literal, e.g. "abcd"
 tapeLiteral :: Parser String
@@ -274,34 +286,40 @@ tapeLiteral = quoted (many tapeSymbol)
 -- Parses an argument to a function call, the EBNF syntax of which is:
 --  FuncCallArg : DerivedValue | TapeLiteral
 funcCallArg :: Parser FuncCallArg
-funcCallArg = Derived <$> derivedSymbol
-          <|> TapeLiteral <$> tapeLiteral
+funcCallArg = undefined
+
+-- funcCallArg = Derived <$> derivedSymbol
+--           <|> TapeLiteral <$> tapeLiteral
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: Parser FuncCallArgs
-funcCallArgs = funcCallArg `sepBy` lWhitespace
+funcCallArgs = undefined
+
+-- funcCallArgs = funcCallArg `sepBy` lWhitespace
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
 funcCall :: Parser Stm
-funcCall = Call <$> funcUseName <*> funcCallArgs
+funcCall = undefined
+
+-- funcCall = Call <$> funcUseName <*> funcCallArgs
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: Parser Stm
 stm' = try funcCall
-   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> varUseName
-   <|> MoveRight <$ lTok "right" <* lWhitespace <*> varUseName
-   <|> try (Write <$ lTok "write" <*> varUseName <* lWhitespace <*> derivedSymbol)
-   <|> WriteStr <$ lTok "write" <*> varUseName <* lWhitespace <*> quotedString
+   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> varUseName TapeType
+   <|> MoveRight <$ lTok "right" <* lWhitespace <*> varUseName TapeType
+   <|> try (Write <$ lTok "write" <*> varUseName TapeType <* lWhitespace <*> derivedSymbol SymType)
+   <|> WriteStr <$ lTok "write" <*> varUseName TapeType <* lWhitespace <*> quotedString
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
-   <|> try (VarDecl <$ lTok "let" <*> varDeclName <* lTok "=" <*> derivedSymbol)
-   <|> TapeDecl <$ lTok "let" <*> varDeclName <* lTok "=" <*> tapeLiteral
+   <|> try (VarDecl <$ lTok "let" <*> varDeclName SymType <* lTok "=" <*> derivedSymbol SymType)
+   <|> TapeDecl <$ lTok "let" <*> varDeclName TapeType <* lTok "=" <*> tapeLiteral
    <|> funcDecl
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
-   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> varUseName)
-   <|> DebugPrintTape <$ lTok "_printTape" <*> varUseName
+   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> varUseName TapeType)
+   <|> DebugPrintTape <$ lTok "_printTape" <*> varUseName TapeType
    <|> While <$ lTok "while" <*> bexp <*> braces stmComp
    <|> ifStm
 
