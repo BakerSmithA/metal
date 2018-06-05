@@ -14,7 +14,8 @@ data Env a = Env {
 
 -- Returns the combination of both scopes to make for easier searching.
 combinedScopes :: Env a -> Map Identifier a
-combinedScopes (Env above used) = Map.union above used
+-- used before above so conficts use the inner-most definiton.
+combinedScopes (Env above used) = Map.union used above
 
 empty :: Env a
 empty = Env Map.empty Map.empty
