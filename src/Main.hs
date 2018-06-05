@@ -21,7 +21,7 @@ main = do
     args <- getArgs
     (filePath, tapeSyms) <- parseArgs args
     let mainTapeName = "main" -- tape to which command line input is written
-    let parseState = S.fromVarList [mainTapeName]
+    let parseState = S.fromVarList [(mainTapeName, TapeType)]
     let config = Config.fromString mainTapeName tapeSyms
     let startDir = takeDirectory filePath
     app <- evalProg (ioTree startDir) filePath parseState config
