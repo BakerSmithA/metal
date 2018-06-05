@@ -201,8 +201,8 @@ refFunc = refId funcEnv
 
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
-argName :: Parser ArgName
-argName = identifier
+newArg :: Parser ArgName
+newArg = newId varEnv
 
 -- Parses a derived symbol, the EBNF syntax of which is:
 --  DerivedValue : 'read'
@@ -267,23 +267,17 @@ dataType = SymType <$ lTok "Sym"
 -- Argument to a function, the EBNF is:
 --  FuncDeclArg : ArgName ':' FuncArgType
 funcDeclArg :: Parser FuncDeclArg
-funcDeclArg = FuncDeclArg <$> argName <* lTok ":" <*> dataType
+funcDeclArg = do
+    name <- newArg
+    _ <- lTok ":"
+    argType <- dataType
+    modify (modifyVarEnv (E.put name argType))
+    return (FuncDeclArg name argType)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs : FuncDeclArg (' ' FuncDeclArg)* | ε
 funcDeclArgs :: Parser FuncDeclArgs
 funcDeclArgs = funcDeclArg `sepBy` lWhitespace
-
--- Parses the body of a function, descending the scope before parsing.
-funcBody :: Parser Stm
-funcBody = do
-    -- Variable/function names can be overwritten inside functions.
-    savedState <- get
-    modify (modifyVarEnv E.descendScope)
-    modify (modifyFuncEnv E.descendScope)
-    body <- braces stmComp
-    put savedState
-    return body
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
@@ -291,8 +285,17 @@ funcDecl :: Parser Stm
 funcDecl = do
     _ <- lTok "func"
     name <- newFunc
+
+    savedState <- get
+    -- Modify the state such variables can be overwritten inside the function.
+    modify (modifyVarEnv E.descendScope)
+    modify (modifyFuncEnv E.descendScope)
+
     args <- funcDeclArgs
-    body <- funcBody
+    body <- braces stmComp
+
+    -- Restore the state so that variables inside the function do not 'leak' out.
+    put savedState
 
     let argTypes = map (\(FuncDeclArg _ argType) -> argType) args
     modify (modifyFuncEnv (E.put name argTypes))

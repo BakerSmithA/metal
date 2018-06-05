@@ -15,7 +15,7 @@ parserSpec = do
         tapeSymbolSpec
         varNameSpec
         funcNameSpec
-        argNameSpec
+        newArgSpec
         derivedSymbolSpec
         bexpSpec
         ifStmSpec
@@ -109,29 +109,29 @@ funcNameSpec = do
         it "fails if the function name is a reserved keyword" $ do
             parseEmptyState newFunc "" `shouldFailOn` "True"
 
-argNameSpec :: Spec
-argNameSpec = do
-    describe "argName" $ do
+newArgSpec :: Spec
+newArgSpec = do
+    describe "newArg" $ do
         it "parses names beginning with a lower char" $ do
-            parseEmptyState argName "" "argname" `shouldParse` "argname"
+            parseEmptyState newArg "" "argname" `shouldParse` "argname"
 
         it "parses names containing uppcase characters" $ do
-            parseEmptyState argName "" "argNAME" `shouldParse` "argNAME"
+            parseEmptyState newArg "" "argNAME" `shouldParse` "argNAME"
 
         it "parses names containing digits" $ do
-            parseEmptyState argName "" "a1234" `shouldParse` "a1234"
+            parseEmptyState newArg "" "a1234" `shouldParse` "a1234"
 
         it "parses if the function name is a superset of a reserved word" $ do
-            parseEmptyState argName "" "trueA" `shouldParse` "trueA"
+            parseEmptyState newArg "" "trueA" `shouldParse` "trueA"
 
         it "fails if the start character is uppercase" $ do
-            parseEmptyState argName "" `shouldFailOn` "Aname"
+            parseEmptyState newArg "" `shouldFailOn` "Aname"
 
         it "fails if the start character is a digit" $ do
-            parseEmptyState argName "" `shouldFailOn` "1AName"
+            parseEmptyState newArg "" `shouldFailOn` "1AName"
 
         it "fails if the function name is a reserved keyword" $ do
-            parseEmptyState argName "" `shouldFailOn` "True"
+            parseEmptyState newArg "" `shouldFailOn` "True"
 
 derivedSymbolSpec :: Spec
 derivedSymbolSpec = do
@@ -432,6 +432,14 @@ programSpec = describe "program" $ do
                 outerVarDecl = TapeDecl "x" "xyz"
                 comp         = Comp outerVarDecl func
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' \n write tape x }" `shouldParseStm` comp
+
+        it "allows arguments to be used inside the function" $ do
+            let args = [FuncDeclArg "t" TapeType, FuncDeclArg "x" SymType]
+                func = FuncDecl "writeNew" args (Write "t" (Var "x"))
+            parseEmptyState program "" "func writeNew t:Tape x:Sym { write t x }" `shouldParseStm` func
+
+        it "fails if argument names are duplicated" $ do
+            parseEmptyState program "" `shouldFailOn` "func f x:Tape x:Sym { print \"\" }"
 
         it "fails to parse if a function name is missing" $ do
             parseEvalState state program "" `shouldFailOn` "func { right tape }"
