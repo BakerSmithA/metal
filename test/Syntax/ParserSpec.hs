@@ -417,6 +417,15 @@ programSpec = describe "program" $ do
             let expected = FuncDecl "leftUntil" [] (MoveRight "tape")
             parseEvalState state program "" "func leftUntil { right tape }" `shouldParseStm` expected
 
+        it "allows the types of variables to be changed at inner scopes" $ do
+            let innerVarDecl = VarDecl "x" (Literal 'a')
+                write        = Write "tape" (Var "x")
+                body         = Comp innerVarDecl write
+                func         = FuncDecl "f" [] body
+                outerVarDecl = TapeDecl "x" "xyz"
+                comp         = Comp outerVarDecl func
+            parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' \n write tape x }" `shouldParseStm` comp
+
         it "fails to parse if a function name is missing" $ do
             parseEvalState state program "" `shouldFailOn` "func { right tape }"
 
