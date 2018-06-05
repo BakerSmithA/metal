@@ -288,18 +288,18 @@ ifStmSpec = describe "ifStm" $ do
     context "identifier scope" $ do
         it "allows variables to be shadowed" $ do
             let innerVarDecl = VarDecl "x" (Literal 'a')
-                ifStm        = If TRUE innerVarDecl [] Nothing
+                ifStatement  = If TRUE innerVarDecl [] Nothing
                 outerVarDecl = TapeDecl "x" "xyz"
-                comp         = Comp outerVarDecl ifStm
+                comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' }" `shouldParseStm` comp
 
         it "allows the types of variables to be changed at inner scopes" $ do
             let innerVarDecl = VarDecl "x" (Literal 'a')
                 write        = Write "tape" (Var "x")
                 body         = Comp innerVarDecl write
-                ifStm        = If TRUE body [] Nothing
+                ifStatement = If TRUE body [] Nothing
                 outerVarDecl = TapeDecl "x" "xyz"
-                comp         = Comp outerVarDecl ifStm
+                comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
 importPathsSpec :: Spec
@@ -417,6 +417,23 @@ programSpec = describe "program" $ do
 
         it "fails to parse if both braces are missing" $ do
             parseEvalState state program "" `shouldFailOn` "while True right tape"
+
+        context "identifier scope" $ do
+            it "allows variables to be shadowed" $ do
+                let innerVarDecl = VarDecl "x" (Literal 'a')
+                    while        = While TRUE innerVarDecl
+                    outerVarDecl = TapeDecl "x" "xyz"
+                    comp         = Comp outerVarDecl while
+                parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' }" `shouldParseStm` comp
+
+            it "allows the types of variables to be changed at inner scopes" $ do
+                let innerVarDecl = VarDecl "x" (Literal 'a')
+                    write        = Write "tape" (Var "x")
+                    body         = Comp innerVarDecl write
+                    while        = While TRUE body
+                    outerVarDecl = TapeDecl "x" "xyz"
+                    comp         = Comp outerVarDecl while
+                parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
     context "parsing function declarations" $ do
         let state = S.fromVarList [("tape", TapeType)]
