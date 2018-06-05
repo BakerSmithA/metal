@@ -10,11 +10,13 @@ data Variable = Symbol TapeSymbol
               | TapeRef Address
               deriving (Show, Eq)
 
+type RefCount = Integer
+
 -- A configuration of a Turing machine.
 data Config = Config {
     vars      :: Map VarName Variable
   , funcs     :: Map FuncName (FuncDeclArgs, Stm)
-  , refs      :: Map Address Tape
+  , refs      :: Map Address (Tape, RefCount)
   , freeAddrs :: [Address]
 } deriving (Eq)
 
@@ -44,22 +46,22 @@ getTapeRef name config = do
     return addr
 
 -- Looks up a tape and its address in an environment.
-getTapeData :: VarName -> Config -> Maybe (Address, Tape)
+getTapeData :: VarName -> Config -> Maybe (Address, Tape, RefCount)
 getTapeData name config = do
     addr <- getTapeRef name config
-    tape <- Map.lookup addr (refs config)
-    return (addr, tape)
+    (tape, refCount) <- Map.lookup addr (refs config)
+    return (addr, tape, refCount)
 
 -- Looks up a tape in an environment.
 getTape :: VarName -> Config -> Maybe Tape
-getTape name c = fmap snd (getTapeData name c)
+getTape name c = fmap (\(_,t,_) -> t) (getTapeData name c)
 
 -- Creates a new tape in the environment.
 newTape :: VarName -> Tape -> Config -> Config
 newTape _ _ (Config _ _ _ []) = error "No space for tapes left"
 newTape name tape c@(Config vs _ rs (freeAddr:rest)) = c { vars = vs', refs = rs', freeAddrs = rest } where
     vs' = Map.insert name (TapeRef freeAddr) vs
-    rs' = Map.insert freeAddr tape rs
+    rs' = Map.insert freeAddr (tape, 1) rs
 
 -- Sets a reference to an existing tape with the given name.
 putTapeRef :: VarName -> VarName -> Config -> Maybe Config
@@ -67,15 +69,18 @@ putTapeRef newName existingName c = do
     addr <- getTapeRef existingName c
     return $ c { vars = Map.insert newName (TapeRef addr) (vars c) }
 
--- Adds a tape at the given address.
-putTape :: Address -> Tape -> Config -> Config
-putTape addr tape c = c { refs = Map.insert addr tape (refs c) }
+-- Adds a reference to the tape at the given address, incrementing its
+-- reference count.
+putTapeAddrRef :: Address -> Tape -> RefCount -> Config -> Config
+putTapeAddrRef addr tape refCount c = c { refs = refs' } where
+    refs'     = Map.insert addr (tape, refCount') (refs c)
+    refCount' = refCount + 1
 
 -- Retrieves and then modifies a tape in the environment.
 modifyTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
 modifyTape name f config = do
-    (addr, tape) <- getTapeData name config
-    return $ putTape addr (f tape) config
+    (addr, tape, refCount) <- getTapeData name config
+    return $ putTapeAddrRef addr (f tape) refCount config
 
 -- Looks up a variable in an environment.
 getSym :: VarName -> Config -> Maybe TapeSymbol
@@ -95,7 +100,20 @@ putSym name sym config = config { vars = Map.insert name (Symbol sym) (vars conf
 putFunc :: FuncName -> FuncDeclArgs -> Stm -> Config -> Config
 putFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }
 
+-- Reduces the reference count, or returns Nothing if no more references would
+-- exist to the variable.
+reduceRefCount :: RefCount -> Maybe RefCount
+reduceRefCount 1 = Nothing
+reduceRefCount c = Just (c - 1)
+
 -- Resets the variable and function environment of `cNew` to that provided
 -- by `cOld`.
 resetEnv :: Config -> Config -> Config
-resetEnv cOld cNew = cNew { vars = vars cOld, funcs = funcs cOld }
+resetEnv cOld cNew = Config vars' funcs' refs' frees' where
+    vars'       = vars cOld
+    funcs'      = funcs cOld
+    refs'       = refs cNew
+    frees'      = freeAddrs cNew
+    -- removedRefs = undefined
+
+-- resetEnv cOld cNew = cNew { vars = vars cOld, funcs = funcs cOld,  }

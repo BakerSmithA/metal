@@ -285,6 +285,23 @@ ifStmSpec = describe "ifStm" $ do
         it "fails to parse if both braces are missing" $ do
             parseEvalState state program "" `shouldFailOn` "if True { right tape } else right tape"
 
+    context "identifier scope" $ do
+        it "allows variables to be shadowed" $ do
+            let innerVarDecl = VarDecl "x" (Literal 'a')
+                ifStm        = If TRUE innerVarDecl [] Nothing
+                outerVarDecl = TapeDecl "x" "xyz"
+                comp         = Comp outerVarDecl ifStm
+            parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' }" `shouldParseStm` comp
+
+        it "allows the types of variables to be changed at inner scopes" $ do
+            let innerVarDecl = VarDecl "x" (Literal 'a')
+                write        = Write "tape" (Var "x")
+                body         = Comp innerVarDecl write
+                ifStm        = If TRUE body [] Nothing
+                outerVarDecl = TapeDecl "x" "xyz"
+                comp         = Comp outerVarDecl ifStm
+            parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' \n write tape x }" `shouldParseStm` comp
+
 importPathsSpec :: Spec
 importPathsSpec =
     describe "importPaths" $ do

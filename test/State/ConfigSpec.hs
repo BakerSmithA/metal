@@ -67,6 +67,11 @@ varSpec = do
             let env = newTape "tape" (Tape.fromString "abc") Config.empty
             getSym "tape" env `shouldBe` Nothing
 
+    describe "references" $ do
+        it "destroys variables referenced to once all references are gone" $ do
+            let env = newTape "tape" (Tape.fromString "abc") Config.empty
+            pending
+
 funcSpec :: Spec
 funcSpec = do
     describe "function environment" $ do
@@ -121,3 +126,6 @@ resetEnvSpec = do
 
             getFunc "f1" env3 `shouldBe` Just ([], MoveRight "tape")
             getFunc "f2" env3 `shouldBe` Nothing
+
+        it "destroys variables referenced to once all references are gone" $ do
+            pending
