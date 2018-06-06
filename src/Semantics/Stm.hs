@@ -101,7 +101,7 @@ evalFuncBody name ds cs body config = do
     oldConfig <- app
     -- Reset the environment so variables declared as function arguments do not
     -- 'leak' out.
-    return (resetEnv oldConfig newConfig)
+    return (revertEnv oldConfig newConfig)
 
 -- Evaluates a function call.
 evalCall :: (MonadOutput m) => FuncName -> FuncCallArgs -> Config -> App m Config

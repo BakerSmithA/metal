@@ -24,4 +24,4 @@ cond ((predicate, branch):ps) config = do
 block :: (Monad m) => (Config -> App m Config) -> Config -> App m Config
 block f oldConfig = do
     newConfig <- f oldConfig
-    return (resetEnv oldConfig newConfig)
+    return (revertEnv oldConfig newConfig)

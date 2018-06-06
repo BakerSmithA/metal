@@ -5,6 +5,7 @@ import qualified State.Tape as Tape
 import Syntax.Tree
 import Test.Hspec
 import Data.Maybe
+import Data.Map
 
 configSpec :: Spec
 configSpec = do
@@ -67,11 +68,6 @@ varSpec = do
             let env = newTape "tape" (Tape.fromString "abc") Config.empty
             getSym "tape" env `shouldBe` Nothing
 
-    describe "references" $ do
-        it "destroys variables referenced to once all references are gone" $ do
-            let env = newTape "tape" (Tape.fromString "abc") Config.empty
-            pending
-
 funcSpec :: Spec
 funcSpec = do
     describe "function environment" $ do
@@ -98,7 +94,7 @@ resetEnvSpec = do
         it "resets the symbol definitions" $ do
             let env1 = putSym "x" '1' Config.empty
                 env2 = putSym "y" '2' env1
-                env3 = resetEnv env1 env2
+                env3 = revertEnv env1 env2
 
             getSym "x" env3 `shouldBe` Just '1'
             getSym "y" env3 `shouldBe` Nothing
@@ -106,7 +102,7 @@ resetEnvSpec = do
         it "resets new tape definitions" $ do
             let env1 = newTape "x" (Tape.fromString "abc") Config.empty
                 env2 = newTape "y" (Tape.fromString "xyz") env1
-                env3 = resetEnv env1 env2
+                env3 = revertEnv env1 env2
 
             getTape "x" env3 `shouldBe` Just (Tape.fromString "abc")
             getTape "y" env3 `shouldBe` Nothing
@@ -114,7 +110,7 @@ resetEnvSpec = do
         it "resets references to exisiting tapes" $ do
             let env1 = newTape "x" (Tape.fromString "abc") Config.empty
                 env2 = fromJust $ putTapeRef "y" "x" env1
-                env3 = resetEnv env1 env2
+                env3 = revertEnv env1 env2
 
             getTape "x" env3 `shouldBe` Just (Tape.fromString "abc")
             getTape "y" env3 `shouldBe` Nothing
@@ -122,10 +118,22 @@ resetEnvSpec = do
         it "resets function definitions" $ do
             let env1 = putFunc "f1" [] (MoveRight "tape") Config.empty
                 env2 = putFunc "f2" [] (MoveLeft "tape") env1
-                env3 = resetEnv env1 env2
+                env3 = revertEnv env1 env2
 
             getFunc "f1" env3 `shouldBe` Just ([], MoveRight "tape")
             getFunc "f2" env3 `shouldBe` Nothing
 
-        it "destroys variables referenced to once all references are gone" $ do
-            pending
+        it "adds freed addresses back to the list of free addresses" $ do
+            let env1 = newTape "x" (Tape.fromString "x") Config.empty
+                env2 = newTape "y" (Tape.fromString "y") env1
+                env3 = revertEnv env1 env2
+
+            elems (refs env3) `shouldBe` [Tape.fromString "x"]
+
+        it "removes freed references" $ do
+            let env1          = newTape "x" (Tape.fromString "x") Config.empty
+                env2          = newTape "y" (Tape.fromString "y") env1
+                (tapeAddr, _) = fromJust (getTapeData "y" env2)
+                env3          = revertEnv env1 env2
+
+            (freeAddrs env3) `shouldContain` [tapeAddr]
