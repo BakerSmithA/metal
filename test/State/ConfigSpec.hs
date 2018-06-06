@@ -123,14 +123,14 @@ resetEnvSpec = do
             getFunc "f1" env3 `shouldBe` Just ([], MoveRight "tape")
             getFunc "f2" env3 `shouldBe` Nothing
 
-        it "adds freed addresses back to the list of free addresses" $ do
+        it "removes freed references" $ do
             let env1 = newTape "x" (Tape.fromString "x") Config.empty
                 env2 = newTape "y" (Tape.fromString "y") env1
                 env3 = revertEnv env1 env2
 
             elems (refs env3) `shouldBe` [Tape.fromString "x"]
 
-        it "removes freed references" $ do
+        it "adds freed addresses back to the list of free addresses" $ do
             let env1          = newTape "x" (Tape.fromString "x") Config.empty
                 env2          = newTape "y" (Tape.fromString "y") env1
                 (tapeAddr, _) = fromJust (getTapeData "y" env2)
