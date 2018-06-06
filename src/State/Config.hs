@@ -102,5 +102,7 @@ putFunc name args body config = config { funcs = Map.insert name (args, body) (f
 -- by `cOld`. Also frees any references that are in the new environment but not
 -- in the old.
 revertEnv :: Config -> Config -> Config
-revertEnv cOld cNew = cNew { vars = vars cOld, funcs = funcs cOld, refs = refs' } where
+revertEnv cOld cNew = Config (vars cOld) (funcs cOld) refs' freeAddrs' where
     refs' = Map.intersection (refs cNew) (refs cOld)
+    freeAddrs' = (freeAddrs cOld) ++ removedAddrs
+    removedAddrs = Map.keys (Map.difference (refs cNew) (refs cOld))
