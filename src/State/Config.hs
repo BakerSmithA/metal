@@ -20,8 +20,8 @@ data Config = Config {
 
 instance Show Config where
     -- show :: Config -> String
-    show (Config vs fs rs _) = "vars: " ++ (show vs)
-                            ++ "refs: " ++ (show rs)
+    show (Config vs fs rs _) =   "vars: " ++ (show vs)
+                            ++ ", refs: " ++ (show rs)
                             ++ ", funcs: " ++ (show (keys fs))
 
 -- Config which contains nothing.
