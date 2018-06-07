@@ -3,18 +3,22 @@ module Syntax.Variable where
 import Syntax.Helper
 import Syntax.Identifier
 
+-- Parses a camel-case identifier starting with a lower case string.
+lowerId :: Parser VarName
+lowerId = (:) <$> lowerChar <*> many alphaNumChar
+
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist
 -- it is added to the environment. EBNF:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 newVar :: DataType -> Parser VarName
-newVar varType = putNewId varType varEnv modifyVarEnv
+newVar varType = putNewId lowerId varType varEnv modifyVarEnv
 
 -- Attempts to use a declared variable. If the variable does not exist, or the
 -- types do not match, then parsing fails. EBNF:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 refVar :: DataType -> Parser VarName
-refVar expectedType = refTypedId expectedType varEnv
+refVar expectedType = refExpTypedId lowerId expectedType varEnv
 
 -- Parses a derived symbol, the EBNF syntax of which is:
 --  DerivedValue : 'read'
