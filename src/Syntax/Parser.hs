@@ -16,15 +16,21 @@ import qualified Text.Megaparsec.String as M
 --  UpperChar     : 'A' | 'B' | ... | 'Z'
 --  Digit         : '0' | '1' | ... | '9'
 --  String        : " (LowerChar | UpperChar | Digit)* "
---  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
---  VarName       : LowerChar (LowerChar | UpperChar | Digit)*
---  FuncName      : LowerChar (LowerChar | UpperChar | Digit)*
---  ArgName       : LowerChar (LowerChar | UpperChar | Digit)*
+--
+--  Identifier    : LowerChar (LowerChar | UpperChar | Digit)*
+--  VarName       : Identifier
+--  FuncName      : Identifier
+--  ArgName       : Identifier
+--  StructName    : Identifier
+--  Type          : 'Tape' | 'Sym'
+--
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
 --  TapeLiteral   : '"' TapeSymbol* '"'
+--
 --  DerivedValue  : 'read'
 --                | VarName
 --                | \' TapeSymbol \'
+--
 --  Bexp          : 'True'
 --                | 'False'
 --                | 'not' Bexp
@@ -36,21 +42,32 @@ import qualified Text.Megaparsec.String as M
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
---  FuncArgType   : 'Tape' | 'Sym'
---  FuncDeclArg   : FuncDeclArg : ArgName ':' FuncArgType
+--
+--  FuncDeclArg   : FuncDeclArg : ArgName ':' Type
 --  FuncDeclArgs  : FuncDeclArg (' ' FuncDeclArg)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
 --  FuncCallArg   : DerivedSymbol | TapeLiteral
 --  FuncCallArgs  : FuncCallArg (',' FuncCallArg) | ε
 --  Call          : FuncName FuncCallArgs
+--
+--  MemberDecl    : VarName ':' Type
+--  StructDecl    : 'struct' StructName '{' (MemberDecl '\n')+ '}'
+--  MemberAccess  : VarName '.' VarName
+--
+--  Var           : DerivedValue
+--                | TapeLiteral
+--                | StructName
+--  VarDecl       : 'let' VarName '=' Var
+--
 --  Stm           : 'left' VarName
 --                | 'right' VarName
 --                | 'write' VarName DerivedValue
 --                | 'write' VarName String
 --                | 'reject'
 --                | 'accept'
---                | 'let' VarName '=' DerivedValue
---                | 'let' VarName '=' TapeLiteral
+--                | VarDecl
+--                | StructDecl
+--                | MemberAccess
 --                | If
 --                | 'while' Bexp '{' Stm '}'
 --                | FuncDecl
