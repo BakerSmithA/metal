@@ -2,7 +2,11 @@ module Syntax.ParserSpec (parserSpec) where
 
 import Syntax.Tree
 import Syntax.ParseState as S
+import Syntax.Bexp
+import Syntax.Variable
+import Syntax.Identifier
 import Syntax.Parser
+import Syntax.Helper
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import TestHelper.Parser
