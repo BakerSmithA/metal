@@ -1,7 +1,7 @@
 module Syntax.Func where
 
 import Syntax.Helper
-import Syntax.Env as E
+import qualified Syntax.Env as E
 import Syntax.Identifier
 import Syntax.Variable
 

@@ -50,3 +50,9 @@ putNewId identifier newType getEnv modifyEnv = do
     i <- newId identifier getEnv
     modify (modifyEnv $ E.put i newType)
     return i
+
+modifyNewId :: Parser Identifier -> (a -> a) -> GetEnv a -> ModifyEnv a -> Parser Identifier
+modifyNewId identifier f getEnv modifyEnv = do
+    i <- newId identifier getEnv
+    modify (modifyEnv $ E.modify i f)
+    return i

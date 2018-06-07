@@ -34,6 +34,13 @@ put newId idType (Env above used) = Env above used' where
 get :: Identifier -> Env a -> Maybe a
 get i env = i `Map.lookup` (combinedScopes env)
 
+-- Retrive the identifier from the environment and modify it. If the identifier
+-- does not exist then the supplied env is returned.
+modify :: Identifier -> (a -> a) -> Env a -> Env a
+modify i f env = case get i env of
+    Nothing -> env
+    Just x  -> put i (f x) env
+
 -- Moves any used names into the scope above.
 descendScope :: Env a -> Env a
 descendScope env = Env (combinedScopes env) Map.empty
