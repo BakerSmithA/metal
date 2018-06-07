@@ -4,7 +4,6 @@ import Syntax.Tree
 import Syntax.ParseState as S
 import Syntax.Bexp
 import Syntax.Variable
-import Syntax.Func
 import Syntax.Parser
 import Syntax.Helper
 import Test.Hspec
@@ -17,9 +16,7 @@ parserSpec = do
     describe "Parser" $ do
         encasedStringSpec
         tapeSymbolSpec
-        varNameSpec
-        funcNameSpec
-        newArgSpec
+        snakeIdSpec
         derivedSymbolSpec
         bexpSpec
         ifStmSpec
@@ -65,77 +62,32 @@ tapeSymbolSpec = do
         it "does not parse single quotes" $ do
             parseEmptyState tapeSymbol "" `shouldFailOn` "\'"
 
-varNameSpec :: Spec
-varNameSpec = do
-    describe "newVar" $ do
+snakeIdSpec :: Spec
+snakeIdSpec = do
+    describe "snakeIdSpec" $ do
         it "parses names beginning with a lower char" $ do
-            parseEmptyState (newVar SymType) "" "vname" `shouldParse` "vname"
+            parseEmptyState snakeId "" "vname" `shouldParse` "vname"
 
-        it "parses names containing uppcase characters" $ do
-            parseEmptyState (newVar SymType) "" "vNAME" `shouldParse` "vNAME"
+        it "parses names containing underscores characters" $ do
+            parseEmptyState snakeId "" "v_name" `shouldParse` "v_name"
 
         it "parses names containing digits" $ do
-            parseEmptyState (newVar SymType) "" "v1234" `shouldParse` "v1234"
+            parseEmptyState snakeId "" "v1234" `shouldParse` "v1234"
 
         it "parses if the variable name is a superset of a reserved word" $ do
-            parseEmptyState (newVar SymType) "" "trueV" `shouldParse` "trueV"
+            parseEmptyState snakeId "" "true_v" `shouldParse` "true_v"
 
-        it "fails if the start character is uppercase" $ do
-            parseEmptyState (newVar SymType) "" `shouldFailOn` "Vname"
+        it "parses underscores at the start" $ do
+            parseEmptyState snakeId "" "_name" `shouldParse` "_name"
 
-        it "fails if the start character is a digit" $ do
-            parseEmptyState (newVar SymType) "" `shouldFailOn` "1vName"
-
-        it "fails if the function name is a reserved keyword" $ do
-            parseEmptyState (newVar SymType) "" `shouldFailOn` "True"
-
-funcNameSpec :: Spec
-funcNameSpec = do
-    describe "newFunc" $ do
-        it "parses names beginning with a lower char" $ do
-            parseEmptyState newFunc "" "fname" `shouldParse` "fname"
-
-        it "parses names containing uppcase characters" $ do
-            parseEmptyState newFunc "" "fNAME" `shouldParse` "fNAME"
-
-        it "parses names containing digits" $ do
-            parseEmptyState newFunc "" "f1234" `shouldParse` "f1234"
-
-        it "parses if the function name is a superset of a reserved word" $ do
-            parseEmptyState newFunc "" "trueF" `shouldParse` "trueF"
-
-        it "fails if the start character is uppercase" $ do
-            parseEmptyState newFunc "" `shouldFailOn` "Fname"
+        it "fails if contains uppercase" $ do
+            parseEmptyState snakeId "" `shouldFailOn` "Vname"
 
         it "fails if the start character is a digit" $ do
-            parseEmptyState newFunc "" `shouldFailOn` "1fName"
+            parseEmptyState snakeId "" `shouldFailOn` "1_"
 
         it "fails if the function name is a reserved keyword" $ do
-            parseEmptyState newFunc "" `shouldFailOn` "True"
-
-newArgSpec :: Spec
-newArgSpec = do
-    describe "newArg" $ do
-        it "parses names beginning with a lower char" $ do
-            parseEmptyState newArg "" "argname" `shouldParse` "argname"
-
-        it "parses names containing uppcase characters" $ do
-            parseEmptyState newArg "" "argNAME" `shouldParse` "argNAME"
-
-        it "parses names containing digits" $ do
-            parseEmptyState newArg "" "a1234" `shouldParse` "a1234"
-
-        it "parses if the function name is a superset of a reserved word" $ do
-            parseEmptyState newArg "" "trueA" `shouldParse` "trueA"
-
-        it "fails if the start character is uppercase" $ do
-            parseEmptyState newArg "" `shouldFailOn` "Aname"
-
-        it "fails if the start character is a digit" $ do
-            parseEmptyState newArg "" `shouldFailOn` "1AName"
-
-        it "fails if the function name is a reserved keyword" $ do
-            parseEmptyState newArg "" `shouldFailOn` "True"
+            parseEmptyState snakeId "" `shouldFailOn` "True"
 
 derivedSymbolSpec :: Spec
 derivedSymbolSpec = do
@@ -460,17 +412,17 @@ programSpec = describe "program" $ do
         let state = S.fromVarList [("tape", TapeType)]
 
         it "parses function delcarations" $ do
-            let expected = FuncDecl "fName" [] (MoveRight "tape")
-            parseEvalState state program "" "func fName { right tape }" `shouldParseStm` expected
+            let expected = FuncDecl "f_name" [] (MoveRight "tape")
+            parseEvalState state program "" "func f_name { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
             let args = [FuncDeclArg "a" SymType, FuncDeclArg "bb" TapeType]
-                expected = FuncDecl "fName" args (MoveRight "tape")
-            parseEvalState state program "" "func fName a:Sym bb:Tape { right tape }" `shouldParseStm` expected
+                expected = FuncDecl "f_name" args (MoveRight "tape")
+            parseEvalState state program "" "func f_name a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
-            let expected = FuncDecl "leftUntil" [] (MoveRight "tape")
-            parseEvalState state program "" "func leftUntil { right tape }" `shouldParseStm` expected
+            let expected = FuncDecl "left_until" [] (MoveRight "tape")
+            parseEvalState state program "" "func left_until { right tape }" `shouldParseStm` expected
 
         it "allows variables to be shadowed" $ do
             let innerVarDecl = VarDecl "x" (Literal 'a')
@@ -498,8 +450,8 @@ programSpec = describe "program" $ do
 
         it "allows arguments to be used inside the function" $ do
             let args = [FuncDeclArg "t" TapeType, FuncDeclArg "x" SymType]
-                func = FuncDecl "writeNew" args (Write "t" (Var "x"))
-            parseEmptyState program "" "func writeNew t:Tape x:Sym { write t x }" `shouldParseStm` func
+                func = FuncDecl "write_new" args (Write "t" (Var "x"))
+            parseEmptyState program "" "func write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
 
         it "fails if argument names are duplicated" $ do
             parseEmptyState program "" `shouldFailOn` "func f x:Tape x:Sym { print \"\" }"
@@ -508,58 +460,58 @@ programSpec = describe "program" $ do
             parseEvalState state program "" `shouldFailOn` "func { right tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func fName right tape }"
+            parseEvalState state program "" `shouldFailOn` "func f_name right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func fName { right tape"
+            parseEvalState state program "" `shouldFailOn` "func f_name { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func fName right tape"
+            parseEvalState state program "" `shouldFailOn` "func f_name right tape"
 
         it "fails if the same function is declared twice in the same scope" $ do
             parseEmptyState program "" `shouldFailOn` "func f { left main }\nfunc g { left main }"
 
     context "parsing function calls" $ do
         it "parses function calls" $ do
-            let state = S.fromFuncList [("fName", [])]
-            parseEvalState state program "" "fName" `shouldParseStm` (Call "fName" [])
+            let state = S.fromFuncList [("f_name", [])]
+            parseEvalState state program "" "f_name" `shouldParseStm` (Call "f_name" [])
 
         it "parses function calls with arguments" $ do
-            let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
+            let expected = Call "f_name" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
                 var1     = ("tape", TapeType)
                 var2     = ("x", SymType)
-                func     = ("fName", [SymType, SymType, SymType])
+                func     = ("f_name", [SymType, SymType, SymType])
                 state    = S.fromLists [var1, var2] [func]
-            parseEvalState state program "" "fName (read tape) x '#'" `shouldParseStm` expected
+            parseEvalState state program "" "f_name (read tape) x '#'" `shouldParseStm` expected
 
         it "parses function calls with multiple spaces between arguments" $ do
-            let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
+            let expected = Call "f_name" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
                 var1     = ("tape", TapeType)
                 var2     = ("x", SymType)
-                func     = ("fName", [SymType, SymType, SymType])
+                func     = ("f_name", [SymType, SymType, SymType])
                 state    = S.fromLists [var1, var2] [func]
-            parseEvalState state program "" "fName   (read tape)  x  '#'" `shouldParseStm` expected
+            parseEvalState state program "" "f_name   (read tape)  x  '#'" `shouldParseStm` expected
 
         it "parses function calls with tabs between arguments" $ do
-            let expected = Call "fName" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
+            let expected = Call "f_name" [Derived (Read "tape"), Derived (Var "x"), Derived (Literal '#')]
                 var1     = ("tape", TapeType)
                 var2     = ("x", SymType)
-                func     = ("fName", [SymType, SymType, SymType])
+                func     = ("f_name", [SymType, SymType, SymType])
                 state    = S.fromLists [var1, var2] [func]
-            parseEvalState state program "" "fName \t(read tape)\tx\t'#'" `shouldParseStm` expected
+            parseEvalState state program "" "f_name \t(read tape)\tx\t'#'" `shouldParseStm` expected
 
         it "parses function calls followed by another statement" $ do
-            let call     = Call "fName" [Derived (Read "tape")]
+            let call     = Call "f_name" [Derived (Read "tape")]
                 expected = Comp call ((MoveLeft "tape"))
                 var      = ("tape", TapeType)
-                func     = ("fName", [SymType])
+                func     = ("f_name", [SymType])
                 state    = S.fromLists [var] [func]
-            parseEvalState state program "" "fName (read tape) \n left tape" `shouldParseStm` expected
+            parseEvalState state program "" "f_name (read tape) \n left tape" `shouldParseStm` expected
 
         it "parses function calls where the name contains a keyword" $ do
-            let expected = Call "leftUntil" []
-                state    = S.fromFuncList [("leftUntil", [])]
-            parseEvalState state program "" "leftUntil" `shouldParseStm` expected
+            let expected = Call "left_until" []
+                state    = S.fromFuncList [("left_until", [])]
+            parseEvalState state program "" "left_until" `shouldParseStm` expected
 
         it "parses tape literal arguments" $ do
             let expected = Call "f" [TapeLiteral "abcd", TapeLiteral "xyz"]

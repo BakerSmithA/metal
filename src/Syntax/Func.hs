@@ -10,18 +10,18 @@ import Syntax.Variable
 -- function already exists. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
 newFunc :: Parser FuncName
-newFunc = newId lowerId funcEnv
+newFunc = newId snakeId funcEnv
 
 -- Attempts to use a declared variable, but does **not** check for matching
 -- types. If the variable does not exist then parsing fails. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
 refFunc :: Parser (FuncName, [DataType])
-refFunc = refId lowerId funcEnv
+refFunc = refId snakeId funcEnv
 
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
 newArg :: Parser ArgName
-newArg = newId lowerId varEnv
+newArg = newId snakeId varEnv
 
 -- Parses an argument to a function, the EBNF of which is the same as a TypedVar.
 funcDeclArg :: Parser FuncDeclArg
