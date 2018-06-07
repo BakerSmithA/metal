@@ -1,15 +1,11 @@
 module Syntax.Parser where
 
-import Control.Monad.State.Lazy (StateT, when, modify, get, put, lift, runStateT, liftM)
 import Syntax.Tree
 import Syntax.ParseState as S
-import Syntax.Bexp
 import Syntax.Control
 import Syntax.Func
 import Syntax.Helper
-import Syntax.Identifier
 import Syntax.Variable
-import Text.Megaparsec hiding (State)
 import qualified Text.Megaparsec.String as M
 
 -- Abstract Grammar
@@ -25,6 +21,7 @@ import qualified Text.Megaparsec.String as M
 --  ArgName       : Identifier
 --  StructName    : Identifier
 --  Type          : 'Tape' | 'Sym' | StructName
+--  TypedVar      : VarName ':' Type
 --
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
 --  TapeLiteral   : '"' TapeSymbol* '"'
@@ -45,15 +42,13 @@ import qualified Text.Megaparsec.String as M
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
 --
---  FuncDeclArg   : FuncDeclArg : ArgName ':' Type
---  FuncDeclArgs  : FuncDeclArg (' ' FuncDeclArg)* | ε
+--  FuncDeclArgs  : FuncDeclArg (' ' TypedVar)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
 --  FuncCallArg   : DerivedSymbol | TapeLiteral
 --  FuncCallArgs  : FuncCallArg (',' FuncCallArg) | ε
 --  Call          : FuncName FuncCallArgs
 --
---  MemberDecl    : VarName ':' Type
---  StructDecl    : 'struct' StructName '{' (MemberDecl '\n')+ '}'
+--  StructDecl    : 'struct' StructName '{' (TypedVar '\n')+ '}'
 --  NewStruct     : StructName (Var ' ')+
 --  MemberAccess  : VarName '.' VarName
 --

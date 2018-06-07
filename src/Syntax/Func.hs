@@ -5,18 +5,33 @@ import Syntax.Env as E
 import Syntax.Identifier
 import Syntax.Variable
 
--- Argument to a function, the EBNF is:
---  FuncDeclArg : ArgName ':' FuncArgType
+-- Attempts to parse an identifier used to declare a new function. Does **not**
+-- add the function to the environment if it does not exist. Fails if the
+-- function already exists. EBNF:
+--  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
+newFunc :: Parser FuncName
+newFunc = newId funcEnv
+
+-- Attempts to use a declared variable, but does **not** check for matching
+-- types. If the variable does not exist then parsing fails. EBNF:
+--  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
+refFunc :: Parser (FuncName, [DataType])
+refFunc = refId funcEnv
+
+-- Parses a function argument, the EBNF syntax of which is:
+--  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
+newArg :: Parser ArgName
+newArg = newId varEnv
+
+-- Argument to a function.
 funcDeclArg :: Parser FuncDeclArg
 funcDeclArg = do
-    name <- newArg
-    _ <- lTok ":"
-    argType <- dataType
+    (name, argType) <- typedVar newArg
     modify (modifyVarEnv (E.put name argType))
     return (FuncDeclArg name argType)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
---  FuncDeclArgs : FuncDeclArg (' ' FuncDeclArg)* | ε
+--  FuncDeclArgs  : FuncDeclArg (' ' TypedVar)* | ε
 funcDeclArgs :: Parser FuncDeclArgs
 funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 

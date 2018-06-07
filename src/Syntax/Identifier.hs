@@ -11,11 +11,6 @@ reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
                     "right", "write", "reject", "accept", "let", "if", "else",
                     "while", "print", "func", "import", "_printTape"]
 
--- Parses a tape symbol, the EBNF syntax of which is:
---  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
-tapeSymbol :: Parser TapeSymbol
-tapeSymbol = noneOf "\'\""
-
 -- Parses an identifier, i.e. variable or function name, the EBNF syntax for
 -- both being:
 --  LowerChar (LowerChar | UpperChar | Digit)*
@@ -60,34 +55,3 @@ putNewId newType getEnv modifyEnv = do
     i <- newId getEnv
     modify (modifyEnv $ E.put i newType)
     return i
-
--- Attempts to parse an identifier used to declare a new variable.
--- Fails if the variable already exists. If the variable does not exist
--- it is added to the environment. EBNF:
---  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-newVar :: DataType -> Parser VarName
-newVar varType = putNewId varType varEnv modifyVarEnv
-
--- Attempts to use a declared variable. If the variable does not exist, or the
--- types do not match, then parsing fails. EBNF:
---  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-refVar :: DataType -> Parser VarName
-refVar expectedType = refTypedId expectedType varEnv
-
--- Attempts to parse an identifier used to declare a new function. Does **not**
--- add the function to the environment if it does not exist. Fails if the
--- function already exists. EBNF:
---  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-newFunc :: Parser FuncName
-newFunc = newId funcEnv
-
--- Attempts to use a declared variable, but does **not** check for matching
--- types. If the variable does not exist then parsing fails. EBNF:
---  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-refFunc :: Parser (FuncName, [DataType])
-refFunc = refId funcEnv
-
--- Parses a function argument, the EBNF syntax of which is:
---  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
-newArg :: Parser ArgName
-newArg = newId varEnv
