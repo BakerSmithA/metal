@@ -23,7 +23,7 @@ refFunc = refId funcEnv
 newArg :: Parser ArgName
 newArg = newId varEnv
 
--- Argument to a function.
+-- Parses an argument to a function, the EBNF of which is the same as a TypedVar.
 funcDeclArg :: Parser FuncDeclArg
 funcDeclArg = do
     (name, argType) <- typedVar newArg

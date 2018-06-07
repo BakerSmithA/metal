@@ -1,26 +1,30 @@
 module Syntax.ParseState where
 
 import Syntax.Env as E
-import Syntax.Tree (VarName, FuncName, DataType)
+import Syntax.Tree (VarName, FuncName, StructName, StructMember, DataType)
+import Data.Map as Map
 
 -- Stores variable identifiers and their associated types.
 type VarEnv = Env DataType
 -- Stores function identifiers and their associated argument types.
 type FuncEnv = Env [DataType]
+-- Stores struct names and their associated member variable names and types.
+type StructEnv = Env [StructMember]
 
 -- Keeps track of used variable and function names to avoid invalid programs.
 data ParseState = ParseState {
     varEnv :: VarEnv,
-    funcEnv :: FuncEnv
+    funcEnv :: FuncEnv,
+    structEnv :: StructEnv
 }
 
 -- A parse state containing no variables or functions.
 empty :: ParseState
-empty = ParseState E.empty E.empty
+empty = ParseState E.empty E.empty E.empty
 
 -- A parse state containing variables and functions with the given names.
 fromLists :: [(VarName, DataType)] -> [(FuncName, [DataType])] -> ParseState
-fromLists vars funcs = ParseState (E.fromList vars) (E.fromList funcs)
+fromLists vars funcs = ParseState (E.fromList vars) (E.fromList funcs) E.empty
 
 -- A parse state containing only variables with the given names.
 fromVarList :: [(VarName, DataType)] -> ParseState
@@ -32,8 +36,12 @@ fromFuncList funcs = fromLists [] funcs
 
 -- Applies f to the variable environment only.
 modifyVarEnv :: (VarEnv -> VarEnv) -> ParseState -> ParseState
-modifyVarEnv f (ParseState ve fe) = ParseState (f ve) fe
+modifyVarEnv f env = env { varEnv = f (varEnv env) }
 
 -- Applies f to the function environment only.
 modifyFuncEnv :: (FuncEnv -> FuncEnv) -> ParseState -> ParseState
-modifyFuncEnv f (ParseState ve fe) = ParseState ve (f fe)
+modifyFuncEnv f env = env { funcEnv = f (funcEnv env) }
+
+-- Applies f to the struct environment only.
+modifyStructEnv :: (StructEnv -> StructEnv) -> ParseState -> ParseState
+modifyStructEnv f env = env { structEnv = f (structEnv env) }

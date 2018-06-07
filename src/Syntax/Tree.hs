@@ -15,6 +15,11 @@ type FuncName = Identifier
 -- Function argument name.
 type ArgName = Identifier
 
+-- Struct Name, must start with a capital letter.
+type StructName = String
+-- Variable contained within a struct.
+type StructMember = (VarName, DataType)
+
 -- Types that can be passed to functions.
 data DataType = SymType
               | TapeType
