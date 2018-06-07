@@ -22,7 +22,7 @@ import qualified Text.Megaparsec.String as M
 --  FuncName      : Identifier
 --  ArgName       : Identifier
 --  StructName    : Identifier
---  Type          : 'Tape' | 'Sym'
+--  Type          : 'Tape' | 'Sym' | StructName
 --
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
 --  TapeLiteral   : '"' TapeSymbol* '"'
@@ -52,11 +52,12 @@ import qualified Text.Megaparsec.String as M
 --
 --  MemberDecl    : VarName ':' Type
 --  StructDecl    : 'struct' StructName '{' (MemberDecl '\n')+ '}'
+--  NewStruct     : StructName (Var ' ')+
 --  MemberAccess  : VarName '.' VarName
 --
 --  Var           : DerivedValue
 --                | TapeLiteral
---                | StructName
+--                | NewStruct
 --  VarDecl       : 'let' VarName '=' Var
 --
 --  Stm           : 'left' VarName
@@ -75,6 +76,7 @@ import qualified Text.Megaparsec.String as M
 --                | Stm '\n' Stm
 --                | 'print' VarName
 --                | 'print' String
+--
 --  Import        : 'import ' String
 --  Imports       : ('import ' String '\n'+)*
 --  Program       : Imports Stm
