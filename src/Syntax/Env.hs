@@ -12,6 +12,9 @@ data Env a = Env {
     used :: Map Identifier a
 }
 
+instance (Show a) => Show (Env a) where
+    show (Env a u) = "above: " ++ (show a) ++ ", used: " ++ (show u)
+
 -- Returns the combination of both scopes to make for easier searching.
 combinedScopes :: Env a -> Map Identifier a
 -- used before above so conficts use the inner-most definiton.

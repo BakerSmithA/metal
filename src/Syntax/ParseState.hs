@@ -40,5 +40,5 @@ descendScopeM = modify E.descendScope
 -- i.e. if the name is in use at this scope.
 isTakenM :: Identifier -> ParserM Bool
 isTakenM i = do
-    v <- getM i
-    return (maybe False (const True) v)
+    state <- get
+    return (E.isTaken i state)

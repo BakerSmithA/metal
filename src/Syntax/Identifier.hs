@@ -2,6 +2,8 @@ module Syntax.Identifier where
 
 import Syntax.Tree
 import Syntax.Common
+import Debug.Trace
+import Control.Monad.State.Lazy (get)
 
 -- Parses a snake-case identifier.
 snakeId :: ParserM VarName
@@ -27,7 +29,8 @@ newId :: ParserM Identifier -> ParserM Identifier
 newId p = do
     i <- reserveCheckedId p
     taken <- isTakenM i
-    if not taken
+    s <- get
+    trace (i ++ ", " ++ (show s) ++ ", " ++ (show taken)) $ if not taken
         then return i
         else (fail $ i ++ " already exists")
 
