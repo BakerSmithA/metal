@@ -47,5 +47,5 @@ typedVar :: ParserM Identifier -> ParserM (Identifier, DataType)
 typedVar p = do
     name <- p
     _ <- lTok ":"
-    argType <- dataType
-    return (name, argType)
+    idType <- dataType
+    return (name, idType)

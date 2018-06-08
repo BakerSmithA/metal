@@ -98,6 +98,7 @@ stm' = try funcCall
    <|> DebugPrintTape <$ lTok "_printTape" <*> refVar TapeType
    <|> whileStm stmComp
    <|> ifStm stmComp
+   <|> structDecl
 
 -- Composes a list of statements using Comp.
 compose :: [Stm] -> Stm

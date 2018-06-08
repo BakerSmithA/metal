@@ -8,7 +8,7 @@ import Syntax.Common
 reservedKeywords :: [String]
 reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
                     "right", "write", "reject", "accept", "let", "if", "else",
-                    "while", "print", "func", "import", "_printTape"]
+                    "while", "print", "func", "import", "_printTape", "struct"]
 
 -- Checks that the parsed identifier is not a reserved keyword.
 reserveCheckedId :: ParserM Identifier -> ParserM Identifier
