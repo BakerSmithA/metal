@@ -43,7 +43,9 @@ funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 funcArgsBody :: FuncName -> ParserM Stm -> ParserM (FuncDeclArgs, Stm)
 funcArgsBody name stm = do
     args <- funcDeclArgs
-    body <- braces stm
+    -- Expose the function inside the function itself, allowing recursion.
+    putFunc name args
+    body <- block (braces stm)
     return (args, body)
 
 putFunc :: FuncName -> FuncDeclArgs -> ParserM ()
