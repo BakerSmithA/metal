@@ -1,15 +1,12 @@
 module Syntax.BexpSpec where
 
 import Syntax.Tree
-import Syntax.ParseState as S
+import Syntax.Env as Env
 import Syntax.Bexp
-import Syntax.Variable
 import Syntax.Parser
 import Syntax.Common
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import TestHelper.Parser
-import Text.Megaparsec (parse)
 
 bexpSpec :: Spec
 bexpSpec = describe "bexp" $ do
@@ -40,29 +37,29 @@ bexpSpec = describe "bexp" $ do
 
     context "parsing EQ operator" $ do
         it "parses EQ" $ do
-            let state = S.fromVarList [("tape", TapeType), ("x", SymType)]
+            let state = Env.fromList [("tape", PVar TapeType), ("x", PVar SymType)]
             parseEvalState state bexp "" "x == read tape" `shouldParse` (Eq (Var "x") (Read "tape"))
 
         it "fails to parse chains" $ do
-            let state = S.fromVarList [("x", SymType), ("y", SymType), ("z", SymType)]
+            let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
             parseEvalState state bexp "" "'x' == y == z" `shouldParse` (Eq (Literal 'x') (Var "y"))
 
     context "parsing LE operator" $ do
         it "parses LE" $ do
-            let state = S.fromVarList [("x", SymType), ("tape", TapeType)]
+            let state = Env.fromList [("x", PVar SymType), ("tape", PVar TapeType)]
             parseEvalState state bexp "" "x <= read tape" `shouldParse` (Le (Var "x") (Read "tape"))
 
         it "fails to parse chains" $ do
-            let state = S.fromVarList [("x", SymType), ("y", SymType), ("z", SymType)]
+            let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
             parseEvalState state bexp "" "x <= y <= z" `shouldParse` (Le (Var "x") (Var "y"))
 
     context "parsing NE operator" $ do
         it "parses NE" $ do
-            let state = S.fromVarList [("x", SymType), ("tape", TapeType)]
+            let state = Env.fromList [("x", PVar SymType), ("tape", PVar TapeType)]
             parseEvalState state bexp "" "x != read tape" `shouldParse` (Ne (Var "x") (Read "tape"))
 
         it "fails to parse chains" $ do
-            let state = S.fromVarList [("x", SymType), ("y", SymType), ("z", SymType)]
+            let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
             parseEvalState state bexp "" "x != y != z" `shouldParse` (Ne (Var "x") (Var "y"))
 
     context "parsing boolean expressions with parenthesis" $ do

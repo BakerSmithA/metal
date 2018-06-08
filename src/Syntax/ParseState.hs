@@ -1,47 +1,44 @@
-module Syntax.ParseState where
+module Syntax.ParseState
+( module Syntax.ParseState
+, module Text.Megaparsec.String
+)
+where
 
-import Syntax.Env as E
-import Syntax.Tree (VarName, FuncName, StructName, StructMember, DataType)
-import Data.Map as Map
+import Syntax.Tree
+import qualified Syntax.Env as E
+import Control.Monad.State.Lazy (StateT, modify, get)
+import Text.Megaparsec.String
 
--- Stores variable identifiers and their associated types.
-type VarEnv = Env DataType
--- Stores function identifiers and their associated argument types.
-type FuncEnv = Env [DataType]
--- Stores struct names and their associated member variable names and types.
-type StructEnv = Env [StructMember]
+data EnvDecl = PVar DataType
+             | PFunc [DataType]
+             deriving (Eq, Show)
 
--- Keeps track of used variable and function names to avoid invalid programs.
-data ParseState = ParseState {
-    varEnv :: VarEnv,
-    funcEnv :: FuncEnv,
-    structEnv :: StructEnv
-}
+type ParseState = E.Env EnvDecl
+type ParserM = StateT ParseState Parser
 
--- A parse state containing no variables or functions.
-empty :: ParseState
-empty = ParseState E.empty E.empty E.empty
+-- Adds a variable name to the current scope.
+putM :: Identifier -> EnvDecl -> ParserM ()
+putM i v = modify (E.put i v)
 
--- A parse state containing variables and functions with the given names.
-fromLists :: [(VarName, DataType)] -> [(FuncName, [DataType])] -> ParseState
-fromLists vars funcs = ParseState (E.fromList vars) (E.fromList funcs) E.empty
+-- Returns whether a identifier can be used, i.e. if the identifier has been
+-- declared in this scope or the scope above.
+getM :: Identifier -> ParserM (Maybe EnvDecl)
+getM i = do
+    state <- get
+    return (E.get i state)
 
--- A parse state containing only variables with the given names.
-fromVarList :: [(VarName, DataType)] -> ParseState
-fromVarList vars = fromLists vars []
+-- Retrive the identifier from the environment and modify it. If the identifier
+-- does not exist then the supplied env is returned.
+modifyM :: Identifier -> (EnvDecl -> EnvDecl) -> ParserM ()
+modifyM i f = modify (E.modify i f)
 
--- A parse state containing only functions with the given names.
-fromFuncList :: [(FuncName, [DataType])] -> ParseState
-fromFuncList funcs = fromLists [] funcs
+-- Moves any used names into the scope above.
+descendScopeM :: ParserM ()
+descendScopeM = modify E.descendScope
 
--- Applies f to the variable environment only.
-mapVarEnv :: (VarEnv -> VarEnv) -> ParseState -> ParseState
-mapVarEnv f env = env { varEnv = f (varEnv env) }
-
--- Applies f to the function environment only.
-mapFuncEnv :: (FuncEnv -> FuncEnv) -> ParseState -> ParseState
-mapFuncEnv f env = env { funcEnv = f (funcEnv env) }
-
--- Applies f to the struct environment only.
-mapStructEnv :: (StructEnv -> StructEnv) -> ParseState -> ParseState
-mapStructEnv f env = env { structEnv = f (structEnv env) }
+-- Returns whether a identifier has already been used to declare a variable/function.
+-- i.e. if the name is in use at this scope.
+isTakenM :: Identifier -> ParserM Bool
+isTakenM i = do
+    v <- getM i
+    return (maybe False (const True) v)

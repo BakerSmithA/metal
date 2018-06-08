@@ -7,7 +7,7 @@ import Syntax.Bexp
 --  If     : 'if' { Stm } ElseIf
 --  ElseIf : 'else if' { Stm } ElseIf | Else
 --  Else   : 'else' { Stm } | ε
-ifStm :: Parser Stm -> Parser Stm
+ifStm :: ParserM Stm -> ParserM Stm
 ifStm stm = If <$ lTok "if" <*> bexp <*> block (braces stm) <*> many elseIfClause <*> elseClause where
     elseIfClause = do
         bool <- lTok "else if" *> bexp
@@ -15,5 +15,5 @@ ifStm stm = If <$ lTok "if" <*> bexp <*> block (braces stm) <*> many elseIfClaus
         return (bool, statement)
     elseClause = optional (lTok "else" *> block (braces stm))
 
-whileStm :: Parser Stm -> Parser Stm
+whileStm :: ParserM Stm -> ParserM Stm
 whileStm stm = While <$ lTok "while" <*> bexp <*> block (braces stm)

@@ -1,12 +1,13 @@
 module Syntax.Parser where
 
 import Syntax.Tree
-import Syntax.ParseState as S
+import Syntax.Env as E
 import Syntax.Control
 import Syntax.Func
 import Syntax.Common
 import Syntax.Variable
 import qualified Text.Megaparsec.String as M
+import Control.Monad.State.Lazy (runStateT, lift, liftM)
 
 -- Abstract Grammar
 --
@@ -79,7 +80,7 @@ import qualified Text.Megaparsec.String as M
 --  Program       : Imports Stm
 
 -- Parses the elements of the syntactic class Stm, except for composition.
-stm' :: Parser Stm
+stm' :: ParserM Stm
 stm' = try funcCall
    <|> MoveLeft <$ lTok "left" <* lWhitespace <*> refVar TapeType
    <|> MoveRight <$ lTok "right" <* lWhitespace <*> refVar TapeType
@@ -102,10 +103,10 @@ compose []  = error "Compose failed: expected a statement"
 compose [x] = x
 compose xs  = foldr1 Comp xs
 
--- Parses statements separated by newlines into a composition of statements.stmComp :: Parser Stm
-stmComp :: Parser Stm
+-- Parses statements separated by newlines into a composition of statements.stmComp :: ParserM Stm
+stmComp :: ParserM Stm
 stmComp = (stms <* lWhitespaceNewline) >>= (return . compose) where
-    stms :: Parser [Stm]
+    stms :: ParserM [Stm]
     stms = try ((:) <$> (stm' <* some (newline <* lWhitespace)) <*> stms)
        <|> (:) <$> stm' <*> pure []
 
@@ -125,35 +126,35 @@ stmComp = (stms <* lWhitespaceNewline) >>= (return . compose) where
 --      | 'print'
 --      | 'print' String
 --      | Import
-stm :: Parser Stm
+stm :: ParserM Stm
 stm = stmComp <* lWhitespaceNewline
 
 -- Parses an import statement, the EBNF syntax of which is given below.
 --  Import : 'import ' String
-importPath :: M.Parser ImportPath
+importPath :: Parser ImportPath
 importPath = tok "import" *> many (noneOf "\n\r")
 
 -- Parses many import statements seperated by newlines.
 --  Imports : ('import ' String '\n'+)*
-importPaths :: M.Parser [ImportPath]
+importPaths :: Parser [ImportPath]
 importPaths = whitespaceNewline *> paths <* whitespaceNewline where
     paths = try (many (importPath <* some newline))
         <|> (:) <$> importPath <*> pure []
 
 -- Parses a program, the EBNF syntax of which is:
 --  Program : Import* Stm
-program :: Parser Stm
+program :: ParserM Stm
 program = lift importPaths *> stm <* eof
 
 -- Parses using the initial parse state, returning the new parse state.
-parseRunState :: ParseState -> Parser a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) (a, ParseState)
+parseRunState :: ParseState -> ParserM a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) (a, ParseState)
 parseRunState initialState parser fileName fileContents = parse p fileName fileContents where
     p = runStateT parser initialState
 
 -- Parses using the initial parse state, discarding the new parse state.
-parseEvalState :: ParseState -> Parser a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) a
+parseEvalState :: ParseState -> ParserM a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) a
 parseEvalState initialState parser fileName fileContents = liftM fst (parseRunState initialState parser fileName fileContents)
 
 -- Parses using an empty initial parse state, discarding the new parse state.
-parseEmptyState :: Parser a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) a
-parseEmptyState = parseEvalState S.empty
+parseEmptyState :: ParserM a -> ImportPath -> FileContents -> Either (ParseError (Token String) Dec) a
+parseEmptyState = parseEvalState E.empty

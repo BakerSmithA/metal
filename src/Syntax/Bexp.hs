@@ -6,7 +6,7 @@ import Text.Megaparsec.Expr
 
 -- Parses the basis elements of the boolean expressions, plus boolean
 -- expressions wrapped in parenthesis.
-bexp' :: Parser Bexp
+bexp' :: ParserM Bexp
 bexp' = try (parens bexp)
     <|> TRUE  <$ lTok "True"
     <|> FALSE <$ lTok "False"
@@ -16,7 +16,7 @@ bexp' = try (parens bexp)
 
 -- The operators that can work on boolean expressions. There is no precedence,
 -- instead the expression is evaualted from left to right.
-bexpOps :: [[Operator Parser Bexp]]
+bexpOps :: [[Operator ParserM Bexp]]
 bexpOps = [[Prefix (Not <$ lTok "not")],
            [InfixL (And <$ lTok "and"), InfixL (Or <$ lTok "or")]]
 
@@ -29,5 +29,5 @@ bexpOps = [[Prefix (Not <$ lTok "not")],
 --       | Bexp 'or' Bexp
 --       | DerivedValue '==' DerivedValue
 --       | DerivedValue '<=' DerivedValue
-bexp :: Parser Bexp
+bexp :: ParserM Bexp
 bexp = makeExprParser bexp' bexpOps

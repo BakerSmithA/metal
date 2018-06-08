@@ -17,6 +17,7 @@ type ArgName = Identifier
 
 -- Struct Name, must start with a capital letter.
 type StructName = String
+
 -- Variable contained within a struct.
 type StructMember = (VarName, DataType)
 

@@ -1,7 +1,8 @@
 module Syntax.VariableSpec where
 
 import Syntax.Tree
-import Syntax.ParseState as S
+import Syntax.Env as Env
+import Syntax.ParseState
 import Syntax.Variable
 import Syntax.Parser
 import Test.Hspec
@@ -40,19 +41,19 @@ derivedSymbolSpec :: Spec
 derivedSymbolSpec = do
     describe "derivedSymbol" $ do
         it "parses read" $ do
-            let state = S.fromVarList [("tape", TapeType)]
+            let state = Env.fromList [("tape", PVar TapeType)]
             parseEvalState state (derivedSymbol SymType) "" "read tape" `shouldParse` (Read "tape")
 
         it "parses symbol variables" $ do
-            let state = S.fromVarList [("x", SymType)]
+            let state = Env.fromList [("x", PVar SymType)]
             parseEvalState state (derivedSymbol SymType) "" "x" `shouldParse` Var "x"
 
         it "parses tape variables" $ do
-            let state = S.fromVarList [("x", TapeType)]
+            let state = Env.fromList [("x", PVar TapeType)]
             parseEvalState state (derivedSymbol TapeType) "" "x" `shouldParse` Var "x"
 
         it "fails to parse variables if the types mismatch" $ do
-            let state = S.fromVarList [("x", SymType)]
+            let state = Env.fromList [("x", PVar SymType)]
             parseEvalState state (derivedSymbol TapeType) "" `shouldFailOn` "x"
 
         it "parses literals" $ do
@@ -64,7 +65,7 @@ derivedSymbolSpec = do
 variableDeclSpec :: Spec
 variableDeclSpec = do
     describe "variable declarations" $ do
-        let state = S.fromVarList [("tape", TapeType)]
+        let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses variable declarations" $ do
             parseEvalState state program "" "let x = read tape" `shouldParseStm` VarDecl "x" (Read "tape")

@@ -1,15 +1,12 @@
 module Syntax.ControlSpec where
 
 import Syntax.Tree
-import Syntax.ParseState as S
-import Syntax.Bexp
-import Syntax.Variable
+import Syntax.Env as Env
 import Syntax.Parser
 import Syntax.Common
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import TestHelper.Parser
-import Text.Megaparsec (parse)
 
 controlSpec :: Spec
 controlSpec = do
@@ -18,7 +15,7 @@ controlSpec = do
 
 ifStmSpec :: Spec
 ifStmSpec = describe "ifStm" $ do
-    let state = S.fromVarList [("tape", TapeType)]
+    let state = Env.fromList [("tape", PVar TapeType)]
 
     context "parsing a single IF" $ do
         it "parses IF" $ do
@@ -110,7 +107,7 @@ ifStmSpec = describe "ifStm" $ do
 whileSpec :: Spec
 whileSpec = do
     describe "while" $ do
-        let state = S.fromVarList [("tape", TapeType)]
+        let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses WHILE" $ do
             parseEvalState state program "" "while True { right tape }" `shouldParseStm` (While TRUE (MoveRight "tape"))

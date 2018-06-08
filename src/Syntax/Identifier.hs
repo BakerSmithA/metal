@@ -2,10 +2,9 @@ module Syntax.Identifier where
 
 import Syntax.Tree
 import Syntax.Common
-import qualified Syntax.Env as E
 
 -- Parses a snake-case identifier.
-snakeId :: Parser VarName
+snakeId :: ParserM VarName
 snakeId = (:) <$> (lowerChar <|> char '_') <*> many c where
     c = lowerChar <|> digitChar <|> char '_'
 
@@ -17,47 +16,43 @@ reservedKeywords = ["read", "True", "False", "not", "and", "or", "left",
                     "while", "print", "func", "import", "_printTape"]
 
 -- Checks that the parsed identifier is not a reserved keyword.
-reserveCheckedId :: Parser Identifier -> Parser Identifier
+reserveCheckedId :: ParserM Identifier -> ParserM Identifier
 reserveCheckedId p = (p >>= check) <* lWhitespace where
         check word = if not (word `elem` reservedKeywords)
                         then return word
                         else fail $ "keyword " ++ show word ++ " cannot be an identifier"
 
 -- Parses an identifier if the identifier has **not** already been declared.
-newId :: Parser Identifier -> GetEnv a -> Parser Identifier
-newId identifier getEnv = do
-    i <- reserveCheckedId identifier
-    env <- liftM getEnv get
-    when (E.isTaken i env) (fail $ i ++ " already exists")
-    return i
+newId :: ParserM Identifier -> ParserM Identifier
+newId p = do
+    i <- reserveCheckedId p
+    taken <- isTakenM i
+    if not taken
+        then return i
+        else (fail $ i ++ " already exists")
 
 -- Parses an identifier if the identifier already exists, returning the new
 -- id and its type.
-refId :: Parser Identifier -> GetEnv a -> Parser (Identifier, a)
-refId identifier getEnv = do
-    i <- reserveCheckedId identifier
-    env <- liftM getEnv get
-    case E.get i env of
-        Nothing     -> fail $ i ++ " does not exist"
-        Just idType -> return (i, idType)
+refId :: ParserM Identifier -> ParserM (Identifier, EnvDecl)
+refId p = do
+    i <- reserveCheckedId p
+    idType <- getM i
+    case idType of
+        Nothing -> fail $ i ++ " does not exist"
+        Just t -> return (i, t)
 
 -- Parses an identifier if the identifier exists and has the expected type.
-refExpTypedId :: (Eq a) => Parser Identifier -> a -> GetEnv a -> Parser Identifier
-refExpTypedId identifier expectedType getEnv = do
-    (i, idType) <- refId identifier getEnv
-    when (expectedType /= idType) (fail "mistmatched types")
-    return i
+refExpTypeId :: ParserM Identifier -> EnvDecl -> ParserM Identifier
+refExpTypeId p expType = do
+    (i, idType) <- refId p
+    if expType == idType
+        then return i
+        else (fail "mistmatched types")
 
 -- Parses an identifier if has not already been declared, and puts it in the
 -- environment.
-putNewId :: Parser Identifier -> a -> GetEnv a -> ModifyEnv a -> Parser Identifier
-putNewId identifier newType getEnv modifyEnv = do
-    i <- newId identifier getEnv
-    modify (modifyEnv $ E.put i newType)
-    return i
-
-modifyNewId :: Parser Identifier -> (a -> a) -> GetEnv a -> ModifyEnv a -> Parser Identifier
-modifyNewId identifier f getEnv modifyEnv = do
-    i <- newId identifier getEnv
-    modify (modifyEnv $ E.modify i f)
+putNewId :: ParserM Identifier -> EnvDecl -> ParserM Identifier
+putNewId p idType = do
+    i <- newId p
+    putM i idType
     return i

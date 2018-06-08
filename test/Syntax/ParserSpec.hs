@@ -1,9 +1,7 @@
 module Syntax.ParserSpec (parserSpec) where
 
 import Syntax.Tree
-import Syntax.ParseState as S
-import Syntax.Bexp
-import Syntax.Variable
+import Syntax.Env as Env
 import Syntax.Parser
 import Syntax.Common
 import Test.Hspec
@@ -53,7 +51,7 @@ importPathsSpec =
 programSpec :: Spec
 programSpec = describe "program" $ do
     context "parsing Turing Machine operators" $ do
-        let state = S.fromVarList [("tape", TapeType)]
+        let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses LEFT command" $ do
             parseEvalState state program "" "left tape" `shouldParseStm` (MoveLeft "tape")
@@ -74,7 +72,7 @@ programSpec = describe "program" $ do
             parseEmptyState program "" "accept" `shouldParseStm` Accept
 
     context "parsing composition" $ do
-        let state = S.fromVarList [("tape", TapeType)]
+        let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses composition" $ do
             parseEvalState state program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
@@ -98,11 +96,11 @@ programSpec = describe "program" $ do
             parseEmptyState program "" "print \"This is a string\"" `shouldParseStm` (PrintStr "This is a string")
 
         it "parses printing the symbol read from the tape" $ do
-            let state = S.fromVarList [("tape", TapeType)]
+            let state = Env.fromList [("tape", PVar TapeType)]
             parseEvalState state program "" "print tape" `shouldParseStm` (PrintRead "tape")
 
     context "removing whitespace and comments" $ do
-        let state = S.fromVarList [("tape", TapeType)]
+        let state = Env.fromList [("tape", PVar TapeType)]
 
         context "before statements" $ do
             it "ignores spaces" $ do
