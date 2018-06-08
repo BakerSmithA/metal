@@ -67,7 +67,11 @@ funcDeclSpec = do
 
         it "allows resursive functions" $ do
             let expected = FuncDecl "f" [] (Call "f" [])
-            parseEmptyState program "" "f { f }" `shouldParseStm` expected
+            parseEmptyState program "" "func f { f }" `shouldParseStm` expected
+
+        it "allows redefinition of function inside function" $ do
+            let expected = FuncDecl "f" [] (FuncDecl "f" [] (MoveLeft "tape"))
+            parseEvalState state program "" "func f { func f { left tape } }" `shouldParseStm` expected
 
         it "fails if argument names are duplicated" $ do
             parseEmptyState program "" `shouldFailOn` "func f x:Tape x:Sym { print \"\" }"
