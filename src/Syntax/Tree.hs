@@ -70,6 +70,7 @@ data Stm = MoveLeft VarName
          | VarDecl VarName DerivedValue
          | TapeDecl VarName String
          | FuncDecl FuncName FuncDeclArgs Stm
+         | StructDecl StructName [StructMember]
          | Call FuncName FuncCallArgs
          | Comp Stm Stm
          | PrintRead VarName

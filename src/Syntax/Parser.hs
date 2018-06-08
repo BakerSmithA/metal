@@ -4,6 +4,7 @@ import Syntax.Tree
 import Syntax.Env as E
 import Syntax.Control
 import Syntax.Func
+import Syntax.Struct
 import Syntax.Common
 import Syntax.Variable
 import qualified Text.Megaparsec.String as M
@@ -31,6 +32,11 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --                | VarName
 --                | \' TapeSymbol \'
 --
+--  Var           : DerivedValue
+--                | TapeLiteral
+--                | NewStruct
+--  VarDecl       : 'let' VarName '=' Var
+--
 --  Bexp          : 'True'
 --                | 'False'
 --                | 'not' Bexp
@@ -52,11 +58,6 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  StructDecl    : 'struct' StructName '{' (TypedVar '\n')+ '}'
 --  NewStruct     : StructName (Var ' ')+
 --  MemberAccess  : VarName '.' VarName
---
---  Var           : DerivedValue
---                | TapeLiteral
---                | NewStruct
---  VarDecl       : 'let' VarName '=' Var
 --
 --  Stm           : 'left' VarName
 --                | 'right' VarName
