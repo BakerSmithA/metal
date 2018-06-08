@@ -2,12 +2,6 @@ module Syntax.Identifier where
 
 import Syntax.Tree
 import Syntax.Common
-import Control.Monad.State.Lazy (get)
-
--- Parses a snake-case identifier.
-snakeId :: ParserM VarName
-snakeId = (:) <$> (lowerChar <|> char '_') <*> many c where
-    c = lowerChar <|> digitChar <|> char '_'
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
@@ -23,12 +17,27 @@ reserveCheckedId p = (p >>= check) <* lWhitespace where
                         then return word
                         else fail $ "keyword " ++ show word ++ " cannot be an identifier"
 
+identifier :: ParserM Char -> ParserM Char -> ParserM Identifier
+identifier start body = reserveCheckedId p where
+    p = (:) <$> start <*> many body
+
+-- Parses a snakecase identifier.
+snakeId :: ParserM Identifier
+snakeId = identifier start body where
+    start = lowerChar <|> char '_'
+    body = start <|> digitChar
+
+-- Parses a camel-case identifier.
+camelId :: ParserM Identifier
+camelId = identifier start body where
+    start = upperChar
+    body = start <|> lowerChar <|> digitChar
+
 -- Parses an identifier if the identifier has **not** already been declared.
 newId :: ParserM Identifier -> ParserM Identifier
 newId p = do
-    i <- reserveCheckedId p
+    i <- p
     taken <- isTakenM i
-    s <- get
     if not taken
         then return i
         else (fail $ i ++ " already exists")
@@ -37,7 +46,7 @@ newId p = do
 -- id and its type.
 refId :: ParserM Identifier -> ParserM (Identifier, EnvDecl)
 refId p = do
-    i <- reserveCheckedId p
+    i <- p
     idType <- getM i
     case idType of
         Nothing -> fail $ i ++ " does not exist"
