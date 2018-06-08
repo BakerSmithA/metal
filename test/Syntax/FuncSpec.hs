@@ -143,9 +143,17 @@ funcCallSpec = do
         it "fails if function has not been declared" $ do
             parseEmptyState program "" `shouldFailOn` "f"
 
-        it "fails if the argument types mismatch" $ do
-            let state = Env.fromList [("x", PVar TapeType), ("y", PVar SymType), ("f", PFunc [TapeType, SymType])]
-            parseEvalState state program "" `shouldFailOn` "f y x"
+        it "fails if a tape is given as a symbol" $ do
+            let state = Env.fromList [("x", PVar TapeType), ("f", PFunc [SymType])]
+            parseEvalState state program "" `shouldFailOn` "f x"
+
+        it "fails if a symbol is given as a tape" $ do
+            let state = Env.fromList [("x", PVar SymType), ("f", PFunc [TapeType])]
+            parseEvalState state program "" `shouldFailOn` "f x"
+
+        it "fails if a symbol is given as a tape using read" $ do
+            let state = Env.fromList [("x", PVar TapeType), ("f", PFunc [TapeType])]
+            parseEvalState state program "" `shouldFailOn` "f (read x)"
 
         it "fails if an incorrect number of arguments are supplied" $ do
             let state = Env.fromList [("x", PVar TapeType), ("y", PVar SymType), ("f", PFunc [TapeType, SymType])]

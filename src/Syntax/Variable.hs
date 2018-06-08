@@ -49,3 +49,10 @@ typedVar p = do
     _ <- lTok ":"
     idType <- dataType
     return (name, idType)
+
+-- Parses a variable, either an already existing variable value
+--  FuncCallArg : DerivedValue | TapeLiteral | CreateStruct
+var :: DataType -> ParserM FuncCallArg
+var expectedType = p <* lWhitespace where
+    p = Derived <$> derivedSymbol expectedType
+     <|> TapeLiteral <$> tapeLiteral

@@ -6,8 +6,6 @@ import Syntax.Identifier
 import Syntax.Common
 import Syntax.Variable (typedVar)
 
---  MemberAccess  : VarName '.' VarName
-
 -- Parses the name of a struct, making sure the struct does not already exist.
 newStruct :: ParserM StructName
 newStruct = newId camelId
@@ -15,8 +13,8 @@ newStruct = newId camelId
 -- Parses the name of a struct, ensuring it already exists.
 refStruct :: ParserM (StructName, [StructMemberVar])
 refStruct = do
-    (name, members) <- refId camelId
-    case members of
+    (name, idType) <- refId camelId
+    case idType of
         PStruct ms -> return (name, ms)
         _          -> fail "Expected struct"
 
@@ -44,3 +42,16 @@ memberVars = memberVar `sepBy` some (newline <* lWhitespace)
 --  NewStruct : StructName (Var ' ')+ '{' MemberVars '}'
 structDecl :: ParserM Stm
 structDecl = StructDecl <$ lTok "struct" <*> newStruct <*> block (braces memberVars)
+
+-- Parses the construction of a new struct object. Fails if the struct does
+-- not exist, or the incorrect number of arguments with the wrong types are
+-- given. EBNF:
+--  CreateStruct : StructName (Var ' ')+
+createStruct :: ParserM Stm
+createStruct = undefined
+
+-- Parses access to a member of an instance of a struct. Fails if the variable
+-- is not a struct, or the member is not part of the struct class.
+--  MemberAccess : VarName '.' VarName
+memberAccess :: ParserM Stm
+memberAccess = undefined

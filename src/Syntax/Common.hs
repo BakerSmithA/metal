@@ -70,3 +70,10 @@ quoted = between (lTok "\"") (lTok "\"")
 -- Parses a string encased in double quotes.
 quotedString :: ParserM String
 quotedString = quoted (many (noneOf "\""))
+
+-- Creates a parser for each member of expTypes. Useful for ensuring many
+-- parses have the correct type, e.g. when invoking a function.
+matchedTypes :: (DataType -> ParserM a) -> [DataType] -> ParserM [a]
+matchedTypes makeP expTypes = foldl combine (return []) ps where
+    combine acc p = (++) <$> acc <*> (fmap (\x -> [x]) p)
+    ps = zipWith (\x y -> x y) (repeat makeP) expTypes

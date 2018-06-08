@@ -65,19 +65,10 @@ funcDecl stm = do
 
     return (FuncDecl name args body)
 
--- Parses an argument to a function call, the EBNF syntax of which is:
---  FuncCallArg : DerivedValue | TapeLiteral
-funcCallArg :: DataType -> ParserM FuncCallArg
-funcCallArg expectedType = arg <* lWhitespace where
-    arg = Derived <$> derivedSymbol expectedType
-      <|> TapeLiteral <$> tapeLiteral
-
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: [DataType] -> ParserM FuncCallArgs
-funcCallArgs expectedTypes = foldl combine (return []) parseArgs where
-    combine acc arg = (++) <$> acc <*> (fmap (\x -> [x]) arg)
-    parseArgs = zipWith (\x y -> x y) (repeat funcCallArg) expectedTypes
+funcCallArgs = matchedTypes var
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs

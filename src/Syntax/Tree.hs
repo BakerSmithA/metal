@@ -24,6 +24,7 @@ type StructMemberVar = (VarName, DataType)
 -- Types that can be passed to functions.
 data DataType = SymType
               | TapeType
+              | CustomType StructName
               deriving (Eq, Show)
 
 -- Argument to a function.

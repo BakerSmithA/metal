@@ -57,7 +57,7 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --
 --  MemberVars    : (TypedVar '\n')+
 --  StructDecl    : 'struct' StructName '{' MemberVars '}'
---  NewStruct     : StructName (Var ' ')+
+--  CreateStruct  : StructName (Var ' ')+
 --  MemberAccess  : VarName '.' VarName
 --
 --  Stm           : 'left' VarName
