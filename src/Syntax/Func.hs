@@ -48,6 +48,7 @@ funcArgsBody name stm = do
     body <- block (braces stm)
     return (args, body)
 
+-- Adds the function to the environment.
 putFunc :: FuncName -> FuncDeclArgs -> ParserM ()
 putFunc name args = putM name (PFunc argTypes) where
     argTypes = map (\(FuncDeclArg _ argType) -> argType) args
