@@ -19,7 +19,7 @@ type ArgName = Identifier
 type StructName = String
 
 -- Variable contained within a struct.
-type StructMember = (VarName, DataType)
+type StructMemberVar = (VarName, DataType)
 
 -- Types that can be passed to functions.
 data DataType = SymType
@@ -70,7 +70,7 @@ data Stm = MoveLeft VarName
          | VarDecl VarName DerivedValue
          | TapeDecl VarName String
          | FuncDecl FuncName FuncDeclArgs Stm
-         | StructDecl StructName [StructMember]
+         | StructDecl StructName [StructMemberVar]
          | Call FuncName FuncCallArgs
          | Comp Stm Stm
          | PrintRead VarName

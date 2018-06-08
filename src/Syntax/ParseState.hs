@@ -9,10 +9,14 @@ import qualified Syntax.Env as E
 import Control.Monad.State.Lazy (StateT, modify, get)
 import Text.Megaparsec.String
 
+-- Types that can be declared. Used to keep track of identifiers while parsing.
 data EnvDecl = PVar DataType
              | PFunc [DataType]
+             | PStruct [StructMemberVar]
              deriving (Eq, Show)
 
+-- Keeps track of what identifiers, and their associated types, have been
+-- parsed so far.
 type ParseState = E.Env EnvDecl
 type ParserM = StateT ParseState Parser
 

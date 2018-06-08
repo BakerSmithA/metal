@@ -55,7 +55,8 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  FuncCallArgs  : FuncCallArg (',' FuncCallArg) | ε
 --  Call          : FuncName FuncCallArgs
 --
---  StructDecl    : 'struct' StructName '{' (TypedVar '\n')+ '}'
+--  MemberVars    : (TypedVar '\n')+
+--  StructDecl    : 'struct' StructName '{' MemberVars '}'
 --  NewStruct     : StructName (Var ' ')+
 --  MemberAccess  : VarName '.' VarName
 --
