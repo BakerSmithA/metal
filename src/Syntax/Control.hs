@@ -1,6 +1,6 @@
 module Syntax.Control where
 
-import Syntax.Helper
+import Syntax.Common
 import Syntax.Bexp
 
 -- Parses if-else statement, the EBNF syntax of which is:

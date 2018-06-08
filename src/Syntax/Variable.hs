@@ -1,12 +1,7 @@
 module Syntax.Variable where
 
-import Syntax.Helper
+import Syntax.Common
 import Syntax.Identifier
-
--- Parses a snake-case identifier.
-snakeId :: Parser VarName
-snakeId = (:) <$> (lowerChar <|> char '_') <*> many c where
-    c = lowerChar <|> digitChar <|> char '_'
 
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist

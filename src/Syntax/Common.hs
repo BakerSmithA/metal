@@ -1,5 +1,5 @@
-module Syntax.Helper
-( module Syntax.Helper
+module Syntax.Common
+( module Syntax.Common
 , module Text.Megaparsec
 , module Control.Monad.State.Lazy
 , module Syntax.ParseState

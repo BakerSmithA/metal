@@ -1,6 +1,6 @@
 module Syntax.Bexp where
 
-import Syntax.Helper
+import Syntax.Common
 import Syntax.Variable
 import Text.Megaparsec.Expr
 

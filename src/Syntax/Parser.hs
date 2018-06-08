@@ -4,9 +4,8 @@ import Syntax.Tree
 import Syntax.ParseState as S
 import Syntax.Control
 import Syntax.Func
-import Syntax.Helper
+import Syntax.Common
 import Syntax.Variable
-import Syntax.Struct
 import qualified Text.Megaparsec.String as M
 
 -- Abstract Grammar

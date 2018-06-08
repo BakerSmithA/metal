@@ -1,8 +1,13 @@
 module Syntax.Identifier where
 
 import Syntax.Tree
-import Syntax.Helper
+import Syntax.Common
 import qualified Syntax.Env as E
+
+-- Parses a snake-case identifier.
+snakeId :: Parser VarName
+snakeId = (:) <$> (lowerChar <|> char '_') <*> many c where
+    c = lowerChar <|> digitChar <|> char '_'
 
 -- The keywords reserved by the language. These are not allowed to be function
 -- names, however function names are allowed to contain reserved keywords.
