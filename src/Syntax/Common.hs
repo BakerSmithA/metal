@@ -67,8 +67,8 @@ braces = between (lTok "{" <* lWhitespaceNewline) (lTok "}")
 block :: Parser a -> Parser a
 block p = do
     savedState <- get
-    modify (modifyVarEnv E.descendScope)
-    modify (modifyFuncEnv E.descendScope)
+    modify (mapVarEnv E.descendScope)
+    modify (mapFuncEnv E.descendScope)
 
     x <- p
 

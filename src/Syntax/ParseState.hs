@@ -35,13 +35,13 @@ fromFuncList :: [(FuncName, [DataType])] -> ParseState
 fromFuncList funcs = fromLists [] funcs
 
 -- Applies f to the variable environment only.
-modifyVarEnv :: (VarEnv -> VarEnv) -> ParseState -> ParseState
-modifyVarEnv f env = env { varEnv = f (varEnv env) }
+mapVarEnv :: (VarEnv -> VarEnv) -> ParseState -> ParseState
+mapVarEnv f env = env { varEnv = f (varEnv env) }
 
 -- Applies f to the function environment only.
-modifyFuncEnv :: (FuncEnv -> FuncEnv) -> ParseState -> ParseState
-modifyFuncEnv f env = env { funcEnv = f (funcEnv env) }
+mapFuncEnv :: (FuncEnv -> FuncEnv) -> ParseState -> ParseState
+mapFuncEnv f env = env { funcEnv = f (funcEnv env) }
 
 -- Applies f to the struct environment only.
-modifyStructEnv :: (StructEnv -> StructEnv) -> ParseState -> ParseState
-modifyStructEnv f env = env { structEnv = f (structEnv env) }
+mapStructEnv :: (StructEnv -> StructEnv) -> ParseState -> ParseState
+mapStructEnv f env = env { structEnv = f (structEnv env) }

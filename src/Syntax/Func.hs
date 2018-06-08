@@ -27,7 +27,7 @@ newArg = newId snakeId varEnv
 funcDeclArg :: Parser FuncDeclArg
 funcDeclArg = do
     (name, argType) <- typedVar newArg
-    modify (modifyVarEnv (E.put name argType))
+    modify (mapVarEnv (E.put name argType))
     return (FuncDeclArg name argType)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
@@ -51,7 +51,7 @@ funcDecl stm = do
     (args, body) <- block (funcArgsBody stm)
 
     let argTypes = map (\(FuncDeclArg _ argType) -> argType) args
-    modify (modifyFuncEnv (E.put name argTypes))
+    modify (mapFuncEnv (E.put name argTypes))
 
     return (FuncDecl name args body)
 

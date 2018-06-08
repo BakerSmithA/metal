@@ -8,7 +8,7 @@ import Syntax.Identifier
 -- it is added to the environment. EBNF:
 --  VarName : LowerChar (LowerChar | UpperChar | Digit)*
 newVar :: DataType -> Parser VarName
-newVar varType = putNewId snakeId varType varEnv modifyVarEnv
+newVar varType = putNewId snakeId varType varEnv mapVarEnv
 
 -- Attempts to use a declared variable. If the variable does not exist, or the
 -- types do not match, then parsing fails. EBNF:
