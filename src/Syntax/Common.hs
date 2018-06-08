@@ -54,8 +54,8 @@ parens = between (lTok "(") (lTok ")")
 braces :: ParserM a -> ParserM a
 braces = between (lTok "{" <* lWhitespaceNewline) (lTok "}")
 
--- Parses a string enclosed in curly braces, but also allows any variables or
--- functions inside the block to overwrite definitions outside the block.
+-- Allows any variables or functions inside the block to overwrite definitions
+-- outside the block.
 block :: ParserM a -> ParserM a
 block p = do
     savedState <- get

@@ -60,6 +60,11 @@ funcDeclSpec = do
                 func = FuncDecl "write_new" args (Write "t" (Var "x"))
             parseEmptyState program "" "func write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
 
+        it "allows arguments to have the same name as variables outside" $ do
+            let args = [FuncDeclArg "tape" TapeType, FuncDeclArg "x" SymType]
+                func = FuncDecl "write_new" args (Write "tape" (Var "x"))
+            parseEmptyState program "" "func write_new tape:Tape x:Sym { write tape x }" `shouldParseStm` func
+
         it "allows resursive functions" $ do
             let expected = FuncDecl "f" [] (Call "f" [])
             parseEmptyState program "" "f { f }" `shouldParseStm` expected
@@ -80,7 +85,7 @@ funcDeclSpec = do
             parseEvalState state program "" `shouldFailOn` "func f_name right tape"
 
         it "fails if the same function is declared twice in the same scope" $ do
-            parseEmptyState program "" `shouldFailOn` "func f { left main }\nfunc g { left main }"
+            parseEvalState state program "" `shouldFailOn` "func f { left tape } \n func f { left tape }"
 
 funcCallSpec :: Spec
 funcCallSpec = do
