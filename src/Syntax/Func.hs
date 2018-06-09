@@ -34,15 +34,15 @@ funcDeclArg :: ParserM FuncDeclArg
 funcDeclArg = do
     (name, argType) <- typedVar newArg
     putM name (PVar argType)
-    return (FuncDeclArg name argType)
+    return (name, argType)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs  : FuncDeclArg (' ' TypedVar)* | ε
-funcDeclArgs :: ParserM FuncDeclArgs
+funcDeclArgs :: ParserM [FuncDeclArg]
 funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 
 -- Parses the arguments and body of a function.
-funcArgsBody :: FuncName -> ParserM Stm -> ParserM (FuncDeclArgs, Stm)
+funcArgsBody :: FuncName -> ParserM Stm -> ParserM ([FuncDeclArg], Stm)
 funcArgsBody name stm = do
     args <- funcDeclArgs
     -- Expose the function inside the function itself, allowing recursion.
@@ -51,9 +51,9 @@ funcArgsBody name stm = do
     return (args, body)
 
 -- Adds the function to the environment.
-putFunc :: FuncName -> FuncDeclArgs -> ParserM ()
+putFunc :: FuncName -> [FuncDeclArg] -> ParserM ()
 putFunc name args = putM name (PFunc argTypes) where
-    argTypes = map (\(FuncDeclArg _ argType) -> argType) args
+    argTypes = map argType args
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
@@ -69,7 +69,7 @@ funcDecl stm = do
 
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
-funcCallArgs :: [DataType] -> ParserM FuncCallArgs
+funcCallArgs :: [DataType] -> ParserM [FuncCallArg]
 funcCallArgs = matchedTypes anyVarVal
 
 -- Parses a function call, the EBNF syntax of which is:

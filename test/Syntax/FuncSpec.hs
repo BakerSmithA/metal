@@ -23,7 +23,7 @@ funcDeclSpec = do
             parseEvalState state program "" "func f_name { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
-            let args = [FuncDeclArg "a" SymType, FuncDeclArg "bb" TapeType]
+            let args = [("a", SymType), ("bb", TapeType)]
                 expected = FuncDecl "f_name" args (MoveRight "tape")
             parseEvalState state program "" "func f_name a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
@@ -56,12 +56,12 @@ funcDeclSpec = do
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
         it "allows arguments to be used inside the function" $ do
-            let args = [FuncDeclArg "t" TapeType, FuncDeclArg "x" SymType]
+            let args = [("t", TapeType), ("x", SymType)]
                 func = FuncDecl "write_new" args (Write "t" (Var "x"))
             parseEmptyState program "" "func write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
 
         it "allows arguments to have the same name as variables outside" $ do
-            let args = [FuncDeclArg "tape" TapeType, FuncDeclArg "x" SymType]
+            let args = [("tape", TapeType), ("x", SymType)]
                 func = FuncDecl "write_new" args (Write "tape" (Var "x"))
             parseEmptyState program "" "func write_new tape:Tape x:Sym { write tape x }" `shouldParseStm` func
 

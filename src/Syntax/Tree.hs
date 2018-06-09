@@ -1,69 +1,100 @@
 module Syntax.Tree where
 
--- Tape symbol, i.e. a symbol contained in a cell of the machine's tape.
-type TapeSymbol = Char
+--------------------------------------------------------------------------------
+-- Types
+--------------------------------------------------------------------------------
 
--- Can be used as a reference to a piece of memory, e.g. symbol, tape, function.
-type Identifier = String
-
--- Variable name, i.e. reference to a symbol.
-type VarName = Identifier
-
--- Function name.
-type FuncName = Identifier
-
--- Function argument name.
-type ArgName = Identifier
-
--- Struct Name, must start with a capital letter.
-type StructName = String
-
--- Variable contained within a struct.
-type StructMemberVar = (VarName, DataType)
-
-memberVarType :: StructMemberVar -> DataType
-memberVarType = snd
-
--- Types that can be passed to functions.
+-- Types associated with data stored in variables.
 data DataType = SymType
               | TapeType
               | CustomType StructName
               deriving (Eq, Show)
 
--- Argument to a function.
-data FuncDeclArg = FuncDeclArg ArgName DataType deriving (Eq, Show)
+--------------------------------------------------------------------------------
+-- Tape Symbols
+--------------------------------------------------------------------------------
 
--- All the declared arguments to a function.
-type FuncDeclArgs = [FuncDeclArg]
-
--- All the arguments passed to a function call.
-type FuncCallArgs = [VarVal AnyVal]
+-- Tape symbol, i.e. a symbol contained in a cell of the machine's tape.
+type TapeSymbol = Char
 
 -- Values that evaluate to tape symbols.
 data SymVal = Read VarName
             | SymLit TapeSymbol
             deriving (Eq, Show)
 
+--------------------------------------------------------------------------------
+-- Tape
+--------------------------------------------------------------------------------
+
 -- Values that evaluate to tape references.
 data TapeVal = TapeLit String
                deriving (Eq, Show)
 
+--------------------------------------------------------------------------------
+-- Identifiers
+--------------------------------------------------------------------------------
+
+type Identifier = String
+type SnakeId    = Identifier
+type CamelId    = Identifier
+
+--------------------------------------------------------------------------------
+-- Variables
+--------------------------------------------------------------------------------
+
+-- Used to refer to variables, functions, structs, etc.
+type VarName = SnakeId
 -- Values that evaluate to either a symbol or tape.
 data AnyVal = S SymVal
             | T TapeVal
             deriving (Eq, Show)
-
 -- Values that can be looked up using a variable, or given as an expression
 -- that evaluates to the type.
 data VarVal a = ValExpr a
               | Var VarName
               deriving (Eq, Show)
 
+-- Convenience function.
 fromSymVal :: SymVal -> VarVal AnyVal
 fromSymVal s = ValExpr (S s)
 
+-- Convenience function.
 fromTapeVal :: TapeVal -> VarVal AnyVal
 fromTapeVal t = ValExpr (T t)
+
+--------------------------------------------------------------------------------
+-- Functions
+--------------------------------------------------------------------------------
+
+-- Name of a function.
+type FuncName = SnakeId
+-- Name of an argument to the function.
+type ArgName = SnakeId
+-- Argument supplied when defining the function.
+type FuncDeclArg = (ArgName, DataType)
+-- Argument supplied when calling the function.
+type FuncCallArg = VarVal AnyVal
+
+-- Returns the type of an argument to a function invocation.
+argType :: FuncDeclArg -> DataType
+argType = snd
+
+--------------------------------------------------------------------------------
+-- Structs
+--------------------------------------------------------------------------------
+
+-- Name of a structure.
+type StructName = CamelId
+-- Variable contained within a struct.
+type StructMemberVar = (VarName, DataType)
+
+-- Returns the type of the variable in the struct.
+memberVarType :: StructMemberVar -> DataType
+memberVarType = snd
+
+--------------------------------------------------------------------------------
+-- Bexp
+--------------------------------------------------------------------------------
 
 -- Syntax tree for boolean expressions.
 data Bexp = TRUE
@@ -76,6 +107,10 @@ data Bexp = TRUE
           | Ne (VarVal SymVal) (VarVal SymVal)
           deriving (Eq, Show)
 
+--------------------------------------------------------------------------------
+-- Stm
+--------------------------------------------------------------------------------
+
 -- Syntax tree for statements.
 data Stm = MoveLeft VarName
          | MoveRight VarName
@@ -87,14 +122,18 @@ data Stm = MoveLeft VarName
          | While Bexp Stm
          | VarDecl VarName (VarVal SymVal)
          | TapeDecl VarName (VarVal TapeVal)
-         | FuncDecl FuncName FuncDeclArgs Stm
+         | FuncDecl FuncName [FuncDeclArg] Stm
          | StructDecl StructName [StructMemberVar]
-         | Call FuncName FuncCallArgs
+         | Call FuncName [FuncCallArg]
          | Comp Stm Stm
          | PrintRead VarName
          | PrintStr String
          | DebugPrintTape VarName
          deriving (Eq, Show)
+
+--------------------------------------------------------------------------------
+-- Program
+--------------------------------------------------------------------------------
 
 -- Path of a Metal file to be imported.
 type ImportPath = String
