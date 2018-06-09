@@ -86,12 +86,12 @@ stm' :: ParserM Stm
 stm' = try funcCall
    <|> MoveLeft <$ lTok "left" <* lWhitespace <*> refVar TapeType
    <|> MoveRight <$ lTok "right" <* lWhitespace <*> refVar TapeType
-   <|> try (Write <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> derivedSymbol SymType)
+   <|> try (Write <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> varVal symVal SymType)
    <|> WriteStr <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> quotedString
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
-   <|> try (VarDecl <$ lTok "let" <*> newVar SymType <* lTok "=" <*> derivedSymbol SymType)
-   <|> TapeDecl <$ lTok "let" <*> newVar TapeType <* lTok "=" <*> tapeLiteral
+   <|> try (VarDecl <$ lTok "let" <*> newVar SymType <* lTok "=" <*> varVal symVal SymType)
+   <|> TapeDecl <$ lTok "let" <*> newVar TapeType <* lTok "=" <*> varVal tapeVal TapeType
    <|> funcDecl stmComp
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
    <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> refVar TapeType)

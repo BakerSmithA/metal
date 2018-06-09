@@ -5,6 +5,8 @@ import qualified Syntax.Env as E
 import Syntax.Identifier
 import Syntax.Variable
 
+import Debug.Trace
+
 -- Attempts to parse an identifier used to declare a new function. Does **not**
 -- add the function to the environment if it does not exist. Fails if the
 -- function already exists. EBNF:
@@ -68,7 +70,7 @@ funcDecl stm = do
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: [DataType] -> ParserM FuncCallArgs
-funcCallArgs = matchedTypes var
+funcCallArgs = matchedTypes anyVarVal
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs

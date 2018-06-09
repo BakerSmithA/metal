@@ -10,9 +10,10 @@ bexp' :: ParserM Bexp
 bexp' = try (parens bexp)
     <|> TRUE  <$ lTok "True"
     <|> FALSE <$ lTok "False"
-    <|> try (Eq <$> derivedSymbol SymType <* lTok "==" <*> derivedSymbol SymType)
-    <|> try (Le <$> derivedSymbol SymType <* lTok "<=" <*> derivedSymbol SymType)
-    <|> try (Ne <$> derivedSymbol SymType <* lTok "!=" <*> derivedSymbol SymType)
+    <|> try (Eq <$> p <* lTok "==" <*> p)
+    <|> try (Le <$> p <* lTok "<=" <*> p)
+    <|> try (Ne <$> p <* lTok "!=" <*> p) where
+        p = varVal symVal SymType
 
 -- The operators that can work on boolean expressions. There is no precedence,
 -- instead the expression is evaualted from left to right.

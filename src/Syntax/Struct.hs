@@ -4,7 +4,7 @@ import Syntax.Tree
 import Syntax.ParseState
 import Syntax.Identifier
 import Syntax.Common
-import Syntax.Variable (typedVar)
+import Syntax.Variable
 
 -- Parses the name of a struct, making sure the struct does not already exist.
 newStruct :: ParserM StructName
@@ -49,6 +49,10 @@ structDecl = StructDecl <$ lTok "struct" <*> newStruct <*> block (braces memberV
 --  CreateStruct : StructName (Var ' ')+
 createStruct :: ParserM Stm
 createStruct = undefined
+-- createStruct = do
+--     (name, ms) <- refStruct
+--     args <- matchedTypes anyVarVal (map memberVarType ms)
+--     undefined
 
 -- Parses access to a member of an instance of a struct. Fails if the variable
 -- is not a struct, or the member is not part of the struct class.

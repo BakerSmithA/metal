@@ -60,7 +60,7 @@ programSpec = describe "program" $ do
             parseEvalState state program "" "right tape" `shouldParseStm` (MoveRight "tape")
 
         it "parses WRITE command" $ do
-            parseEvalState state program "" "write tape 'x'" `shouldParseStm` (Write "tape" (Literal 'x'))
+            parseEvalState state program "" "write tape 'x'" `shouldParseStm` (Write "tape" (ValExpr $ SymLit 'x'))
 
         it "parses a WRITESTR command" $ do
             parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr "tape" "abcd")
@@ -78,7 +78,7 @@ programSpec = describe "program" $ do
             parseEvalState state program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
 
         it "parses composition to be right associative" $ do
-            let expected = Comp (MoveLeft "tape") (Comp (MoveRight "tape") (Write "tape" (Literal 'x')))
+            let expected = Comp (MoveLeft "tape") (Comp (MoveRight "tape") (Write "tape" (ValExpr $ SymLit 'x')))
             parseEvalState state program "" "left tape \n right tape \n write tape 'x'" `shouldParseStm` expected
 
         it "allows for multiple newlines between statements" $ do

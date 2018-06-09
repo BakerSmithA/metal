@@ -81,26 +81,26 @@ ifStmSpec = describe "ifStm" $ do
 
     context "identifier scope" $ do
         it "allows variables to be shadowed" $ do
-            let innerVarDecl = VarDecl "x" (Literal 'a')
+            let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                 ifStatement  = If TRUE innerVarDecl [] Nothing
-                outerVarDecl = TapeDecl "x" "xyz"
+                outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
                 comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' }" `shouldParseStm` comp
 
         it "allows the types of variables to be changed at inner scopes" $ do
-            let innerVarDecl = VarDecl "x" (Literal 'a')
+            let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                 write        = Write "tape" (Var "x")
                 body         = Comp innerVarDecl write
                 ifStatement  = If TRUE body [] Nothing
-                outerVarDecl = TapeDecl "x" "xyz"
+                outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
                 comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
         it "reverts variables after scope is exited" $ do
-            let innerVarDecl = VarDecl "x" (Literal 'a')
+            let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                 ifStatement  = If TRUE innerVarDecl [] Nothing
-                outerVarDecl = TapeDecl "x" "xyz"
-                write        = Write "x" (Literal 'a')
+                outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
+                write        = Write "x" (ValExpr $ SymLit 'a')
                 comp         = Comp outerVarDecl (Comp ifStatement write)
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
@@ -126,25 +126,25 @@ whileSpec = do
 
         context "identifier scope" $ do
             it "allows variables to be shadowed" $ do
-                let innerVarDecl = VarDecl "x" (Literal 'a')
+                let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                     while        = While TRUE innerVarDecl
-                    outerVarDecl = TapeDecl "x" "xyz"
+                    outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
                     comp         = Comp outerVarDecl while
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' }" `shouldParseStm` comp
 
             it "allows the types of variables to be changed at inner scopes" $ do
-                let innerVarDecl = VarDecl "x" (Literal 'a')
+                let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                     write        = Write "tape" (Var "x")
                     body         = Comp innerVarDecl write
                     while        = While TRUE body
-                    outerVarDecl = TapeDecl "x" "xyz"
+                    outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
                     comp         = Comp outerVarDecl while
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
             it "reverts variables after scope is exited" $ do
-                let innerVarDecl = VarDecl "x" (Literal 'a')
+                let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                     while        = While TRUE innerVarDecl
-                    outerVarDecl = TapeDecl "x" "xyz"
-                    write        = Write "x" (Literal 'a')
+                    outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
+                    write        = Write "x" (ValExpr $ SymLit 'a')
                     comp         = Comp outerVarDecl (Comp while write)
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp

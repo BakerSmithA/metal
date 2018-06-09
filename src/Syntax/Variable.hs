@@ -20,26 +20,40 @@ refVar expType = refExpTypeId snakeId (PVar expType)
 --  DerivedValue : 'read'
 --                | VarName
 --                | \' TapeSymbol \'
-derivedSymbol :: DataType -> ParserM DerivedValue
-derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> refVar TapeType
-                            <|> Var <$> refVar expectedVarType
-                            <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
-                            <|> parens (derivedSymbol expectedVarType)
+-- derivedSymbol :: DataType -> ParserM DerivedValue
+-- derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> refVar TapeType
+--                             <|> Var <$> refVar expectedVarType
+--                             <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
+--                             <|> parens (derivedSymbol expectedVarType)
 
 -- Parses a tape symbol, the EBNF syntax of which is:
 --  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
 tapeSymbol :: ParserM TapeSymbol
 tapeSymbol = noneOf "\'\""
 
--- ParserMs the contents of a tape literal, e.g. "abcd"
-tapeLiteral :: ParserM String
-tapeLiteral = quoted (many tapeSymbol)
+symVal :: ParserM SymVal
+symVal = Read <$ lTok "read" <* lWhitespace <*> refVar TapeType
+     <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
+
+tapeVal :: ParserM TapeVal
+tapeVal = TapeLit <$> quoted (many tapeSymbol)
+
+anyVal :: DataType -> ParserM AnyVal
+anyVal SymType  = S <$> symVal
+anyVal TapeType = T <$> tapeVal
+
+varVal :: ParserM a -> DataType -> ParserM (VarVal a)
+varVal p expType = ValExpr <$> (p <|> parens p)
+               <|> Var <$> refVar expType
+
+anyVarVal :: DataType -> ParserM (VarVal AnyVal)
+anyVarVal expType = varVal (anyVal expType) expType
 
 -- Type of data passed to a function, the EBNF of which is:
 --  FuncArgType : 'Tape' | 'Sym'
-dataType :: ParserM DataType
-dataType = SymType <$ lTok "Sym"
-       <|> TapeType <$ lTok "Tape"
+annotatedType :: ParserM DataType
+annotatedType = SymType <$ lTok "Sym"
+            <|> TapeType <$ lTok "Tape"
 
 -- Variable which has a type, the EBNF of which is:
 --  TypedVar : VarName ':' Type
@@ -47,12 +61,5 @@ typedVar :: ParserM Identifier -> ParserM (Identifier, DataType)
 typedVar p = do
     name <- p
     _ <- lTok ":"
-    idType <- dataType
+    idType <- annotatedType
     return (name, idType)
-
--- Parses a variable, either an already existing variable value
---  FuncCallArg : DerivedValue | TapeLiteral | CreateStruct
-var :: DataType -> ParserM FuncCallArg
-var expectedType = p <* lWhitespace where
-    p = Derived <$> derivedSymbol expectedType
-     <|> TapeLiteral <$> tapeLiteral

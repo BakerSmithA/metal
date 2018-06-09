@@ -21,6 +21,9 @@ type StructName = String
 -- Variable contained within a struct.
 type StructMemberVar = (VarName, DataType)
 
+memberVarType :: StructMemberVar -> DataType
+memberVarType = snd
+
 -- Types that can be passed to functions.
 data DataType = SymType
               | TapeType
@@ -33,20 +36,34 @@ data FuncDeclArg = FuncDeclArg ArgName DataType deriving (Eq, Show)
 -- All the declared arguments to a function.
 type FuncDeclArgs = [FuncDeclArg]
 
--- Argument to a function when invoking.
-data FuncCallArg = Derived DerivedValue
-                 | TapeLiteral String
-                 deriving (Eq, Show)
-
 -- All the arguments passed to a function call.
-type FuncCallArgs = [FuncCallArg]
+type FuncCallArgs = [VarVal AnyVal]
 
--- Derived value, i.e. either a literal tape symbol, or a symbol read from
--- under the read/write head, or the value of a variable.
-data DerivedValue = Read VarName
-                  | Var VarName
-                  | Literal TapeSymbol
-                  deriving (Eq, Show)
+-- Values that evaluate to tape symbols.
+data SymVal = Read VarName
+            | SymLit TapeSymbol
+            deriving (Eq, Show)
+
+-- Values that evaluate to tape references.
+data TapeVal = TapeLit String
+               deriving (Eq, Show)
+
+-- Values that evaluate to either a symbol or tape.
+data AnyVal = S SymVal
+            | T TapeVal
+            deriving (Eq, Show)
+
+-- Values that can be looked up using a variable, or given as an expression
+-- that evaluates to the type.
+data VarVal a = ValExpr a
+              | Var VarName
+              deriving (Eq, Show)
+
+fromSymVal :: SymVal -> VarVal AnyVal
+fromSymVal s = ValExpr (S s)
+
+fromTapeVal :: TapeVal -> VarVal AnyVal
+fromTapeVal t = ValExpr (T t)
 
 -- Syntax tree for boolean expressions.
 data Bexp = TRUE
@@ -54,22 +71,22 @@ data Bexp = TRUE
           | Not Bexp
           | And Bexp Bexp
           | Or Bexp Bexp
-          | Eq DerivedValue DerivedValue
-          | Le DerivedValue DerivedValue
-          | Ne DerivedValue DerivedValue
+          | Eq (VarVal SymVal) (VarVal SymVal)
+          | Le (VarVal SymVal) (VarVal SymVal)
+          | Ne (VarVal SymVal) (VarVal SymVal)
           deriving (Eq, Show)
 
 -- Syntax tree for statements.
 data Stm = MoveLeft VarName
          | MoveRight VarName
-         | Write VarName DerivedValue
+         | Write VarName (VarVal SymVal)
          | WriteStr VarName [TapeSymbol]
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
-         | VarDecl VarName DerivedValue
-         | TapeDecl VarName String
+         | VarDecl VarName (VarVal SymVal)
+         | TapeDecl VarName (VarVal TapeVal)
          | FuncDecl FuncName FuncDeclArgs Stm
          | StructDecl StructName [StructMemberVar]
          | Call FuncName FuncCallArgs
