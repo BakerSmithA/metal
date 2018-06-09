@@ -11,14 +11,14 @@ import Debug.Trace
 -- add the function to the environment if it does not exist. Fails if the
 -- function already exists. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-newFunc :: ParserM FuncName
-newFunc = newId snakeId
+newFuncId :: ParserM FuncName
+newFuncId = newId snakeId
 
 -- Attempts to use a declared variable, but does **not** check for matching
 -- types. If the variable does not exist then parsing fails. EBNF:
 --  FuncName : LowerChar (LowerChar | UpperChar | Digit)*
-refFunc :: ParserM (FuncName, [DataType])
-refFunc = do
+refFuncId :: ParserM (FuncName, [DataType])
+refFuncId = do
     (name, idType) <- refId snakeId
     case idType of
         PFunc argTypes -> return (name, argTypes)
@@ -26,13 +26,13 @@ refFunc = do
 
 -- Parses a function argument, the EBNF syntax of which is:
 --  ArgName : LowerChar (LowerChar | UpperChar | Digit)*
-newArg :: ParserM ArgName
-newArg = newId snakeId
+newArgId :: ParserM ArgName
+newArgId = newId snakeId
 
 -- Parses an argument to a function, the EBNF of which is the same as a TypedVar.
 funcDeclArg :: ParserM FuncDeclArg
 funcDeclArg = do
-    (name, argType) <- typedVar newArg
+    (name, argType) <- typedVar newArgId
     putM name (PVar argType)
     return (name, argType)
 
@@ -60,7 +60,7 @@ putFunc name args = putM name (PFunc argTypes) where
 funcDecl :: ParserM Stm -> ParserM Stm
 funcDecl stm = do
     _ <- lTok "func"
-    name <- newFunc
+    name <- newFuncId
     (args, body) <- block (funcArgsBody name stm)
 
     putFunc name args
@@ -70,12 +70,12 @@ funcDecl stm = do
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: [DataType] -> ParserM [FuncCallArg]
-funcCallArgs = matchedTypes anyVarVal
+funcCallArgs = matchedTypes expTypeAnyVal
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
 funcCall :: ParserM Stm
 funcCall = do
-    (name, expectedArgTypes) <- refFunc
+    (name, expectedArgTypes) <- refFuncId
     args <- funcCallArgs expectedArgTypes
     return (Call name args)

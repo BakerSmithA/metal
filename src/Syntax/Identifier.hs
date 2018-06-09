@@ -53,8 +53,8 @@ refId p = do
         Just t -> return (i, t)
 
 -- Parses an identifier if the identifier exists and has the expected type.
-refExpTypeId :: ParserM Identifier -> EnvDecl -> ParserM Identifier
-refExpTypeId p expType = do
+expTypeId :: ParserM Identifier -> EnvDecl -> ParserM Identifier
+expTypeId p expType = do
     (i, idType) <- refId p
     if expType == idType
         then return i

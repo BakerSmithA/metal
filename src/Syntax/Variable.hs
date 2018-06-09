@@ -5,55 +5,64 @@ import Syntax.Identifier
 
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist
--- it is added to the environment. EBNF:
---  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-newVar :: DataType -> ParserM VarName
-newVar varType = putNewId snakeId (PVar varType)
+-- it is added to the environment.
+newVarId :: DataType -> ParserM VarName
+newVarId varType = putNewId snakeId (PVar varType)
+
+-- Parses a variable, returning its name and type.
+refVarId :: ParserM (VarName, DataType)
+refVarId = do
+    (name, idType) <- refId snakeId
+    case idType of
+        PVar argTypes -> return (name, argTypes)
+        _              -> fail "Expected variable"
 
 -- Attempts to use a declared variable. If the variable does not exist, or the
--- types do not match, then parsing fails. EBNF:
---  VarName : LowerChar (LowerChar | UpperChar | Digit)*
-refVar :: DataType -> ParserM VarName
-refVar expType = refExpTypeId snakeId (PVar expType)
-
--- Parses a derived symbol, the EBNF syntax of which is:
---  DerivedValue : 'read'
---                | VarName
---                | \' TapeSymbol \'
--- derivedSymbol :: DataType -> ParserM DerivedValue
--- derivedSymbol expectedVarType = Read <$ lTok "read" <* lWhitespace <*> refVar TapeType
---                             <|> Var <$> refVar expectedVarType
---                             <|> Literal <$> between (char '\'') (lTok "\'") tapeSymbol
---                             <|> parens (derivedSymbol expectedVarType)
-
--- Parses a tape symbol, the EBNF syntax of which is:
---  TapeSymbol  : LowerChar | UpperChar | Digit | ASCII-Symbol
-tapeSymbol :: ParserM TapeSymbol
-tapeSymbol = noneOf "\'\""
-
-symVal :: ParserM SymVal
-symVal = Read <$ lTok "read" <* lWhitespace <*> refVar TapeType
-     <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
-
-tapeVal :: ParserM TapeVal
-tapeVal = TapeLit <$> quoted (many tapeSymbol)
-
-anyVal :: DataType -> ParserM AnyVal
-anyVal SymType  = S <$> symVal
-anyVal TapeType = T <$> tapeVal
-
-varVal :: ParserM a -> DataType -> ParserM (VarVal a)
-varVal p expType = ValExpr <$> (p <|> parens p)
-               <|> Var <$> refVar expType
-
-anyVarVal :: DataType -> ParserM (VarVal AnyVal)
-anyVarVal expType = varVal (anyVal expType) expType
+-- types do not match, then parsing fails.
+expTypeVarId :: DataType -> ParserM VarName
+expTypeVarId expType = expTypeId snakeId (PVar expType)
 
 -- Type of data passed to a function, the EBNF of which is:
 --  FuncArgType : 'Tape' | 'Sym'
 annotatedType :: ParserM DataType
 annotatedType = SymType <$ lTok "Sym"
             <|> TapeType <$ lTok "Tape"
+
+tapeSymbol :: ParserM TapeSymbol
+tapeSymbol = noneOf "\'\""
+
+sym :: ParserM Sym
+sym = Read <$ lTok "read" <* lWhitespace <*> expTypeVarId TapeType
+  <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
+
+tape :: ParserM Tape
+tape = TapeLit <$> quoted (many tapeSymbol)
+
+anyType :: ParserM Any
+anyType = S <$> sym
+      <|> T <$> tape
+
+val :: ParserM a -> ParserM (Val a)
+val p = New <$> p
+    <|> Var <$> refVarId
+
+symVal :: ParserM (Val Sym)
+symVal = expTypeVal SymType sym
+
+tapeVal :: ParserM (Val Tape)
+tapeVal = expTypeVal TapeType tape
+
+expTypeVal :: DataType -> ParserM a -> ParserM (Val a)
+expTypeVal expType p = New <$> p
+                   <|> Var <$> fmap addType (expTypeVarId expType) where
+                       addType v = (v, expType)
+
+expTypeAny :: DataType -> ParserM Any
+expTypeAny SymType  = S <$> sym
+expTypeAny TapeType = T <$> tape
+
+expTypeAnyVal :: DataType -> ParserM (Val Any)
+expTypeAnyVal expType = expTypeVal expType (expTypeAny expType)
 
 -- Variable which has a type, the EBNF of which is:
 --  TypedVar : VarName ':' Type

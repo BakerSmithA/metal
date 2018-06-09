@@ -145,6 +145,6 @@ whileSpec = do
                 let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
                     while        = While TRUE innerVarDecl
                     outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
-                    write        = Write "x" (ValExpr $ SymLit 'a')
+                    write        = Write "x" (New $ SymLit 'a')
                     comp         = Comp outerVarDecl (Comp while write)
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp

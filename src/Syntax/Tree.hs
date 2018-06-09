@@ -18,17 +18,17 @@ data DataType = SymType
 type TapeSymbol = Char
 
 -- Values that evaluate to tape symbols.
-data SymVal = Read VarName
-            | SymLit TapeSymbol
-            deriving (Eq, Show)
+data Sym = Read VarName
+         | SymLit TapeSymbol
+         deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
 -- Tape
 --------------------------------------------------------------------------------
 
 -- Values that evaluate to tape references.
-data TapeVal = TapeLit String
-               deriving (Eq, Show)
+data Tape = TapeLit String
+            deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
 -- Identifiers
@@ -44,23 +44,25 @@ type CamelId    = Identifier
 
 -- Used to refer to variables, functions, structs, etc.
 type VarName = SnakeId
+
 -- Values that evaluate to either a symbol or tape.
-data AnyVal = S SymVal
-            | T TapeVal
-            deriving (Eq, Show)
+data Any = S Sym
+         | T Tape
+         deriving (Eq, Show)
+
 -- Values that can be looked up using a variable, or given as an expression
 -- that evaluates to the type.
-data VarVal a = ValExpr a
-              | Var VarName
-              deriving (Eq, Show)
+data Val a = New a
+           | Var (VarName, DataType)
+           deriving (Eq, Show)
 
 -- Convenience function.
-fromSymVal :: SymVal -> VarVal AnyVal
-fromSymVal s = ValExpr (S s)
+fromSymVal :: Sym -> Val Any
+fromSymVal s = New (S s)
 
 -- Convenience function.
-fromTapeVal :: TapeVal -> VarVal AnyVal
-fromTapeVal t = ValExpr (T t)
+fromTapeVal :: Tape -> Val Any
+fromTapeVal t = New (T t)
 
 --------------------------------------------------------------------------------
 -- Functions
@@ -73,7 +75,7 @@ type ArgName = SnakeId
 -- Argument supplied when defining the function.
 type FuncDeclArg = (ArgName, DataType)
 -- Argument supplied when calling the function.
-type FuncCallArg = VarVal AnyVal
+type FuncCallArg = Val Any
 
 -- Returns the type of an argument to a function invocation.
 argType :: FuncDeclArg -> DataType
@@ -102,9 +104,9 @@ data Bexp = TRUE
           | Not Bexp
           | And Bexp Bexp
           | Or Bexp Bexp
-          | Eq (VarVal SymVal) (VarVal SymVal)
-          | Le (VarVal SymVal) (VarVal SymVal)
-          | Ne (VarVal SymVal) (VarVal SymVal)
+          | Eq (Val Sym) (Val Sym)
+          | Le (Val Sym) (Val Sym)
+          | Ne (Val Sym) (Val Sym)
           deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
@@ -112,23 +114,22 @@ data Bexp = TRUE
 --------------------------------------------------------------------------------
 
 -- Syntax tree for statements.
-data Stm = MoveLeft VarName
-         | MoveRight VarName
-         | Write VarName (VarVal SymVal)
-         | WriteStr VarName [TapeSymbol]
+data Stm = MoveLeft (Val Tape)
+         | MoveRight (Val Tape)
+         | Write (Val Tape) (Val Sym)
+         | WriteStr (Val Tape) [TapeSymbol]
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
-         | VarDecl VarName (VarVal SymVal)
-         | TapeDecl VarName (VarVal TapeVal)
+         | VarDecl VarName (Val Any)
          | FuncDecl FuncName [FuncDeclArg] Stm
          | StructDecl StructName [StructMemberVar]
          | Call FuncName [FuncCallArg]
          | Comp Stm Stm
-         | PrintRead VarName
+         | PrintRead (Val Tape)
          | PrintStr String
-         | DebugPrintTape VarName
+         | DebugPrintTape (Val Tape)
          deriving (Eq, Show)
 
 --------------------------------------------------------------------------------

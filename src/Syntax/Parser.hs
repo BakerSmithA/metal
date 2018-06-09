@@ -84,18 +84,18 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: ParserM Stm
 stm' = try funcCall
-   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> refVar TapeType
-   <|> MoveRight <$ lTok "right" <* lWhitespace <*> refVar TapeType
-   <|> try (Write <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> varVal symVal SymType)
-   <|> WriteStr <$ lTok "write" <*> refVar TapeType <* lWhitespace <*> quotedString
+   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> tapeVal
+   <|> MoveRight <$ lTok "right" <* lWhitespace <*> tapeVal
+   <|> try (Write <$ lTok "write" <*> tapeVal <* lWhitespace <*> symVal)
+   <|> WriteStr <$ lTok "write" <*> tapeVal <* lWhitespace <*> quotedString
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
-   <|> try (VarDecl <$ lTok "let" <*> newVar SymType <* lTok "=" <*> varVal symVal SymType)
-   <|> TapeDecl <$ lTok "let" <*> newVar TapeType <* lTok "=" <*> varVal tapeVal TapeType
+   -- <|> try (VarDecl <$ lTok "let" <*> newVarId SymType <* lTok "=" <*> symVal)
+   -- <|> TapeDecl <$ lTok "let" <*> newVarId TapeType <* lTok "=" <*> tapeVal
    <|> funcDecl stmComp
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
-   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> refVar TapeType)
-   <|> DebugPrintTape <$ lTok "_printTape" <*> refVar TapeType
+   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> tapeVal)
+   <|> DebugPrintTape <$ lTok "_printTape" <*> tapeVal
    <|> whileStm stmComp
    <|> ifStm stmComp
    <|> structDecl
