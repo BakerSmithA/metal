@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 module Syntax.Tree where
 
 --------------------------------------------------------------------------------
@@ -28,7 +30,7 @@ data Sym = Read VarName
 
 -- Values that evaluate to tape references.
 data Tape = TapeLit String
-            deriving (Eq, Show)
+          deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
 -- Identifiers
@@ -53,7 +55,7 @@ data Any = S Sym
 -- Values that can be looked up using a variable, or given as an expression
 -- that evaluates to the type.
 data Val a = New a
-           | Var (VarName, DataType)
+           | Var VarName
            deriving (Eq, Show)
 
 -- Convenience function.

@@ -54,16 +54,16 @@ programSpec = describe "program" $ do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses LEFT command" $ do
-            parseEvalState state program "" "left tape" `shouldParseStm` (MoveLeft "tape")
+            parseEvalState state program "" "left tape" `shouldParseStm` (MoveLeft (Var "tape"))
 
         it "parses RIGHT command" $ do
-            parseEvalState state program "" "right tape" `shouldParseStm` (MoveRight "tape")
+            parseEvalState state program "" "right tape" `shouldParseStm` (MoveRight (Var "tape"))
 
         it "parses WRITE command" $ do
-            parseEvalState state program "" "write tape 'x'" `shouldParseStm` (Write "tape" (ValExpr $ SymLit 'x'))
+            parseEvalState state program "" "write tape 'x'" `shouldParseStm` (Write (Var "tape") (New $ SymLit 'x'))
 
         it "parses a WRITESTR command" $ do
-            parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr "tape" "abcd")
+            parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr (Var "tape") "abcd")
 
         it "parses REJECT" $ do
             parseEmptyState program "" "reject" `shouldParseStm` Reject
@@ -75,15 +75,15 @@ programSpec = describe "program" $ do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses composition" $ do
-            parseEvalState state program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+            parseEvalState state program "" "left tape\n right tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
         it "parses composition to be right associative" $ do
-            let expected = Comp (MoveLeft "tape") (Comp (MoveRight "tape") (Write "tape" (ValExpr $ SymLit 'x')))
+            let expected = Comp (MoveLeft (Var "tape")) (Comp (MoveRight (Var "tape")) (Write (Var "tape") (New $ SymLit 'x')))
             parseEvalState state program "" "left tape \n right tape \n write tape 'x'" `shouldParseStm` expected
 
         it "allows for multiple newlines between statements" $ do
-            parseEvalState state program "" "left tape \n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
-            parseEvalState state program "" "left tape \n\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+            parseEvalState state program "" "left tape \n\n right tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
+            parseEvalState state program "" "left tape \n\n\n right tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
         it "fails if parsing the first statements fails to parse" $ do
             parseEvalState state program "" `shouldFailOn` "left tape \n if"
@@ -97,78 +97,78 @@ programSpec = describe "program" $ do
 
         it "parses printing the symbol read from the tape" $ do
             let state = Env.fromList [("tape", PVar TapeType)]
-            parseEvalState state program "" "print tape" `shouldParseStm` (PrintRead "tape")
+            parseEvalState state program "" "print tape" `shouldParseStm` (PrintRead (Var "tape"))
 
     context "removing whitespace and comments" $ do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         context "before statements" $ do
             it "ignores spaces" $ do
-                parseEvalState state program "" " left tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" " left tape" `shouldParseStm` (MoveLeft (Var "tape"))
 
             it "ignores newlines" $ do
-                parseEvalState state program "" "\n\nleft tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "\n\nleft tape" `shouldParseStm` (MoveLeft (Var "tape"))
 
             it "ignores whole-line comments" $ do
-                parseEvalState state program "" "//Comment\n left tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "//Comment\n left tape" `shouldParseStm` (MoveLeft (Var "tape"))
 
             it "ignores in-line" $ do
-                parseEvalState state program "" "/* Comment */\n left tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "/* Comment */\n left tape" `shouldParseStm` (MoveLeft (Var "tape"))
 
             it "ignores tabs" $ do
-                parseEvalState state program "" "\tleft tape" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "\tleft tape" `shouldParseStm` (MoveLeft (Var "tape"))
 
         context "interspersed with statements" $ do
             it "ignores whole line comments" $ do
-                parseEvalState state program "" "left tape\n//Comment\n\n right tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n//Comment\n\n right tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
             it "ignores in-line comments" $ do
-                parseEvalState state program "" "if /* Comment */ True { left tape }" `shouldParseStm` (If TRUE (MoveLeft "tape") [] Nothing)
+                parseEvalState state program "" "if /* Comment */ True { left tape }" `shouldParseStm` (If TRUE (MoveLeft (Var "tape")) [] Nothing)
 
         context "ignores whitespace after of statements" $ do
             it "ignores whitespace at the end of a statement" $ do
-                parseEvalState state program "" "left tape  " `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "left tape  " `shouldParseStm` (MoveLeft (Var "tape"))
 
             it "ignores newlines at the end of a statement" $ do
-                parseEvalState state program "" "left tape\n\n" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "left tape\n\n" `shouldParseStm` (MoveLeft (Var "tape"))
 
             it "ignores tabs" $ do
-                parseEvalState state program "" "left tape\t" `shouldParseStm` (MoveLeft "tape")
+                parseEvalState state program "" "left tape\t" `shouldParseStm` (MoveLeft (Var "tape"))
 
         context "composition" $ do
             it "ignores tabs after the newline" $ do
-                parseEvalState state program "" "left tape\n\tright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n\tright tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
             it "ignores tabs before the newline" $ do
-                parseEvalState state program "" "left tape\t\nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\t\nright tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
             it "ignores tabs alone on lines inbetween statements" $ do
-                parseEvalState state program "" "left tape\n\t\nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n\t\nright tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
             it "ignores spaces alone on lines inbetween statements" $ do
-                parseEvalState state program "" "left tape\n \nright tape" `shouldParseStm` (Comp (MoveLeft "tape") (MoveRight "tape"))
+                parseEvalState state program "" "left tape\n \nright tape" `shouldParseStm` (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
 
         context "whitespace nested in statements" $ do
             it "ignores newlines after an opening brace" $ do
-                let expected = While TRUE (MoveLeft "tape")
+                let expected = While TRUE (MoveLeft (Var "tape"))
                 parseEvalState state program "" "while True {\n\n left tape }" `shouldParseStm` expected
 
             it "ignores newlines before a closing brace" $ do
-                let expected = While TRUE (MoveLeft "tape")
+                let expected = While TRUE (MoveLeft (Var "tape"))
                 parseEvalState state program "" "while True { left tape \n\n }" `shouldParseStm` expected
 
             it "ignores newlines before and after braces" $ do
-                let expected = While TRUE (MoveLeft "tape")
+                let expected = While TRUE (MoveLeft (Var "tape"))
                 parseEvalState state program "" "while True { \n\n left tape \n\n }" `shouldParseStm` expected
 
             it "ignores newlines after an opening brace when composing" $ do
-                let expected = While TRUE (Comp (MoveLeft "tape") (MoveRight "tape"))
+                let expected = While TRUE (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
                 parseEvalState state program "" "while True {\n\n left tape \n\n right tape }" `shouldParseStm` expected
 
             it "ignores newlines after a closing brace when composing" $ do
-                let expected = While TRUE (Comp (MoveLeft "tape") (MoveRight "tape"))
+                let expected = While TRUE (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
                 parseEvalState state program "" "while True { left tape \n\n right tape \n\n }" `shouldParseStm` expected
 
             it "ignores newlines before and after braces when composing" $ do
-                let expected = While TRUE (Comp (MoveLeft "tape") (MoveRight "tape"))
+                let expected = While TRUE (Comp (MoveLeft (Var "tape")) (MoveRight (Var "tape")))
                 parseEvalState state program "" "while True { \n\n left tape \n\n right tape \n\n }" `shouldParseStm` expected

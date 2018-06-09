@@ -19,50 +19,50 @@ funcDeclSpec = do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses function delcarations" $ do
-            let expected = FuncDecl "f_name" [] (MoveRight "tape")
+            let expected = FuncDecl "f_name" [] (MoveRight (Var "tape"))
             parseEvalState state program "" "func f_name { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
             let args = [("a", SymType), ("bb", TapeType)]
-                expected = FuncDecl "f_name" args (MoveRight "tape")
+                expected = FuncDecl "f_name" args (MoveRight (Var "tape"))
             parseEvalState state program "" "func f_name a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
-            let expected = FuncDecl "left_until" [] (MoveRight "tape")
+            let expected = FuncDecl "left_until" [] (MoveRight (Var "tape"))
             parseEvalState state program "" "func left_until { right tape }" `shouldParseStm` expected
 
         it "allows variables to be shadowed" $ do
-            let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
+            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
                 func         = FuncDecl "f" [] innerVarDecl
-                outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
+                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
                 comp         = Comp outerVarDecl func
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' }" `shouldParseStm` comp
 
         it "allows the types of variables to be changed at inner scopes" $ do
-            let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
-                write        = Write "tape" (Var "x")
+            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+                write        = Write (Var "tape") (Var "x")
                 body         = Comp innerVarDecl write
                 func         = FuncDecl "f" [] body
-                outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
+                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
                 comp         = Comp outerVarDecl func
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
         it "reverts variables after scope is exited" $ do
-            let innerVarDecl = VarDecl "x" (ValExpr $ SymLit 'a')
+            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
                 func         = FuncDecl "f" [] innerVarDecl
-                outerVarDecl = TapeDecl "x" (ValExpr $ TapeLit "xyz")
-                write        = Write "x" (ValExpr $ SymLit 'a')
+                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                write        = Write (Var "x") (New $ SymLit 'a')
                 comp         = Comp outerVarDecl (Comp func write)
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
         it "allows arguments to be used inside the function" $ do
             let args = [("t", TapeType), ("x", SymType)]
-                func = FuncDecl "write_new" args (Write "t" (Var "x"))
+                func = FuncDecl "write_new" args (Write (Var "t") (Var "x"))
             parseEmptyState program "" "func write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
 
         it "allows arguments to have the same name as variables outside" $ do
             let args = [("tape", TapeType), ("x", SymType)]
-                func = FuncDecl "write_new" args (Write "tape" (Var "x"))
+                func = FuncDecl "write_new" args (Write (Var "tape") (Var "x"))
             parseEmptyState program "" "func write_new tape:Tape x:Sym { write tape x }" `shouldParseStm` func
 
         it "allows resursive functions" $ do
@@ -70,7 +70,7 @@ funcDeclSpec = do
             parseEmptyState program "" "func f { f }" `shouldParseStm` expected
 
         it "allows redefinition of function inside function" $ do
-            let expected = FuncDecl "f" [] (FuncDecl "f" [] (MoveLeft "tape"))
+            let expected = FuncDecl "f" [] (FuncDecl "f" [] (MoveLeft (Var "tape")))
             parseEvalState state program "" "func f { func f { left tape } }" `shouldParseStm` expected
 
         it "fails if argument names are duplicated" $ do
@@ -131,7 +131,7 @@ funcCallSpec = do
 
         it "parses function calls followed by another statement" $ do
             let call     = Call "f_name" [Var "tape"]
-                expected = Comp call ((MoveLeft "tape"))
+                expected = Comp call ((MoveLeft (Var "tape")))
                 var      = ("tape", PVar TapeType)
                 func     = ("f_name", PFunc [TapeType])
                 state    = Env.fromList [var, func]

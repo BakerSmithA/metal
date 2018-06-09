@@ -14,8 +14,8 @@ refVarId :: ParserM (VarName, DataType)
 refVarId = do
     (name, idType) <- refId snakeId
     case idType of
-        PVar argTypes -> return (name, argTypes)
-        _              -> fail "Expected variable"
+        PVar t -> return (name, t)
+        _      -> fail "Expected variable"
 
 -- Attempts to use a declared variable. If the variable does not exist, or the
 -- types do not match, then parsing fails.
@@ -44,18 +44,17 @@ anyType = S <$> sym
 
 val :: ParserM a -> ParserM (Val a)
 val p = New <$> p
-    <|> Var <$> refVarId
+    <|> Var <$> fmap fst refVarId
+
+expTypeVal :: DataType -> ParserM a -> ParserM (Val a)
+expTypeVal expType p = New <$> p
+                   <|> Var <$> expTypeVarId expType
 
 symVal :: ParserM (Val Sym)
 symVal = expTypeVal SymType sym
 
 tapeVal :: ParserM (Val Tape)
 tapeVal = expTypeVal TapeType tape
-
-expTypeVal :: DataType -> ParserM a -> ParserM (Val a)
-expTypeVal expType p = New <$> p
-                   <|> Var <$> fmap addType (expTypeVarId expType) where
-                       addType v = (v, expType)
 
 expTypeAny :: DataType -> ParserM Any
 expTypeAny SymType  = S <$> sym

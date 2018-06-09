@@ -42,7 +42,7 @@ variableDeclSpec = do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses variable declarations" $ do
-            let expected = VarDecl "x" (ValExpr $ Read "tape")
+            let expected = VarDecl "x" (fromSymVal $ Read "tape")
             parseEvalState state program "" "let x = read tape" `shouldParseStm` expected
 
         it "fails if '=' is missing" $ do
@@ -55,8 +55,8 @@ variableDeclSpec = do
             parseEmptyState program "" `shouldFailOn` "let x = 'a'\nlet x = 'b'"
 
         it "parses variables overwriting inside functions" $ do
-            let decl     = VarDecl "x" (ValExpr $ SymLit 'x')
-                func     = FuncDecl "f" [] (VarDecl "x" (ValExpr $ SymLit 'y'))
+            let decl     = VarDecl "x" (fromSymVal $ SymLit 'x')
+                func     = FuncDecl "f" [] (VarDecl "x" (fromSymVal $ SymLit 'y'))
                 expected = Comp decl func
             parseEmptyState program "" "let x = 'x' \n func f { let x = 'y' }" `shouldParseStm` expected
 
@@ -68,15 +68,15 @@ tapeDeclSpec :: Spec
 tapeDeclSpec = do
     describe "tape declarations" $ do
         it "parses tape declarations" $ do
-            let expected = TapeDecl "tape" (ValExpr $ TapeLit "abcd")
+            let expected = VarDecl "tape" (fromTapeVal $ TapeLit "abcd")
             parseEmptyState program "" "let tape = \"abcd\"" `shouldParseStm` expected
 
         it "fails if the same variable is declared twice in the same scope" $ do
             parseEmptyState program "" `shouldFailOn` "let x = \"abc\"\nlet x = \"xyz\""
 
         it "parses variables overwriting inside functions" $ do
-            let decl     = TapeDecl "x" (ValExpr $ TapeLit "abc")
-                func     = FuncDecl "f" [] (TapeDecl "x" (ValExpr $ TapeLit "xyz"))
+            let decl     = VarDecl "x" (fromTapeVal $ TapeLit "abc")
+                func     = FuncDecl "f" [] (VarDecl "x" (fromTapeVal $ TapeLit "xyz"))
                 expected = Comp decl func
             parseEmptyState program "" "let x = \"abc\" \n func f { let x = \"xyz\" }" `shouldParseStm` expected
 

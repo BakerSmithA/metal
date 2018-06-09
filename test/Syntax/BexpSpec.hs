@@ -38,16 +38,16 @@ bexpSpec = describe "bexp" $ do
     context "parsing EQ operator" $ do
         it "parses EQ" $ do
             let state = Env.fromList [("tape", PVar TapeType), ("x", PVar SymType)]
-            parseEvalState state bexp "" "x == read tape" `shouldParse` (Eq (Var "x") (ValExpr $ Read "tape"))
+            parseEvalState state bexp "" "x == read tape" `shouldParse` (Eq (Var "x") (New $ Read "tape"))
 
         it "fails to parse chains" $ do
             let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
-            parseEvalState state bexp "" "'x' == y == z" `shouldParse` (Eq (ValExpr $ SymLit 'x') (Var "y"))
+            parseEvalState state bexp "" "'x' == y == z" `shouldParse` (Eq (New $ SymLit 'x') (Var "y"))
 
     context "parsing LE operator" $ do
         it "parses LE" $ do
             let state = Env.fromList [("x", PVar SymType), ("tape", PVar TapeType)]
-            parseEvalState state bexp "" "x <= read tape" `shouldParse` (Le (Var "x") (ValExpr $ Read "tape"))
+            parseEvalState state bexp "" "x <= read tape" `shouldParse` (Le (Var "x") (New $ Read "tape"))
 
         it "fails to parse chains" $ do
             let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
@@ -56,7 +56,7 @@ bexpSpec = describe "bexp" $ do
     context "parsing NE operator" $ do
         it "parses NE" $ do
             let state = Env.fromList [("x", PVar SymType), ("tape", PVar TapeType)]
-            parseEvalState state bexp "" "x != read tape" `shouldParse` (Ne (Var "x") (ValExpr $ Read "tape"))
+            parseEvalState state bexp "" "x != read tape" `shouldParse` (Ne (Var "x") (New $ Read "tape"))
 
         it "fails to parse chains" $ do
             let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
