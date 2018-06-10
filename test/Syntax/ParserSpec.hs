@@ -62,6 +62,10 @@ programSpec = describe "program" $ do
                 let expected = (MoveLeft (New $ TapeLit "abc"))
                 parseEvalState state program "" "left \"abc\"" `shouldParseStm` expected
 
+            it "fails if given a non-tape" $ do
+                let state' = Env.fromList [("x", PVar SymType)]
+                parseEvalState state' program "" `shouldFailOn` "left x"
+
         context "parses RIGHT command" $ do
             it "parses variables" $ do
                 let expected = (MoveRight (Var "tape"))
@@ -70,6 +74,10 @@ programSpec = describe "program" $ do
             it "parses tape literals" $ do
                 let expected = (MoveRight (New $ TapeLit "abc"))
                 parseEvalState state program "" "right \"abc\"" `shouldParseStm` expected
+
+            it "fails if given a non-tape" $ do
+                let state' = Env.fromList [("x", PVar SymType)]
+                parseEvalState state' program "" `shouldFailOn` "right x"
 
         context "parses WRITE command" $ do
             it "parses variables" $ do
@@ -80,6 +88,10 @@ programSpec = describe "program" $ do
                 let expected = (Write (New $ TapeLit "abc") (New $ SymLit 'x'))
                 parseEvalState state program "" "write \"abc\" 'x'" `shouldParseStm` expected
 
+            it "fails if given a non-tape" $ do
+                let state' = Env.fromList [("x", PVar SymType)]
+                parseEvalState state' program "" `shouldFailOn` "write x 'x'"
+
         context "parses a WRITESTR command" $ do
             it "parses variables" $ do
                 let expected = (WriteStr (Var "tape") "abcd")
@@ -88,6 +100,10 @@ programSpec = describe "program" $ do
             it "parses tape literals" $ do
                 let expected = (WriteStr (New $ TapeLit "xyz") "abcd")
                 parseEvalState state program "" "write \"xyz\" \"abcd\"" `shouldParseStm` expected
+
+            it "fails if given a non-tape" $ do
+                let state' = Env.fromList [("x", PVar SymType)]
+                parseEvalState state' program "" `shouldFailOn` "write x \"xyz\""
 
         it "parses REJECT" $ do
             parseEmptyState program "" "reject" `shouldParseStm` Reject
