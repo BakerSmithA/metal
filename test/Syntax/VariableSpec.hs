@@ -12,8 +12,11 @@ import TestHelper.Parser
 variableSpec :: Spec
 variableSpec = do
     tapeSymbolSpec
-    variableDeclSpec
-    tapeDeclSpec
+    symSpec
+    tapeSpec
+    valTypedSpec
+    expTypeValSpec
+    varDeclSpec
 
 tapeSymbolSpec :: Spec
 tapeSymbolSpec = do
@@ -36,14 +39,83 @@ tapeSymbolSpec = do
         it "does not parse single quotes" $ do
             parseEmptyState tapeSymbol "" `shouldFailOn` "\'"
 
-variableDeclSpec :: Spec
-variableDeclSpec = do
+symSpec :: Spec
+symSpec = do
+    describe "sym" $ do
+        it "parses reading a tape variable" $ do
+            let expected = Read (Var "t")
+                state = Env.fromList [("t", PVar TapeType)]
+            parseEvalState state sym "" "read t" `shouldParse` expected
+
+        it "parses reading a tape literal" $ do
+            let expected = Read (New $ TapeLit "abc")
+            parseEmptyState sym "" "read \"abc\"" `shouldParse` expected
+
+        it "fails reading if the variable is not a tape" $ do
+            let state = Env.fromList [("s", PVar SymType)]
+            parseEvalState state sym "" `shouldFailOn` "read s"
+
+        it "fails reading if the variable is a function" $ do
+            let state = Env.fromList [("f", PFunc [])]
+            parseEvalState state sym "" `shouldFailOn` "read f"
+
+tapeSpec :: Spec
+tapeSpec = do
+    describe "tape" $ do
+        it "parses tape literals" $ do
+            let expected = TapeLit "abc"
+            parseEmptyState tape "" "\"abc\"" `shouldParse` expected
+
+valTypedSpec :: Spec
+valTypedSpec = do
+    describe "valTyped" $ do
+        it "parses a new" $ do
+            let expected = (New (TapeLit "abc"), TapeType)
+            parseEmptyState (valTyped tape) "" "\"abc\"" `shouldParse` expected
+
+        it "parses a variable" $ do
+            let expected = (Var "x", TapeType)
+                state = Env.fromList [("x", PVar TapeType)]
+            parseEvalState state (valTyped tape) "" "x" `shouldParse` expected
+
+expTypeValSpec :: Spec
+expTypeValSpec = do
+    describe "expTypeVal" $ do
+        it "parses a new" $ do
+            let expected = New $ SymLit 'a'
+            parseEmptyState (expTypeVal SymType sym) "" "'a'" `shouldParse` expected
+
+        it "parses a variable" $ do
+            let expected = Var "x"
+                state = Env.fromList [("x", PVar SymType)]
+            parseEvalState state (expTypeVal SymType sym) "" "x" `shouldParse` expected
+
+        it "fails if the variable has the incorrect type" $ do
+            let state = Env.fromList [("x", PVar TapeType)]
+            parseEvalState state (expTypeVal SymType sym) "" `shouldFailOn` "x"
+
+        it "fails if the variable is a function" $ do
+            let state = Env.fromList [("x", PFunc [])]
+            parseEvalState state (expTypeVal SymType sym) "" `shouldFailOn` "x"
+
+varDeclSpec :: Spec
+varDeclSpec = do
     describe "variable declarations" $ do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses variable declarations" $ do
             let expected = VarDecl "x" (fromSymVal (Read (Var "tape")))
             parseEvalState state program "" "let x = read tape" `shouldParseStm` expected
+
+        it "parses variables overwriting inside functions" $ do
+            let decl     = VarDecl "x" (fromTapeVal $ TapeLit "x")
+                func     = FuncDecl "f" [] (VarDecl "x" (fromTapeVal $ TapeLit "y"))
+                expected = Comp decl func
+            parseEmptyState program "" "let x = \"x\" \n func f { let x = \"y\" }" `shouldParseStm` expected
+
+        it "resets variable environment after exiting function parse" $ do
+            let s = "let x = 'x' \n func f { let x = 'y' } \n let x = 'z'"
+            parseEmptyState program ""  `shouldFailOn` s
 
         it "fails if '=' is missing" $ do
             parseEvalState state program "" `shouldFailOn` "let x read tape"
@@ -54,32 +126,6 @@ variableDeclSpec = do
         it "fails if the same variable is declared twice in the same scope" $ do
             parseEmptyState program "" `shouldFailOn` "let x = 'a'\nlet x = 'b'"
 
-        it "parses variables overwriting inside functions" $ do
-            let decl     = VarDecl "x" (fromSymVal $ SymLit 'x')
-                func     = FuncDecl "f" [] (VarDecl "x" (fromSymVal $ SymLit 'y'))
-                expected = Comp decl func
-            parseEmptyState program "" "let x = 'x' \n func f { let x = 'y' }" `shouldParseStm` expected
-
-        it "resets variable environment after exiting function parse" $ do
-            let s = "let x = 'x' \n func f { let x = 'y' } \n let x = 'z'"
-            parseEmptyState program ""  `shouldFailOn` s
-
-tapeDeclSpec :: Spec
-tapeDeclSpec = do
-    describe "tape declarations" $ do
-        it "parses tape declarations" $ do
-            let expected = VarDecl "tape" (fromTapeVal $ TapeLit "abcd")
-            parseEmptyState program "" "let tape = \"abcd\"" `shouldParseStm` expected
-
-        it "fails if the same variable is declared twice in the same scope" $ do
-            parseEmptyState program "" `shouldFailOn` "let x = \"abc\"\nlet x = \"xyz\""
-
-        it "parses variables overwriting inside functions" $ do
-            let decl     = VarDecl "x" (fromTapeVal $ TapeLit "abc")
-                func     = FuncDecl "f" [] (VarDecl "x" (fromTapeVal $ TapeLit "xyz"))
-                expected = Comp decl func
-            parseEmptyState program "" "let x = \"abc\" \n func f { let x = \"xyz\" }" `shouldParseStm` expected
-
-        it "resets variable environment after exiting function parse" $ do
-            let s = "let x = \"abc\" \n func f { let x = \"abc\" } \n let x = \"abc\""
-            parseEmptyState program ""  `shouldFailOn` s
+        it "fails if assignment to a function" $ do
+            let state' = Env.fromList [("f", PFunc [])]
+            parseEvalState state' program "" `shouldFailOn` "let x = f"
