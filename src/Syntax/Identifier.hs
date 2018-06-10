@@ -59,11 +59,3 @@ expTypeId p expType = do
     if expType == idType
         then return i
         else (fail "mistmatched types")
-
--- Parses an identifier if has not already been declared, and puts it in the
--- environment.
-putNewId :: ParserM Identifier -> EnvDecl -> ParserM Identifier
-putNewId p idType = do
-    i <- newId p
-    putM i idType
-    return i

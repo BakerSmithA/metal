@@ -12,6 +12,10 @@ data DataType = SymType
               | CustomType StructName
               deriving (Eq, Show)
 
+-- Types that have a data type, e.g. Symbol, Tape, Struct, etc.
+class Typed a where
+    typeOf :: a -> DataType
+
 --------------------------------------------------------------------------------
 -- Tape Symbols
 --------------------------------------------------------------------------------
@@ -24,6 +28,9 @@ data Sym = Read VarName
          | SymLit TapeSymbol
          deriving (Eq, Show)
 
+instance Typed Sym where
+    typeOf _ = SymType
+
 --------------------------------------------------------------------------------
 -- Tape
 --------------------------------------------------------------------------------
@@ -31,6 +38,9 @@ data Sym = Read VarName
 -- Values that evaluate to tape references.
 data Tape = TapeLit String
           deriving (Eq, Show)
+
+instance Typed Tape where
+  typeOf _ = TapeType
 
 --------------------------------------------------------------------------------
 -- Identifiers
@@ -51,6 +61,10 @@ type VarName = SnakeId
 data Any = S Sym
          | T Tape
          deriving (Eq, Show)
+
+instance Typed Any where
+    typeOf (S s) = typeOf s
+    typeOf (T t) = typeOf t
 
 -- Values that can be looked up using a variable, or given as an expression
 -- that evaluates to the type.

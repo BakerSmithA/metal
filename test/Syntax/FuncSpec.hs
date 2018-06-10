@@ -99,12 +99,12 @@ funcCallSpec = do
             parseEvalState state program "" "f_name" `shouldParseStm` (Call "f_name" [])
 
         it "parses function calls with arguments" $ do
-            let expected = Call "f_name" [Var "tape", Var "x", fromSymVal (SymLit '#')]
+            let expected = Call "f_name" [Var "tape", fromSymVal (Read "tape"), Var "x", fromSymVal (SymLit '#')]
                 var1     = ("tape", PVar TapeType)
                 var2     = ("x", PVar SymType)
-                func     = ("f_name", PFunc [TapeType, SymType, SymType])
+                func     = ("f_name", PFunc [TapeType, SymType, SymType, SymType])
                 state    = Env.fromList [var1, var2, func]
-            parseEvalState state program "" "f_name tape x '#'" `shouldParseStm` expected
+            parseEvalState state program "" "f_name tape read tape x '#'" `shouldParseStm` expected
 
         it "parses function calls with parens around arguments" $ do
             let expected = Call "f_name" [fromSymVal (Read "tape")]

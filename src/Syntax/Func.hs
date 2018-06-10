@@ -1,11 +1,8 @@
 module Syntax.Func where
 
 import Syntax.Common
-import qualified Syntax.Env as E
 import Syntax.Identifier
 import Syntax.Variable
-
-import Debug.Trace
 
 -- Attempts to parse an identifier used to declare a new function. Does **not**
 -- add the function to the environment if it does not exist. Fails if the
@@ -32,9 +29,9 @@ newArgId = newId snakeId
 -- Parses an argument to a function, the EBNF of which is the same as a TypedVar.
 funcDeclArg :: ParserM FuncDeclArg
 funcDeclArg = do
-    (name, argType) <- typedVar newArgId
-    putM name (PVar argType)
-    return (name, argType)
+    (name, argT) <- typedVar newArgId
+    putM name (PVar argT)
+    return (name, argT)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs  : FuncDeclArg (' ' TypedVar)* | ε
@@ -70,7 +67,7 @@ funcDecl stm = do
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: [DataType] -> ParserM [FuncCallArg]
-funcCallArgs = matchedTypes expTypeAnyVal
+funcCallArgs = matchedTypes (\t -> expTypeAnyVal t <|> parens (expTypeAnyVal t))
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs

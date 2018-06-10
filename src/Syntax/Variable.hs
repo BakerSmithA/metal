@@ -6,8 +6,8 @@ import Syntax.Identifier
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist
 -- it is added to the environment.
-newVarId :: DataType -> ParserM VarName
-newVarId varType = putNewId snakeId (PVar varType)
+newVarId :: ParserM VarName
+newVarId = newId snakeId
 
 -- Parses a variable, returning its name and type.
 refVarId :: ParserM (VarName, DataType)
@@ -42,9 +42,13 @@ anyType :: ParserM Any
 anyType = S <$> sym
       <|> T <$> tape
 
-val :: ParserM a -> ParserM (Val a)
-val p = New <$> p
-    <|> Var <$> fmap fst refVarId
+valTyped :: (Typed a) => ParserM a -> ParserM (Val a, DataType)
+valTyped p = _val <|> _var where
+    _val = p >>= \x -> return (New x, typeOf x)
+    _var = refVarId >>= \(name, t) -> return (Var name, t)
+
+val :: (Typed a) => ParserM a -> ParserM (Val a)
+val = (fmap fst) . valTyped
 
 expTypeVal :: DataType -> ParserM a -> ParserM (Val a)
 expTypeVal expType p = New <$> p
@@ -57,8 +61,9 @@ tapeVal :: ParserM (Val Tape)
 tapeVal = expTypeVal TapeType tape
 
 expTypeAny :: DataType -> ParserM Any
-expTypeAny SymType  = S <$> sym
-expTypeAny TapeType = T <$> tape
+expTypeAny SymType        = S <$> sym
+expTypeAny TapeType       = T <$> tape
+expTypeAny (CustomType _) = undefined
 
 expTypeAnyVal :: DataType -> ParserM (Val Any)
 expTypeAnyVal expType = expTypeVal expType (expTypeAny expType)
@@ -71,3 +76,15 @@ typedVar p = do
     _ <- lTok ":"
     idType <- annotatedType
     return (name, idType)
+
+-- Parses a variable declaration, i.e. 'let x = ...'
+varDecl :: ParserM Stm
+varDecl = do
+    _ <- lTok "let"
+    name <- newVarId
+    _ <- lTok "="
+    (v, t) <- valTyped anyType
+
+    putM name (PVar t)
+
+    return (VarDecl name v)

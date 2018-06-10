@@ -90,6 +90,7 @@ stm' = try funcCall
    <|> WriteStr <$ lTok "write" <*> tapeVal <* lWhitespace <*> quotedString
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
+   <|> varDecl
    -- <|> try (VarDecl <$ lTok "let" <*> newVarId SymType <* lTok "=" <*> symVal)
    -- <|> TapeDecl <$ lTok "let" <*> newVarId TapeType <* lTok "=" <*> tapeVal
    <|> funcDecl stmComp
