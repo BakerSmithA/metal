@@ -75,18 +75,18 @@ funcSpec = do
             getFunc "f" Config.empty `shouldBe` Nothing
 
         it "allows functions to be added and retrieved" $ do
-            let env = putFunc "f" [] (MoveRight "tape") Config.empty
-            getFunc "f" env `shouldBe` Just ([], (MoveRight "tape"))
+            let env = putFunc "f" [] (MoveRight (Var "tape")) Config.empty
+            getFunc "f" env `shouldBe` Just ([], (MoveRight (Var "tape")))
 
         it "allows functions with arguments to be added and retrieved" $ do
-            let args = [FuncDeclArg "a" SymType, FuncDeclArg "b" TapeType]
-                env = putFunc "f" args (MoveRight "tape") Config.empty
-            getFunc "f" env `shouldBe` Just (args, (MoveRight "tape"))
+            let args = [("a", SymType), ("b", TapeType)]
+                env = putFunc "f" args (MoveRight (Var "tape")) Config.empty
+            getFunc "f" env `shouldBe` Just (args, (MoveRight (Var "tape")))
 
         it "overrides previous function declarations" $ do
-            let env  = putFunc "f" [] (MoveRight "tape") Config.empty
-                env' = putFunc "f" [] (MoveLeft "tape") env
-            getFunc "f" env' `shouldBe` Just ([], (MoveLeft "tape"))
+            let env  = putFunc "f" [] (MoveRight (Var "tape")) Config.empty
+                env' = putFunc "f" [] (MoveLeft (Var "tape")) env
+            getFunc "f" env' `shouldBe` Just ([], (MoveLeft (Var "tape")))
 
 resetEnvSpec :: Spec
 resetEnvSpec = do
@@ -116,11 +116,11 @@ resetEnvSpec = do
             getTape "y" env3 `shouldBe` Nothing
 
         it "resets function definitions" $ do
-            let env1 = putFunc "f1" [] (MoveRight "tape") Config.empty
-                env2 = putFunc "f2" [] (MoveLeft "tape") env1
+            let env1 = putFunc "f1" [] (MoveRight (Var "tape")) Config.empty
+                env2 = putFunc "f2" [] (MoveLeft (Var "tape")) env1
                 env3 = revertEnv env1 env2
 
-            getFunc "f1" env3 `shouldBe` Just ([], MoveRight "tape")
+            getFunc "f1" env3 `shouldBe` Just ([], MoveRight (Var "tape"))
             getFunc "f2" env3 `shouldBe` Nothing
 
         it "removes freed references" $ do

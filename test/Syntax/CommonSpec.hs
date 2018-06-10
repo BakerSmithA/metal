@@ -1,4 +1,4 @@
-module Syntax.CommonSpec where
+module Syntax.CommonSpec (commonSpec) where
 
 import Syntax.Parser
 import Syntax.Common

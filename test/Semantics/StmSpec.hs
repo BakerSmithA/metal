@@ -21,9 +21,9 @@ import Test.Hspec
 --  invoke
 testResetVarEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetVarEnv makeControlStruct invoke = do
-    let outerVarDecl = VarDecl "x" (Literal '1')
-        innerVarDecl = VarDecl "x" (Literal '2')
-        write        = Write "tape" (Literal '#')
+    let outerVarDecl = VarDecl "x" (New $ S $ SymLit '1')
+        innerVarDecl = VarDecl "x" (New $ S $ SymLit '2')
+        write        = Write (Var "tape") (New $ SymLit '#')
         structBody   = Comp innerVarDecl write
         structDecl   = makeControlStruct structBody
         invoke'      = maybe structDecl (Comp structDecl) invoke
@@ -51,10 +51,10 @@ testResetVarEnv makeControlStruct invoke = do
 --  invoke
 testResetFuncEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetFuncEnv makeControlStruct invoke = do
-    let outerFBody = (MoveRight "tape")
-        args       = [FuncDeclArg "x" SymType]
+    let outerFBody = (MoveRight (Var "tape"))
+        args       = [("x", SymType)]
         outerFDecl = FuncDecl "f" args outerFBody
-        innerFBody = Write "tape" (Literal '#')
+        innerFBody = Write (Var "tape") (New $ SymLit '#')
         innerFDecl = FuncDecl "f" [] innerFBody
         fCall      = Call "f" []
         structBody = Comp innerFDecl fCall
@@ -72,7 +72,6 @@ stmSpec = do
         leftSpec
         rightSpec
         writeSpec
-        writeStrSpec
         acceptSpec
         rejectSpec
         ifSpec
@@ -89,7 +88,7 @@ leftSpec = do
 
     context "left" $ do
         it "moves the read-write head left" $ do
-            shouldBeAt (evalSemantics (MoveLeft "tape") testConfig) "tape" 0
+            shouldBeAt (evalSemantics (MoveLeft (Var "tape")) testConfig) "tape" 0
 
 rightSpec :: Spec
 rightSpec = do
@@ -97,7 +96,7 @@ rightSpec = do
 
     context "right" $ do
         it "moves the read-write head right" $ do
-            shouldBeAt (evalSemantics ((MoveRight "tape")) testConfig) "tape" 2
+            shouldBeAt (evalSemantics ((MoveRight (Var "tape"))) testConfig) "tape" 2
 
 writeSpec :: Spec
 writeSpec = do
@@ -105,18 +104,7 @@ writeSpec = do
 
     context "right" $ do
         it "writes to the cell under the read-write head" $ do
-            shouldRead (evalSemantics (Write "tape" (Literal '2')) testConfig) "tape" "a2c"
-
-writeStrSpec :: Spec
-writeStrSpec = do
-    let testConfig = Config.fromString "tape" "xyz"
-
-    context "write string" $ do
-        it "writes a string" $ do
-            shouldRead (evalSemantics (WriteStr "tape" "abcde") testConfig) "tape" "abcde"
-
-        it "leaves the head at the position of the last written character" $ do
-            shouldBeAt (evalSemantics (WriteStr "tape" "abcde") testConfig) "tape" 4
+            shouldRead (evalSemantics (Write (Var "tape") (New $ SymLit '2')) testConfig) "tape" "a2c"
 
 acceptSpec :: Spec
 acceptSpec = do
@@ -140,11 +128,11 @@ ifSpec = do
 
     context "evaluating a single if-statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write "tape" (Literal '1')) [] Nothing
+            let ifStm = If TRUE (Write (Var "tape") (New $ SymLit '1')) [] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs nothing if predicate is false" $ do
-            let ifStm = If FALSE (Write "tape" (Literal '1')) [] Nothing
+            let ifStm = If FALSE (Write (Var "tape") (New $ SymLit '1')) [] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "abc"
 
         it "resets the variable environment after executing a branch" $ do
@@ -157,44 +145,44 @@ ifSpec = do
 
     context "evaluating an if-elseif statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] Nothing
+            let ifStm = If TRUE (Write (Var "tape") (New $ SymLit '1')) [(TRUE, Write (Var "tape") (New $ SymLit '2'))] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] Nothing
+            let ifStm = If FALSE (Write (Var "tape") (New $ SymLit '1')) [(TRUE, Write (Var "tape") (New $ SymLit '2'))] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a2c"
 
         it "performs the third branch" $ do
-            let ifStm = If FALSE (Write "tape" (Literal '1')) [(FALSE, Write "tape" (Literal '2')), (TRUE, Write "tape" (Literal '3'))] Nothing
+            let ifStm = If FALSE (Write (Var "tape") (New $ SymLit '1')) [(FALSE, Write (Var "tape") (New $ SymLit '2')), (TRUE, Write (Var "tape") (New $ SymLit '3'))] Nothing
             shouldRead (evalSemantics ifStm testConfig) "tape" "a3c"
 
         it "resets the variable environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write "tape" (Literal '1')) [(TRUE, body)] Nothing
+            let makeIf body = If FALSE (Write (Var "tape") (New $ SymLit '1')) [(TRUE, body)] Nothing
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write "tape" (Literal '1')) [(TRUE, body)] Nothing
+            let makeIf body = If FALSE (Write (Var "tape") (New $ SymLit '1')) [(TRUE, body)] Nothing
             testResetFuncEnv makeIf Nothing
 
     context "evaluating an if-elseif-else statement" $ do
         it "performs the first branch" $ do
-            let ifStm = If TRUE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] (Just (Write "tape" (Literal '3')))
+            let ifStm = If TRUE (Write (Var "tape") (New $ SymLit '1')) [(TRUE, Write (Var "tape") (New $ SymLit '2'))] (Just (Write (Var "tape") (New $ SymLit '3')))
             shouldRead (evalSemantics ifStm testConfig) "tape" "a1c"
 
         it "performs the second branch" $ do
-            let ifStm = If FALSE (Write "tape" (Literal '1')) [(TRUE, Write "tape" (Literal '2'))] (Just (Write "tape" (Literal '3')))
+            let ifStm = If FALSE (Write (Var "tape") (New $ SymLit '1')) [(TRUE, Write (Var "tape") (New $ SymLit '2'))] (Just (Write (Var "tape") (New $ SymLit '3')))
             shouldRead (evalSemantics ifStm testConfig) "tape" "a2c"
 
         it "performs the else branch" $ do
-            let ifStm = If FALSE (Write "tape" (Literal '1')) [(FALSE, Write "tape" (Literal '2'))] (Just (Write "tape" (Literal '3')))
+            let ifStm = If FALSE (Write (Var "tape") (New $ SymLit '1')) [(FALSE, Write (Var "tape") (New $ SymLit '2'))] (Just (Write (Var "tape") (New $ SymLit '3')))
             shouldRead (evalSemantics ifStm testConfig) "tape" "a3c"
 
         it "resets the variable environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write "tape" (Literal '1')) [] (Just body)
+            let makeIf body = If FALSE (Write (Var "tape") (New $ SymLit '1')) [] (Just body)
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let makeIf body = If FALSE (Write "tape" (Literal '1')) [] (Just body)
+            let makeIf body = If FALSE (Write (Var "tape") (New $ SymLit '1')) [] (Just body)
             testResetFuncEnv makeIf Nothing
 
 whileSpec :: Spec
@@ -203,14 +191,14 @@ whileSpec = do
 
     context "evaluating while loop" $ do
         it "does not loop if the condition is false" $ do
-            let loop = While FALSE (Write "tape" (Literal '1'))
+            let loop = While FALSE (Write (Var "tape") (New $ SymLit '1'))
             shouldRead (evalSemantics loop testConfig) "tape" "Ab5#"
 
         it "performs a loop" $ do
             -- Move right until a '#' character is reached, overwriting each
             -- character with 'X'.
-            let cond   = Not (Eq (Read (Var "tape")) (Literal '#'))
-                comp   = Comp (Write "tape" (Literal 'X')) (MoveRight "tape")
+            let cond   = Not (Eq (New $ Read (Var "tape")) (New $ SymLit '#'))
+                comp   = Comp (Write (Var "tape") (New $ SymLit 'X')) (MoveRight (Var "tape"))
                 loop   = While cond comp
                 result = evalSemantics loop testConfig
 
@@ -218,14 +206,14 @@ whileSpec = do
             shouldRead result "tape" "XXX#"
 
         it "resets the variable environment after executing a branch" $ do
-            let cond        = Not (Eq (Read (Var "tape")) (Literal '#'))
-                makeIf body = While cond (Comp (MoveRight "tape") body)
+            let cond        = Not (Eq (New $ Read (Var "tape")) (New $ SymLit '#'))
+                makeIf body = While cond (Comp (MoveRight (Var "tape")) body)
 
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let cond        = Not (Eq (Read (Var "tape")) (Literal '#'))
-                makeIf body = While cond (Comp (MoveRight "tape") body)
+            let cond        = Not (Eq (New $ Read (Var "tape")) (New $ SymLit '#'))
+                makeIf body = While cond (Comp (MoveRight (Var "tape")) body)
 
             testResetFuncEnv makeIf Nothing
 
@@ -243,8 +231,8 @@ varDeclSpec = do
 
     context "evaluating a variable declaration" $ do
         it "adds the variable to the environment" $ do
-            let decl   = VarDecl "y" (Literal '1')
-                ifStm  = If (Eq (Var "y") (Literal '1')) (Write "tape" (Literal '#')) [] Nothing
+            let decl   = VarDecl "y" (New $ S $ SymLit '1')
+                ifStm  = If (Eq (Var "y") (New $ SymLit '1')) (Write (Var "tape") (New $ SymLit '#')) [] Nothing
                 comp   = Comp decl ifStm
 
             shouldRead (evalSemantics comp testConfig) "tape" "#bc"
@@ -255,7 +243,7 @@ funcCallSpec = do
 
     context "evaluating a function call" $ do
         it "performs the function" $ do
-            let decl = FuncDecl "f" [] (MoveRight "tape")
+            let decl = FuncDecl "f" [] (MoveRight (Var "tape"))
                 call = Call "f" []
                 comp = Comp decl call
             shouldBeAt (evalSemantics comp testConfig) "tape" 1
@@ -284,24 +272,24 @@ funcCallSpec = do
             -- The function is then called with the following arguments:
             --  f '1' '2'
             --  f '1' '3'
-            let boolX    = Eq (Var "x") (Literal '1')
-                boolY    = Eq (Var "y") (Literal '2')
+            let boolX    = Eq (Var "x") (New $ SymLit '1')
+                boolY    = Eq (Var "y") (New $ SymLit '2')
                 boolAnd  = And boolX boolY
-                ifStm    = If boolAnd (MoveLeft "tape") [] (Just (MoveRight "tape"))
-                args     = [FuncDeclArg "x" SymType, FuncDeclArg "y" SymType]
+                ifStm    = If boolAnd (MoveLeft (Var "tape")) [] (Just (MoveRight (Var "tape")))
+                args     = [("x", SymType), ("y", SymType)]
                 funcDecl = FuncDecl "f" args ifStm
-                call1    = Comp funcDecl (Call "f" [Derived (Literal '1'), Derived (Literal '2')])
-                call2    = Comp funcDecl (Call "f" [Derived (Literal '1'), Derived (Literal '3')])
+                call1    = Comp funcDecl (Call "f" [New $ S $ SymLit '1', New $ S $ SymLit '2'])
+                call2    = Comp funcDecl (Call "f" [New $ S $ SymLit '1', New $ S $ SymLit '3'])
                 config   = right (Config.fromString "tape" "abc")
 
             shouldBeAt (evalSemantics call1 config) "tape" 0
             shouldBeAt (evalSemantics call2 config) "tape" 2
 
         it "throws an error if the number of arguments is incorrect" $ do
-            let args     = [FuncDeclArg "a" SymType, FuncDeclArg "b" SymType]
+            let args     = [("a", SymType), ("b", SymType)]
                 funcDecl = FuncDecl "f" args Accept
-                comp     = Comp funcDecl (Call "f" [Derived (Literal '1')])
-                expected = WrongNumArgs "f" args [Derived (Literal '1')]
+                comp     = Comp funcDecl (Call "f" [New $ S $ SymLit '1'])
+                expected = WrongNumArgs "f" args [New $ S $ SymLit '1']
             evalSemantics comp testConfig `shouldThrow` (== expected)
 
         it "evaluates a recursive function" $ do
@@ -321,10 +309,10 @@ funcCallSpec = do
             --      }
             --  }
             --  f
-            let b1            = Eq (Read (Var "tape")) (Literal '#')
-                b2            = Eq (Read (Var "tape")) (Literal ' ')
+            let b1            = Eq (New $ Read (Var "tape")) (New $ SymLit '#')
+                b2            = Eq (New $ Read (Var "tape")) (New $ SymLit ' ')
                 elseIfClauses = [(b2, Reject)]
-                elseClause    = Just (Comp (MoveRight "tape") (Call "f" []))
+                elseClause    = Just (Comp (MoveRight (Var "tape")) (Call "f" []))
                 ifStm         = If b1 Accept elseIfClauses elseClause
                 funcDecl      = FuncDecl "f" [] ifStm
                 termConfig    = Config.fromString "tape" "abc#"
@@ -335,30 +323,30 @@ funcCallSpec = do
             shouldReject (evalSemantics comp nonTermConfig)
 
         it "modifies a reference to a tape" $ do
-            let declTape = TapeDecl "tape1" "xyz"
-                body     = Write "inputTape" (Literal '1')
-                funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp     = Comp declTape (Comp funcDecl (Call "modifyTape" [Derived (Var "tape1")]))
+            let declTape = VarDecl "tape1" (New $ T $ TapeLit "xyz")
+                body     = Write (Var "inputTape") (New $ SymLit '1')
+                funcDecl = FuncDecl "modifyTape" [("inputTape", TapeType)] body
+                comp     = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
                 result   = evalSemantics comp Config.empty
 
             shouldRead result "tape1" "1yz"
 
         it "removes the tape reference once the function is exited" $ do
-            let declTape = TapeDecl "tape1" "xyz"
-                body     = Write "inputTape" (Literal '1')
-                funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Derived (Var "tape1")]))
+            let declTape = VarDecl "tape1" (New $ T $ TapeLit "xyz")
+                body     = Write (Var "inputTape") (New $ SymLit '1')
+                funcDecl = FuncDecl "modifyTape" [("inputTape", TapeType)] body
+                comp1    = Comp declTape (Comp funcDecl (Call "modifyTape" [Var "tape1"]))
                 -- Attempt to use inputTape which was only declared as an argument of the function.
-                comp2    = Comp comp1 (Write "inputTape" (Literal 'a'))
+                comp2    = Comp comp1 (Write (Var "inputTape") (New $ SymLit 'a'))
                 result   = evalSemantics comp2 Config.empty
 
             result `shouldThrow` (== UndefTape "inputTape")
 
         it "removes function variables once the function exited" $ do
-            let declSym  = VarDecl "x" (Literal '1')
+            let declSym  = VarDecl "x" (New $ S $ SymLit '1')
                 body     = PrintStr "hello"
-                funcDecl = FuncDecl "f" [FuncDeclArg "y" SymType] body
-                comp1    = Comp declSym (Comp funcDecl (Call "f" [Derived (Var "x")]))
+                funcDecl = FuncDecl "f" [("y", SymType)] body
+                comp1    = Comp declSym (Comp funcDecl (Call "f" [Var "x"]))
                 -- Attempt to use y which was only declared as an argument of the function.
                 comp2    = Comp comp1 (VarDecl "new" (Var "y"))
                 result   = evalSemantics comp2 Config.empty
@@ -366,27 +354,27 @@ funcCallSpec = do
             result `shouldThrow` (== UndefVar "y")
 
         it "fails if incorrect types are supplied" $ do
-            let funcDecl = FuncDecl "f" [FuncDeclArg "x" TapeType] (PrintStr "hello")
-                call     = Call "f" [Derived (Literal 'x')]
+            let funcDecl = FuncDecl "f" [("x", TapeType)] (PrintStr "hello")
+                call     = Call "f" [New $ S $ SymLit 'x']
                 comp     = Comp funcDecl call
                 result   = evalSemantics comp Config.empty
 
-            result `shouldThrow` (== MismatchedTypes "x" "f" TapeType (Derived (Literal 'x')))
+            result `shouldThrow` (== MismatchedTypes "x" "f" TapeType (New $ S $ SymLit 'x'))
 
         it "accepts a tape literal as argument" $ do
-            let funcDecl = FuncDecl "f" [FuncDeclArg "t" TapeType] (PrintRead "t")
-                call     = Call "f" [TapeLiteral "xyz"]
+            let funcDecl = FuncDecl "f" [("t", TapeType)] (PrintRead (Var "t"))
+                call     = Call "f" [New $ T $ TapeLit "xyz"]
                 comp     = Comp funcDecl call
                 result   = evalSemantics comp Config.empty
 
             result `shouldOutput` ["x"]
 
         it "removes tape literals after function exited" $ do
-            let body     = Write "inputTape" (Literal '1')
-                funcDecl = FuncDecl "modifyTape" [FuncDeclArg "inputTape" TapeType] body
-                comp1    = Comp funcDecl (Call "modifyTape" [TapeLiteral "xyz"])
+            let body     = Write (Var "inputTape") (New $ SymLit '1')
+                funcDecl = FuncDecl "modifyTape" [("inputTape", TapeType)] body
+                comp1    = Comp funcDecl (Call "modifyTape" [(New $ T $ TapeLit "xyz")])
                 -- Attempt to use inputTape which was only declared as an argument of the function.
-                comp2    = Comp comp1 (Write "inputTape" (Literal 'a'))
+                comp2    = Comp comp1 (Write (Var "inputTape") (New $ SymLit 'a'))
                 result   = evalSemantics comp2 Config.empty
 
             result `shouldThrow` (== UndefTape "inputTape")
@@ -397,14 +385,14 @@ compSpec = do
 
     context "evaluating a function composition" $ do
         it "composes two statements 1" $ do
-            let comp   = Comp (MoveRight "tape") (Write "tape" (Literal '#'))
+            let comp   = Comp (MoveRight (Var "tape")) (Write (Var "tape") (New $ SymLit '#'))
                 result = evalSemantics comp testConfig
             shouldBeAt result "tape" 1
             shouldRead result "tape" "a#c"
 
         it "composes two statements 2" $ do
-            let ifStm  = If (Eq ((Read (Var "tape"))) (Literal 'b')) (Write "tape" (Literal '#')) [] Nothing
-                comp   = Comp (MoveRight "tape") ifStm
+            let ifStm  = If (Eq ((New $ Read (Var "tape"))) (New $ SymLit 'b')) (Write (Var "tape") (New $ SymLit '#')) [] Nothing
+                comp   = Comp (MoveRight (Var "tape")) ifStm
                 result = evalSemantics comp testConfig
             shouldRead result "tape" "a#c"
 
@@ -414,53 +402,53 @@ printReadSpec = do
 
     context "evaluating printing the current symbol" $ do
         it "prints the current symbol" $ do
-            let result = evalSemantics (PrintRead "tape") testConfig
+            let result = evalSemantics (PrintRead (Var "tape")) testConfig
             result `shouldOutput` ["a"]
 
         it "prints multiple symbols in the correct order" $ do
-            let comp   = Comp (PrintRead "tape") (Comp (PrintRead "tape") (PrintRead "tape"))
+            let comp   = Comp (PrintRead (Var "tape")) (Comp (PrintRead (Var "tape")) (PrintRead (Var "tape")))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "a"]
 
         it "prints multiple symbols in the correct order using movement" $ do
-            let comp   = Comp (PrintRead "tape") (Comp (MoveRight "tape") (Comp (PrintRead "tape") (Comp (MoveRight "tape") (PrintRead "tape"))))
+            let comp   = Comp (PrintRead (Var "tape")) (Comp (MoveRight (Var "tape")) (Comp (PrintRead (Var "tape")) (Comp (MoveRight (Var "tape")) (PrintRead (Var "tape")))))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
     context "evaluating printing the current symbol using an if" $ do
         it "prints using an if" $ do
-            let comp   = If TRUE (PrintRead "tape") [] Nothing
+            let comp   = If TRUE (PrintRead (Var "tape")) [] Nothing
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a"]
 
         it "does not print anything before the if multiple times" $ do
-            let ifStm  = If TRUE (PrintRead "tape") [] Nothing
-                comp   = Comp (PrintRead "tape") ifStm
+            let ifStm  = If TRUE (PrintRead (Var "tape")) [] Nothing
+                comp   = Comp (PrintRead (Var "tape")) ifStm
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a"]
 
     context "evaluating printing the current symbol using a loop" $ do
         it "prints multiple using a loop" $ do
-            let comp = While (Not (Eq (Read (Var "tape")) (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
+            let comp = While (Not (Eq (New $ Read (Var "tape")) (New $ SymLit ' '))) (Comp (PrintRead (Var "tape")) (MoveRight (Var "tape")))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
         it "does not print anything before the loop multiple times" $ do
-            let loop = While (Not (Eq (Read (Var "tape")) (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
-                comp = Comp (PrintRead "tape") loop
+            let loop = While (Not (Eq (New $ Read (Var "tape")) (New $ SymLit ' '))) (Comp (PrintRead (Var "tape")) (MoveRight (Var "tape")))
+                comp = Comp (PrintRead (Var "tape")) loop
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "b", "c"]
 
     context "evaluating printing using a function" $ do
         it "prints multiple using a function" $ do
-            let decl   = FuncDecl "f" [] (PrintRead "tape")
+            let decl   = FuncDecl "f" [] (PrintRead (Var "tape"))
                 comp   = Comp decl (Call "f" [])
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a"]
 
         it "does not print anything before the function multiple times" $ do
-            let decl   = FuncDecl "f" [] (PrintRead "tape")
-                comp   = Comp (PrintRead "tape") (Comp decl (Call "f" []))
+            let decl   = FuncDecl "f" [] (PrintRead (Var "tape"))
+                comp   = Comp (PrintRead (Var "tape")) (Comp decl (Call "f" []))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a"]
 

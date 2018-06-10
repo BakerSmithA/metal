@@ -7,7 +7,6 @@ import State.Config as Config
 import State.Machine
 import State.Output
 import Semantics.Bexp
-import Semantics.DerivedValue
 import Semantics.Stm
 import qualified Test.Hspec as H
 import Data.Maybe
@@ -17,10 +16,6 @@ type AppResult m a = m (Machine a)
 
 evalWith :: (a -> Config -> App m b) -> a -> Config -> AppResult m b
 evalWith f x config = evalApp (f x config)
-
--- Runs `derivedVal` with `sym` in the given config and environment.
-evalDerivedSymbol :: (Monad m) => DerivedValue -> Config -> AppResult m TapeSymbol
-evalDerivedSymbol = evalWith derivedVal
 
 -- Runs `bexpVal` with `b` in the given config and environment.
 evalBexp :: (Monad m) => Bexp -> Config -> AppResult m Bool
@@ -48,7 +43,7 @@ shouldReturnVar r name sym = shouldSatisfy r predicate where
 
 -- Asserts that the function environment contains the given function body for
 -- the function name.
-shouldReturnFunc :: IO (Machine Config) -> FuncName -> FuncDeclArgs -> Stm -> H.Expectation
+shouldReturnFunc :: IO (Machine Config) -> FuncName -> [FuncDeclArg] -> Stm -> H.Expectation
 shouldReturnFunc r name args body = shouldSatisfy r predicate where
     predicate config = getFunc name config == Just (args, body)
 

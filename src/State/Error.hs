@@ -6,7 +6,7 @@ import Control.Exception
 data RuntimeError = UndefVar VarName   -- An undefined variable was attempted to be used.
                   | UndefTape VarName -- An undefined tape was attempted to be used.
                   | UndefFunc FuncName -- An undefined function was attempted to be called.
-                  | WrongNumArgs FuncName FuncDeclArgs FuncCallArgs -- The wrong number of arguments was supplied.
+                  | WrongNumArgs FuncName [FuncDeclArg] [FuncCallArg] -- The wrong number of arguments was supplied.
                   | MismatchedTypes VarName FuncName DataType FuncCallArg
                   deriving (Eq)
 

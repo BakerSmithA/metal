@@ -1,4 +1,4 @@
-module Syntax.BexpSpec where
+module Syntax.BexpSpec (bexpSpec) where
 
 import Syntax.Tree
 import Syntax.Env as Env

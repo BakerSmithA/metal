@@ -1,4 +1,4 @@
-module Syntax.StructSpec where
+module Syntax.StructSpec (structSpec) where
 
 import Syntax.Parser
 import Syntax.Tree

@@ -1,7 +1,7 @@
 module State.Tape where
 
 import qualified Data.Map as Map
-import Syntax.Tree
+import Syntax.Tree (TapeSymbol)
 
 -- A position on the tape, i.e. the index of a cell.
 type Pos = Integer
@@ -14,15 +14,11 @@ data Tape = Tape {
 } deriving (Eq)
 
 instance Show Tape where
-    show = toString
+    show (Tape p t) = "p=" ++ (show p) ++ ", contents=" ++ map snd (Map.toAscList t)
 
 -- The empty tape, where each position maps to the space symbol, i.e. ' '
 empty :: Tape
 empty = Tape 0 Map.empty
-
--- A string representation of the tape, i.e. the cells of the tape in order.
-toString :: Tape -> String
-toString (Tape p t) = "p=" ++ (show p) ++ ", contents=" ++ map snd (Map.toAscList t)
 
 -- A tape where the string `str` is placed at the start of the tape.
 fromString :: String -> Tape

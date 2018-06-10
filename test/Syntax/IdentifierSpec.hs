@@ -1,4 +1,4 @@
-module Syntax.IdentifierSpec where
+module Syntax.IdentifierSpec (identifierSpec) where
 
 import Syntax.Parser
 import Syntax.Identifier

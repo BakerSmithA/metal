@@ -1,4 +1,4 @@
-module Syntax.FuncSpec where
+module Syntax.FuncSpec (funcSpec) where
 
 import Syntax.Tree
 import Syntax.Env as Env

@@ -1,4 +1,4 @@
-module Syntax.ControlSpec where
+module Syntax.ControlSpec (controlSpec) where
 
 import Syntax.Tree
 import Syntax.Env as Env

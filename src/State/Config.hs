@@ -2,7 +2,7 @@ module State.Config where
 
 import Data.Map as Map
 import State.Tape as Tape
-import Syntax.Tree
+import Syntax.Tree hiding (Tape)
 
 type Address = Integer
 
@@ -13,7 +13,7 @@ data Variable = Symbol TapeSymbol
 -- A configuration of a Turing machine.
 data Config = Config {
     vars      :: Map VarName Variable
-  , funcs     :: Map FuncName (FuncDeclArgs, Stm)
+  , funcs     :: Map FuncName ([FuncDeclArg], Stm)
   , refs      :: Map Address Tape
   , freeAddrs :: [Address]
 } deriving (Eq)
@@ -84,7 +84,7 @@ getSym name config = do
     return sym
 
 -- Looks up a function in an environment.
-getFunc :: FuncName -> Config -> Maybe (FuncDeclArgs, Stm)
+getFunc :: FuncName -> Config -> Maybe ([FuncDeclArg], Stm)
 getFunc name config = Map.lookup name (funcs config)
 
 -- Adds a single variable to the environment.
@@ -92,7 +92,7 @@ putSym :: VarName -> TapeSymbol -> Config -> Config
 putSym name sym config = config { vars = Map.insert name (Symbol sym) (vars config) }
 
 -- Adds a single function to the environment.
-putFunc :: FuncName -> FuncDeclArgs -> Stm -> Config -> Config
+putFunc :: FuncName -> [FuncDeclArg] -> Stm -> Config -> Config
 putFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }
 
 -- Resets the variable and function environment of `cNew` to that provided

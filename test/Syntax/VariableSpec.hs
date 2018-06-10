@@ -1,4 +1,4 @@
-module Syntax.VariableSpec where
+module Syntax.VariableSpec (variableSpec) where
 
 import Syntax.Tree
 import Syntax.Env as Env

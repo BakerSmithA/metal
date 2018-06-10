@@ -1,7 +1,7 @@
 module State.TapeSpec (tapeSpec) where
 
 import State.Tape
-import Syntax.Tree
+import Syntax.Tree (TapeSymbol)
 import Test.Hspec
 
 -- Asserts that the tape should contain `syms` at its start.

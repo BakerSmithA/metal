@@ -63,7 +63,6 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  Stm           : 'left' VarName
 --                | 'right' VarName
 --                | 'write' VarName DerivedValue
---                | 'write' VarName String
 --                | 'reject'
 --                | 'accept'
 --                | VarDecl
@@ -87,12 +86,9 @@ stm' = try funcCall
    <|> MoveLeft <$ lTok "left" <* lWhitespace <*> tapeVal
    <|> MoveRight <$ lTok "right" <* lWhitespace <*> tapeVal
    <|> try (Write <$ lTok "write" <*> tapeVal <* lWhitespace <*> symVal)
-   <|> WriteStr <$ lTok "write" <*> tapeVal <* lWhitespace <*> quotedString
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
    <|> varDecl
-   -- <|> try (VarDecl <$ lTok "let" <*> newVarId SymType <* lTok "=" <*> symVal)
-   -- <|> TapeDecl <$ lTok "let" <*> newVarId TapeType <* lTok "=" <*> tapeVal
    <|> funcDecl stmComp
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
    <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> tapeVal)

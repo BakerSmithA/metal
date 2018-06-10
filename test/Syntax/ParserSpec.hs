@@ -92,19 +92,6 @@ programSpec = describe "program" $ do
                 let state' = Env.fromList [("x", PVar SymType)]
                 parseEvalState state' program "" `shouldFailOn` "write x 'x'"
 
-        context "parses a WRITESTR command" $ do
-            it "parses variables" $ do
-                let expected = (WriteStr (Var "tape") "abcd")
-                parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` expected
-
-            it "parses tape literals" $ do
-                let expected = (WriteStr (New $ TapeLit "xyz") "abcd")
-                parseEvalState state program "" "write \"xyz\" \"abcd\"" `shouldParseStm` expected
-
-            it "fails if given a non-tape" $ do
-                let state' = Env.fromList [("x", PVar SymType)]
-                parseEvalState state' program "" `shouldFailOn` "write x \"xyz\""
-
         it "parses REJECT" $ do
             parseEmptyState program "" "reject" `shouldParseStm` Reject
 

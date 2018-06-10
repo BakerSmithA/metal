@@ -133,7 +133,6 @@ data Bexp = TRUE
 data Stm = MoveLeft (Val Tape)
          | MoveRight (Val Tape)
          | Write (Val Tape) (Val Sym)
-         | WriteStr (Val Tape) [TapeSymbol]
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
