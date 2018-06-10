@@ -117,6 +117,12 @@ varDeclSpec = do
             let s = "let x = 'x' \n func f { let x = 'y' } \n let x = 'z'"
             parseEmptyState program ""  `shouldFailOn` s
 
+        it "infers type of a variable assigned to another variable" $ do
+            let decl      = VarDecl "new_tape" (Var "tape")
+                printRead = PrintRead (Var "new_tape")
+                expected  = Comp decl printRead
+            parseEvalState state program "" "let new_tape = tape \n print new_tape" `shouldParse` expected
+
         it "fails if '=' is missing" $ do
             parseEvalState state program "" `shouldFailOn` "let x read tape"
 
