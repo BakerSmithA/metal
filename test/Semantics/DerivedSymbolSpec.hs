@@ -14,7 +14,7 @@ derivedSymbolValSpec = do
 
     describe "derivedVal" $ do
         it "reads the symbol under the read-write head" $ do
-            let result = evalDerivedSymbol (Read "tape") testConfig'
+            let result = evalDerivedSymbol (Read (Var "tape")) testConfig'
             result `shouldReturn` 'b'
 
         it "returns the literal" $ do

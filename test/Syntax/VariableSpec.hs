@@ -42,7 +42,7 @@ variableDeclSpec = do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses variable declarations" $ do
-            let expected = VarDecl "x" (fromSymVal $ Read "tape")
+            let expected = VarDecl "x" (fromSymVal (Read (Var "tape")))
             parseEvalState state program "" "let x = read tape" `shouldParseStm` expected
 
         it "fails if '=' is missing" $ do

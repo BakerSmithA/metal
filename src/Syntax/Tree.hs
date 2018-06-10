@@ -24,7 +24,7 @@ class Typed a where
 type TapeSymbol = Char
 
 -- Values that evaluate to tape symbols.
-data Sym = Read VarName
+data Sym = Read (Val Tape)
          | SymLit TapeSymbol
          deriving (Eq, Show)
 

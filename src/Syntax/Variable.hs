@@ -32,7 +32,7 @@ tapeSymbol :: ParserM TapeSymbol
 tapeSymbol = noneOf "\'\""
 
 sym :: ParserM Sym
-sym = Read <$ lTok "read" <* lWhitespace <*> expTypeVarId TapeType
+sym = Read <$ lTok "read" <* lWhitespace <*> tapeVal
   <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
 
 tape :: ParserM Tape

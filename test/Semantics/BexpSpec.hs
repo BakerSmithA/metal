@@ -47,8 +47,8 @@ bexpValSpec = do
             tt `shouldReturn` True
 
         it "evaluates <=" $ do
-            let b1      = Le (Read "tape") (Literal 'c') -- The current symbol is 'b'.
-                b2      = Le (Read "tape") (Literal 'a')
+            let b1      = Le (Read (Var "tape")) (Literal 'c') -- The current symbol is 'b'.
+                b2      = Le (Read (Var "tape")) (Literal 'a')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
@@ -56,8 +56,8 @@ bexpValSpec = do
             result2 `shouldReturn` False
 
         it "evaluates ==" $ do
-            let b1      = Eq (Read "tape") (Literal 'b') -- The current symbol is 'b'.
-                b2      = Eq (Read "tape") (Literal '#')
+            let b1      = Eq (Read (Var "tape")) (Literal 'b') -- The current symbol is 'b'.
+                b2      = Eq (Read (Var "tape")) (Literal '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
@@ -65,8 +65,8 @@ bexpValSpec = do
             result2 `shouldReturn` False
 
         it "evaluates !=" $ do
-            let b1      = Ne (Read "tape") (Literal 'b') -- The current symbol is 'b'.
-                b2      = Ne (Read "tape") (Literal '#')
+            let b1      = Ne (Read (Var "tape")) (Literal 'b') -- The current symbol is 'b'.
+                b2      = Ne (Read (Var "tape")) (Literal '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 

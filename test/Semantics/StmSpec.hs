@@ -209,7 +209,7 @@ whileSpec = do
         it "performs a loop" $ do
             -- Move right until a '#' character is reached, overwriting each
             -- character with 'X'.
-            let cond   = Not (Eq (Read "tape") (Literal '#'))
+            let cond   = Not (Eq (Read (Var "tape")) (Literal '#'))
                 comp   = Comp (Write "tape" (Literal 'X')) (MoveRight "tape")
                 loop   = While cond comp
                 result = evalSemantics loop testConfig
@@ -218,13 +218,13 @@ whileSpec = do
             shouldRead result "tape" "XXX#"
 
         it "resets the variable environment after executing a branch" $ do
-            let cond        = Not (Eq (Read "tape") (Literal '#'))
+            let cond        = Not (Eq (Read (Var "tape")) (Literal '#'))
                 makeIf body = While cond (Comp (MoveRight "tape") body)
 
             testResetVarEnv makeIf Nothing
 
         it "resets the function environment after executing a branch" $ do
-            let cond        = Not (Eq (Read "tape") (Literal '#'))
+            let cond        = Not (Eq (Read (Var "tape")) (Literal '#'))
                 makeIf body = While cond (Comp (MoveRight "tape") body)
 
             testResetFuncEnv makeIf Nothing
@@ -321,8 +321,8 @@ funcCallSpec = do
             --      }
             --  }
             --  f
-            let b1            = Eq (Read "tape") (Literal '#')
-                b2            = Eq (Read "tape") (Literal ' ')
+            let b1            = Eq (Read (Var "tape")) (Literal '#')
+                b2            = Eq (Read (Var "tape")) (Literal ' ')
                 elseIfClauses = [(b2, Reject)]
                 elseClause    = Just (Comp (MoveRight "tape") (Call "f" []))
                 ifStm         = If b1 Accept elseIfClauses elseClause
@@ -403,7 +403,7 @@ compSpec = do
             shouldRead result "tape" "a#c"
 
         it "composes two statements 2" $ do
-            let ifStm  = If (Eq ((Read "tape")) (Literal 'b')) (Write "tape" (Literal '#')) [] Nothing
+            let ifStm  = If (Eq ((Read (Var "tape"))) (Literal 'b')) (Write "tape" (Literal '#')) [] Nothing
                 comp   = Comp (MoveRight "tape") ifStm
                 result = evalSemantics comp testConfig
             shouldRead result "tape" "a#c"
@@ -441,12 +441,12 @@ printReadSpec = do
 
     context "evaluating printing the current symbol using a loop" $ do
         it "prints multiple using a loop" $ do
-            let comp = While (Not (Eq (Read "tape") (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
+            let comp = While (Not (Eq (Read (Var "tape")) (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
         it "does not print anything before the loop multiple times" $ do
-            let loop = While (Not (Eq (Read "tape") (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
+            let loop = While (Not (Eq (Read (Var "tape")) (Literal ' '))) (Comp (PrintRead "tape") (MoveRight "tape"))
                 comp = Comp (PrintRead "tape") loop
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "b", "c"]
