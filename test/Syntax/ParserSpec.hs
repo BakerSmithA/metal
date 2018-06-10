@@ -53,17 +53,41 @@ programSpec = describe "program" $ do
     context "parsing Turing Machine operators" $ do
         let state = Env.fromList [("tape", PVar TapeType)]
 
-        it "parses LEFT command" $ do
-            parseEvalState state program "" "left tape" `shouldParseStm` (MoveLeft (Var "tape"))
+        context "LEFT command" $ do
+            it "parses variables" $ do
+                let expected = (MoveLeft (Var "tape"))
+                parseEvalState state program "" "left tape" `shouldParseStm` expected
 
-        it "parses RIGHT command" $ do
-            parseEvalState state program "" "right tape" `shouldParseStm` (MoveRight (Var "tape"))
+            it "parses tape literals" $ do
+                let expected = (MoveLeft (New $ TapeLit "abc"))
+                parseEvalState state program "" "left \"abc\"" `shouldParseStm` expected
 
-        it "parses WRITE command" $ do
-            parseEvalState state program "" "write tape 'x'" `shouldParseStm` (Write (Var "tape") (New $ SymLit 'x'))
+        context "parses RIGHT command" $ do
+            it "parses variables" $ do
+                let expected = (MoveRight (Var "tape"))
+                parseEvalState state program "" "right tape" `shouldParseStm` expected
 
-        it "parses a WRITESTR command" $ do
-            parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` (WriteStr (Var "tape") "abcd")
+            it "parses tape literals" $ do
+                let expected = (MoveRight (New $ TapeLit "abc"))
+                parseEvalState state program "" "right \"abc\"" `shouldParseStm` expected
+
+        context "parses WRITE command" $ do
+            it "parses variables" $ do
+                let expected = (Write (Var "tape") (New $ SymLit 'x'))
+                parseEvalState state program "" "write tape 'x'" `shouldParseStm` expected
+
+            it "parses tape literals" $ do
+                let expected = (Write (New $ TapeLit "abc") (New $ SymLit 'x'))
+                parseEvalState state program "" "write \"abc\" 'x'" `shouldParseStm` expected
+
+        context "parses a WRITESTR command" $ do
+            it "parses variables" $ do
+                let expected = (WriteStr (Var "tape") "abcd")
+                parseEvalState state program "" "write tape \"abcd\"" `shouldParseStm` expected
+
+            it "parses tape literals" $ do
+                let expected = (WriteStr (New $ TapeLit "xyz") "abcd")
+                parseEvalState state program "" "write \"xyz\" \"abcd\"" `shouldParseStm` expected
 
         it "parses REJECT" $ do
             parseEmptyState program "" "reject" `shouldParseStm` Reject
