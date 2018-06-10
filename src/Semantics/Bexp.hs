@@ -5,24 +5,24 @@ import State.Config
 import Semantics.Variable
 import Syntax.Tree
 
-notVal :: (Monad m) => Bexp -> Config -> App m Bool
-notVal b config = do
-    val <- bexpVal b config
-    return (not val)
+notVal :: (Monad m) => Bexp -> Config -> App m (Bool, Config)
+notVal b c = do
+    (val, c') <- bexpVal b c
+    return (not val, c')
 
-binaryOp :: (Monad m) => (a -> a -> Bool) -> (b -> Config -> App m a) -> b -> b -> Config -> App m Bool
-binaryOp op recursiveF x y config = do
-    val1 <- recursiveF x config
-    val2 <- recursiveF y config
-    return (op val1 val2)
+binaryOp :: (Monad m) => (a -> a -> Bool) -> (b -> Config -> App m (a, Config)) -> b -> b -> Config -> App m (Bool, Config)
+binaryOp op recursiveF x y c1 = do
+    (val1, c2) <- recursiveF x c1
+    (val2, c3) <- recursiveF y c2
+    return (op val1 val2, c3)
 
 -- The semantic function B[[.]] over boolean expressions.
-bexpVal :: (Monad m) => Bexp -> Config -> App m Bool
-bexpVal (TRUE)      = const (return True)
-bexpVal (FALSE)     = const (return False)
-bexpVal (Not b)     = notVal b
-bexpVal (And b1 b2) = binaryOp (&&) bexpVal b1 b2
-bexpVal (Or b1 b2)  = binaryOp (||) bexpVal b1 b2
-bexpVal (Eq s1 s2)  = binaryOp (==) symVal s1 s2
-bexpVal (Le s1 s2)  = binaryOp (<=) symVal s1 s2
-bexpVal (Ne s1 s2)  = binaryOp (/=) symVal s1 s2
+bexpVal :: (Monad m) => Bexp -> Config -> App m (Bool, Config)
+bexpVal (TRUE)      c = return (True, c)
+bexpVal (FALSE)     c = return (False, c)
+bexpVal (Not b)     c = notVal b c
+bexpVal (And b1 b2) c = binaryOp (&&) bexpVal b1 b2 c
+bexpVal (Or b1 b2)  c = binaryOp (||) bexpVal b1 b2 c
+bexpVal (Eq s1 s2)  c = binaryOp (==) symVal s1 s2 c
+bexpVal (Le s1 s2)  c = binaryOp (<=) symVal s1 s2 c
+bexpVal (Ne s1 s2)  c = binaryOp (/=) symVal s1 s2 c

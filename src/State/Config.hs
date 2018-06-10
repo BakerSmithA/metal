@@ -37,63 +37,62 @@ fromString tapeName str = newTape tapeName (Tape.fromString str) State.Config.em
 getVariable :: VarName -> Config -> Maybe Variable
 getVariable name c = Map.lookup name (vars c)
 
--- Looks up the address of a tape in the environment.
-getTapeRef :: VarName -> Config -> Maybe Address
-getTapeRef name config = do
-    (TapeRef addr) <- getVariable name config
-    return addr
-
--- Looks up a tape and its address in an environment.
-getTapeData :: VarName -> Config -> Maybe (Address, Tape)
-getTapeData name config = do
-    addr <- getTapeRef name config
-    tape <- Map.lookup addr (refs config)
-    return (addr, tape)
-
--- Looks up a tape in an environment.
-getTape :: VarName -> Config -> Maybe Tape
-getTape name c = fmap snd (getTapeData name c)
-
--- Creates a new tape in the environment.
-newTape :: VarName -> Tape -> Config -> Config
-newTape _ _ (Config _ _ _ []) = error "No space for tapes left"
-newTape name tape c@(Config vs _ rs (freeAddr:rest)) = c { vars = vs', refs = rs', freeAddrs = rest } where
-    vs' = Map.insert name (TapeRef freeAddr) vs
-    rs' = Map.insert freeAddr tape rs
-
--- Sets a reference to an existing tape with the given name.
-putTapeRef :: VarName -> VarName -> Config -> Maybe Config
-putTapeRef newName existingName c = do
-    addr <- getTapeRef existingName c
-    return $ c { vars = Map.insert newName (TapeRef addr) (vars c) }
-
--- Adds a tape at the given address.
-putTape :: Address -> Tape -> Config -> Config
-putTape addr tape c = c { refs = Map.insert addr tape (refs c) }
-
--- Retrieves and then modifies a tape in the environment.
-modifyTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
-modifyTape name f config = do
-    (addr, tape) <- getTapeData name config
-    return $ putTape addr (f tape) config
+--------------------------------------------------------------------------------
+-- Tape Symbols
+--------------------------------------------------------------------------------
 
 -- Looks up a variable in an environment.
 getSym :: VarName -> Config -> Maybe TapeSymbol
-getSym name config = do
-    (Symbol sym) <- getVariable name config
+getSym name c = do
+    (Symbol sym) <- getVariable name c
     return sym
+
+-- Adds a variable to the environment.
+putSym :: VarName -> TapeSymbol -> Config -> Config
+putSym name sym c = c { vars = Map.insert name (Symbol sym) (vars c) }
+
+--------------------------------------------------------------------------------
+-- Tapes
+--------------------------------------------------------------------------------
+
+-- Looks up the address of a tape in the environment.
+getTapePtr :: VarName -> Config -> Maybe Address
+getTapePtr name c = do
+    (TapeRef addr) <- getVariable name c
+    return addr
+
+-- Deferences a pointer to a tape.
+derefTape :: Address -> Config -> Maybe Tape
+derefTape addr c = Map.lookup addr (refs c)
+
+-- Adds a pointer to a tape to the environment.
+putTapePtr :: VarName -> Address -> Config -> Config
+putTapePtr name addr c = c { vars = Map.insert name (TapeRef addr) (vars c) }
+
+-- Adds a tape to the environment, returning the address at which the tape was
+-- added.
+putTape :: Tape -> Config -> (Address, Config)
+putTape _      (Config _ _ _ [])              = error "No space for tapes left"
+putTape tape c@(Config _ _ _ (freeAddr:rest)) = (freeAddr, c') where
+    c'    = c { refs = refs', freeAddrs = rest }
+    refs' = Map.insert freeAddr tape (refs c)
+
+-- Creates a pointer to a new tape with the given name and contents.
+newTape :: VarName -> Tape -> Config -> Config
+newTape name tape c = putTapePtr name addr c' where
+    (addr, c') = putTape tape c
+
+--------------------------------------------------------------------------------
+-- Functions
+--------------------------------------------------------------------------------
 
 -- Looks up a function in an environment.
 getFunc :: FuncName -> Config -> Maybe ([FuncDeclArg], Stm)
-getFunc name config = Map.lookup name (funcs config)
+getFunc name c = Map.lookup name (funcs c)
 
--- Adds a single variable to the environment.
-putSym :: VarName -> TapeSymbol -> Config -> Config
-putSym name sym config = config { vars = Map.insert name (Symbol sym) (vars config) }
-
--- Adds a single function to the environment.
+-- Adds a function to the environment.
 putFunc :: FuncName -> [FuncDeclArg] -> Stm -> Config -> Config
-putFunc name args body config = config { funcs = Map.insert name (args, body) (funcs config) }
+putFunc name args body c = c { funcs = Map.insert name (args, body) (funcs c) }
 
 -- Resets the variable and function environment of `cNew` to that provided
 -- by `cOld`. Also frees any references that are in the new environment but not

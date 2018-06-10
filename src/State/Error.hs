@@ -3,8 +3,7 @@ module State.Error where
 import Syntax.Tree
 import Control.Exception
 
-data RuntimeError = UndefVar VarName   -- An undefined variable was attempted to be used.
-                  | UndefTape VarName -- An undefined tape was attempted to be used.
+data RuntimeError = UndefVar
                   | UndefFunc FuncName -- An undefined function was attempted to be called.
                   | WrongNumArgs FuncName [FuncDeclArg] [FuncCallArg] -- The wrong number of arguments was supplied.
                   | MismatchedTypes VarName FuncName DataType FuncCallArg
@@ -12,8 +11,7 @@ data RuntimeError = UndefVar VarName   -- An undefined variable was attempted to
 
 instance Show RuntimeError where
     -- show :: RuntimeError -> String
-    show (UndefVar  name)                  = "Undefined variable: " ++ name
-    show (UndefTape name)                  = "Undefined tape: "     ++ name
+    show (UndefVar)                        = "Undefined variable"
     show (UndefFunc name)                  = "Undefined function: " ++ name
     show (WrongNumArgs fName expected got) =
         "Wrong number of arguments supplied to '" ++ fName ++ "'.\n"
