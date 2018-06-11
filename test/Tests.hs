@@ -12,8 +12,8 @@ import State.TapeSpec
 import State.ConfigSpec
 import State.TreeSpec
 import Semantics.BexpSpec
--- import Semantics.StmSpec
--- import Semantics.ProgramSpec
+import Semantics.StmSpec
+import Semantics.ProgramSpec
 import Test.Hspec
 
 main :: IO ()
@@ -31,5 +31,5 @@ main = hspec specs where
         configSpec
         treeSpec
         bexpValSpec
-        -- stmSpec
-        -- programSpec
+        stmSpec
+        programSpec
