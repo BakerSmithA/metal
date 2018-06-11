@@ -89,8 +89,11 @@ structDecl = do
 -- not exist, or the incorrect number of arguments with the wrong types are
 -- given. EBNF:
 --  CreateStruct : StructName (Var ' ')+
-makeObj :: ParserM Stm
+makeObj :: ParserM ObjExpr
 makeObj = do
     (name, ms) <- refStruct
     args <- matchedTypes expTypeExpr (map memberVarType ms)
     return (NewObj name args)
+
+objExpr :: ParserM ObjExpr
+objExpr = undefined

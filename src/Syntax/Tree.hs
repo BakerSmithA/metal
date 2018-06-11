@@ -3,6 +3,14 @@
 module Syntax.Tree where
 
 --------------------------------------------------------------------------------
+-- Identifiers
+--------------------------------------------------------------------------------
+
+type Identifier = String
+type SnakeId    = Identifier
+type CamelId    = Identifier
+
+--------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
 
@@ -45,12 +53,17 @@ instance Typed TapeExpr where
   typeOf _ = TapeType
 
 --------------------------------------------------------------------------------
--- Identifiers
+-- Objects
 --------------------------------------------------------------------------------
 
-type Identifier = String
-type SnakeId    = Identifier
-type CamelId    = Identifier
+-- Values that evaluate to structure instances.
+data ObjExpr = NewObj StructName [NewObjArg]
+             | ObjVar VarName StructName
+             deriving (Eq, Show)
+
+instance Typed ObjExpr where
+    typeOf (NewObj structName _) = CustomType structName
+    typeOf (ObjVar _ structName) = CustomType structName
 
 --------------------------------------------------------------------------------
 -- Variables
@@ -62,11 +75,13 @@ type VarName = SnakeId
 -- Values that evaluate to either a symbol or tape.
 data AnyValExpr = S SymExpr
                 | T TapeExpr
+                | C ObjExpr
                 deriving (Eq, Show)
 
 instance Typed AnyValExpr where
     typeOf (S s) = typeOf s
     typeOf (T t) = typeOf t
+    typeOf (C c) = typeOf c
 
 --------------------------------------------------------------------------------
 -- Functions
@@ -74,11 +89,11 @@ instance Typed AnyValExpr where
 
 -- Name of a function.
 type FuncName = SnakeId
--- Name of an argument to the function.
+-- Name of an argument to a function.
 type ArgName = SnakeId
--- Argument supplied when defining the function.
+-- Argument supplied when defining a function.
 type FuncDeclArg = (ArgName, DataType)
--- Argument supplied when calling the function.
+-- Argument supplied when invoking a function.
 type FuncCallArg = AnyValExpr
 
 -- Returns the type of an argument to a function invocation.
@@ -93,8 +108,8 @@ argType = snd
 type StructName = CamelId
 -- Variable contained within a struct.
 type StructMemberVar = (VarName, DataType)
--- Argument supplied when instantiating a struct.
-type StructMakeArg = AnyValExpr
+-- Argument supplied when creating an object.
+type NewObjArg = AnyValExpr
 
 -- Returns the type of the variable in the struct.
 memberVarType :: StructMemberVar -> DataType
@@ -129,9 +144,8 @@ data Stm = MoveLeft TapeExpr
          | While Bexp Stm
          | VarDecl VarName AnyValExpr
          | FuncDecl FuncName [FuncDeclArg] Stm
-         | Call FuncName [FuncCallArg]
+         | Call FuncName [AnyValExpr]
          | StructDecl StructName [StructMemberVar]
-         | NewObj StructName [StructMakeArg]
          | Comp Stm Stm
          | PrintRead TapeExpr
          | PrintStr String
