@@ -65,6 +65,11 @@ getTapePtr name c = do
 derefTape :: Address -> Config -> Maybe Tape
 derefTape addr c = Map.lookup addr (refs c)
 
+-- Looks up the address of the tape and then deferences it, therefore changes
+-- to the returned tape will not be reflected in the environment.
+getTapeCpy :: VarName -> Config -> Maybe Tape
+getTapeCpy name c = getTapePtr name c >>= \addr -> derefTape addr c
+
 -- Adds a pointer to a tape to the environment.
 putTapePtr :: VarName -> Address -> Config -> Config
 putTapePtr name addr c = c { vars = Map.insert name (TapeRef addr) (vars c) }

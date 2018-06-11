@@ -8,8 +8,8 @@ import Syntax.IdentifierSpec
 import Syntax.ParserSpec
 import Syntax.VariableSpec
 import Syntax.StructSpec
--- import State.TapeSpec
--- import State.ConfigSpec
+import State.TapeSpec
+import State.ConfigSpec
 -- import State.TreeSpec
 -- import Semantics.BexpSpec
 -- import Semantics.StmSpec
@@ -27,8 +27,8 @@ main = hspec specs where
         parserSpec
         variableSpec
         structSpec
-        -- tapeSpec
-        -- configSpec
+        tapeSpec
+        configSpec
         -- treeSpec
         -- bexpValSpec
         -- stmSpec
