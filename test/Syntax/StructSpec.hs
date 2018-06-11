@@ -11,7 +11,41 @@ import TestHelper.Parser
 
 structSpec :: Spec
 structSpec = do
+    expTypeMemberIdSpec
     structDeclSpec
+
+expTypeMemberIdSpec :: Spec
+expTypeMemberIdSpec = do
+    describe "expTypeMemberId" $ do
+        it "accesses variables inside structures" $ do
+            let state = Env.fromList [("S", PStruct [("m_x", SymType)]), ("s", PVar (CustomType "S"))]
+            parseEvalState state (expTypeMemberId SymType) "" "s.m_x" `shouldParse` "m_x"
+
+        it "allows chaining" $ do
+            let struct1 = ("S1", PStruct [("m_s", CustomType "S2")])
+                struct2 = ("S2", PStruct [("m_x", SymType)])
+                var     = ("s", PVar (CustomType "S1"))
+                state   = Env.fromList [struct1, struct2, var]
+            parseEvalState state (expTypeMemberId SymType) "" "s.m_s.m_x" `shouldParse` "m_x"
+
+        it "fails if any intermediate member in a chain is not a struct" $ do
+            let struct1 = ("S1", PStruct [("m_s", TapeType)])
+                struct2 = ("S2", PStruct [("m_x", SymType)])
+                var     = ("s", PVar (CustomType "S1"))
+                state   = Env.fromList [struct1, struct2, var]
+            parseEvalState state (expTypeMemberId SymType) "" `shouldFailOn` "s.m_s.m_x"
+
+        it "evaluates to the last access if intermediate types have the required type" $ do
+            let struct = ("S", PStruct [("m_s", CustomType "S"), ("m_x", CustomType "S")])
+                var    = ("s", PVar (CustomType "S"))
+                state  = Env.fromList [struct, var]
+            parseEvalState state (expTypeMemberId (CustomType "S")) "" "s.m_s.m_s.m_x" `shouldParse` "m_x"
+
+        it "fails if the final access has the incorrect type" $ do
+            let struct = ("S", PStruct [("m_s", CustomType "S"), ("m_x", TapeType)])
+                var    = ("s", PVar (CustomType "S"))
+                state  = Env.fromList [struct, var]
+            parseEvalState state (expTypeMemberId SymType) "" `shouldFailOn` "s.m_s.m_s.m_x"
 
 structDeclSpec :: Spec
 structDeclSpec = do

@@ -29,20 +29,26 @@ newMemberVarId = newId snakeId
 -- Parses access to a member of an instance of a struct. Fails if the variable
 -- is not a struct, or the member is not part of the struct class.
 --  MemberAccess : VarName ('.' VarName)+
-refMemberId :: ParserM (VarName, DataType)
-refMemberId = do
-    (_, varType) <- refVarId
-    evalMemberId varType where
+expTypeMemberId :: DataType -> ParserM VarName
+expTypeMemberId expType = do
+    i <- refVarId
+    fmap fst (evalMemberId i) where
 
     -- Recursively tries to evaluate a struct member access.
-    evalMemberId :: DataType -> ParserM (VarName, DataType)
-    evalMemberId (CustomType structName) = block p where
+    evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
+    evalMemberId (_, CustomType structName) = block p where
         p = do
             addStructMemsToEnv structName
-            (name, varType) <- lTok "." *> refVarId
             -- Attempts to parse another ('.' VarName).
-            evalMemberId varType <|> return (name, varType)
-    evalMemberId _ = fail "expected variable to have struct type"
+            lTok "." *> (try chainedAccess <|> finalMem)
+        -- Attemps to parse another chained access, e.g. x.y.z
+        chainedAccess = refVarId >>= evalMemberId
+        -- Attempts to parse the final chained member access.
+        finalMem = do
+            name <- expTypeVarId expType
+            return (name, expType)
+    evalMemberId (varName, varType) = fail msg where
+        msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
 
 -- Assuming the struct with the given name exists, adds all the member variables
 -- to the environment. Fails if the struct does not exists.
@@ -83,15 +89,3 @@ makeObj = do
     (name, ms) <- refStruct
     args <- matchedTypes expTypeExpr (map memberVarType ms)
     return (MakeObj name args)
-
--- refMemberId = do
---     (structName, idType) <- refId camelId
---     case idType of
---         PVar (CustomType structName) -> do
---             struct <- getM structName
---             case struct of
---                 PStruct memTypes -> do
---                     _ <- lTok "."
---                     refStructMem memTypes
---                 _ -> fail "expected struct type"
---         _  -> fail "expected variable to be struct type"

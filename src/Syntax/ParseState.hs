@@ -24,20 +24,14 @@ type ParserM = StateT ParseState Parser
 putM :: Identifier -> EnvDecl -> ParserM ()
 putM i v = modify (E.put i v)
 
--- Attemps to retrieve the declaration using the identifier. If fails produces
--- an error stating that the definition does not exist.
-tryEnvDecl :: Maybe EnvDecl -> ParserM EnvDecl
-tryEnvDecl e = do
-    case e of
-        Nothing -> fail $ (show e) ++ " does not exist"
-        Just x  -> return x
-
 -- Returns whether a identifier can be used, i.e. if the identifier has been
 -- declared in this scope or the scope above.
 getM :: Identifier -> ParserM EnvDecl
 getM i = do
     state <- get
-    tryEnvDecl (E.get i state)
+    case E.get i state of
+        Nothing -> fail $ i ++ " does not exist"
+        Just x  -> return x
 
 -- Returns the type of a member variable of a struct, if both the struct and
 -- variable exist.
