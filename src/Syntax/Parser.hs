@@ -92,7 +92,7 @@ stm' = try funcCall
    <|> funcDecl stmComp
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
    <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> tapeExpr)
-   <|> DebugPrintTape <$ lTok "_printTape" <*> tapeExpr
+   <|> DebugPrintTape <$ lTok "_print" <*> tapeExpr
    <|> whileStm stmComp
    <|> ifStm stmComp
    <|> structDecl
