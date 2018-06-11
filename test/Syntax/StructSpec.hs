@@ -63,6 +63,10 @@ structDeclSpec = do
                 state    = Env.fromList [("x", PVar SymType)]
             parseEvalState state program "" "struct S { x:Sym \n y:Tape }" `shouldParseStm` expected
 
+        it "parses recursive structures" $ do
+            let expected = StructDecl "S" [("x", CustomType "S")]
+            parseEmptyState program "" "struct S { x:S }" `shouldParseStm` expected
+
         it "fails if the struct has already been declared" $ do
             let state = Env.fromList [("S", PStruct [("x", TapeType)])]
             parseEvalState state program "" `shouldFailOn` "struct S { y:Sym }"

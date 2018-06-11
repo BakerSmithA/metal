@@ -38,6 +38,11 @@ funcDeclArg = do
 funcDeclArgs :: ParserM [FuncDeclArg]
 funcDeclArgs = funcDeclArg `sepBy` lWhitespace
 
+-- Adds the function to the environment.
+putFunc :: FuncName -> [FuncDeclArg] -> ParserM ()
+putFunc name args = putM name (PFunc argTypes) where
+    argTypes = map argType args
+
 -- Parses the arguments and body of a function.
 funcArgsBody :: FuncName -> ParserM Stm -> ParserM ([FuncDeclArg], Stm)
 funcArgsBody name stm = do
@@ -46,11 +51,6 @@ funcArgsBody name stm = do
     putFunc name args
     body <- block (braces stm)
     return (args, body)
-
--- Adds the function to the environment.
-putFunc :: FuncName -> [FuncDeclArg] -> ParserM ()
-putFunc name args = putM name (PFunc argTypes) where
-    argTypes = map argType args
 
 -- Parses a function declaration, the EBNF syntax of which is:
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'

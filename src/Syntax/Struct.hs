@@ -60,25 +60,30 @@ addStructMemsToEnv name = do
             putMem (name, memType) = Env.put name (PVar memType)
         _ -> fail "expected struct"
 
--- Parses the name and type of a member variable in a struct. EBNF:
+-- Parses the name and type of a member variable in a struct. Given the struct
+-- name to allow for recursive structures. EBNF:
 --  TypedVar: VarName ':' Type
-memberVarDecl :: ParserM StructMemberVar
-memberVarDecl = do
-    (name, memType) <- typeAnnotated newMemberVarId
+memberVarDecl :: StructName -> ParserM StructMemberVar
+memberVarDecl structName = do
+    (name, memType) <- recTypeAnnotated structName newMemberVarId
     putM name (PVar memType)
     return (name, memType)
 
 -- Parses the member variables of a struct, failing if the variable name has
--- already been used, or the type does not exist. EBNF:
+-- already been used, or the type does not exist. Given the struct name to
+-- allow for recursive structures. EBNF:
 --  MemberVars: (TypedVar '\n')+
-memberVarDecls :: ParserM [StructMemberVar]
-memberVarDecls = memberVarDecl `sepBy` some (newline <* lWhitespace)
+memberVarDecls :: StructName -> ParserM [StructMemberVar]
+memberVarDecls structName = (memberVarDecl structName) `sepBy` some (newline <* lWhitespace)
 
 -- Declares a new structure. Fails if the structure already exists at this
 -- scope. EBNF:
 --  NewStruct : StructName (Var ' ')+ '{' MemberVars '}'
 structDecl :: ParserM Stm
-structDecl = StructDecl <$ lTok "struct" <*> newStruct <*> block (braces memberVarDecls)
+structDecl = do
+    name <- lTok "struct" *> newStruct
+    mems <- block (braces (memberVarDecls name))
+    return (StructDecl name mems)
 
 -- Parses the construction of a new struct object. Fails if the struct does
 -- not exist, or the incorrect number of arguments with the wrong types are
