@@ -93,4 +93,4 @@ makeObj :: ParserM Stm
 makeObj = do
     (name, ms) <- refStruct
     args <- matchedTypes expTypeExpr (map memberVarType ms)
-    return (MakeObj name args)
+    return (NewObj name args)

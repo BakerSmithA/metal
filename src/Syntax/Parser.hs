@@ -28,14 +28,18 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
 --  TapeLiteral   : '"' TapeSymbol* '"'
 --
---  DerivedValue  : 'read'
---                | VarName
+--  VarExpr       : VarName
+--                | MemberAccess
+--  SymExpr       : 'read' TapeExpr
 --                | \' TapeSymbol \'
+--  TapeExpr      : \" many TapeSymbol \"
+--  ObjExpr       : NewObj
+--  AnyTypeExpr   : SymExpr
+--                | TapeExpr
+--                | ObjExpr
+--                | VarExpr
 --
---  Var           : DerivedValue
---                | TapeLiteral
---                | NewStruct
---  VarDecl       : 'let' VarName '=' Var
+--  VarDecl       : 'let' VarName '=' AnyTypeExpr
 --
 --  Bexp          : 'True'
 --                | 'False'
@@ -49,15 +53,15 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
 --
---  FuncDeclArgs  : FuncDeclArg (' ' TypedVar)* | ε
+--  FuncDeclArgs  : ArgName (' ' TypedVar)* | ε
 --  FuncDecl      : 'func' FuncName FuncDeclArgs '{' Stm '}'
---  FuncCallArg   : DerivedSymbol | TapeLiteral
+--  FuncCallArg   : AnyTypeExpr
 --  FuncCallArgs  : FuncCallArg (',' FuncCallArg) | ε
 --  Call          : FuncName FuncCallArgs
 --
 --  MemberVars    : (TypedVar '\n')+
 --  StructDecl    : 'struct' StructName '{' MemberVars '}'
---  CreateStruct  : StructName (Var ' ')+
+--  NewObj        : StructName (AnyTypeExpr ' ')+
 --  MemberAccess  : VarName '.' VarName
 --
 --  Stm           : 'left' VarName
@@ -67,7 +71,7 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --                | 'accept'
 --                | VarDecl
 --                | StructDecl
---                | MemberAccess
+--                | NewObj
 --                | If
 --                | 'while' Bexp '{' Stm '}'
 --                | FuncDecl

@@ -131,7 +131,7 @@ data Stm = MoveLeft TapeExpr
          | FuncDecl FuncName [FuncDeclArg] Stm
          | Call FuncName [FuncCallArg]
          | StructDecl StructName [StructMemberVar]
-         | MakeObj StructName [StructMakeArg]
+         | NewObj StructName [StructMakeArg]
          | Comp Stm Stm
          | PrintRead TapeExpr
          | PrintStr String
