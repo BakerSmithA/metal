@@ -12,10 +12,10 @@ newVarId :: ParserM VarName
 newVarId = newId snakeId
 
 -- Parses a variable and its type. Fails if the variable does not already
--- exist in the environment (which is determined by getType).
-refVarIdWith :: (Identifier -> ParserM EnvDecl) -> ParserM (VarName, DataType)
-refVarIdWith getType = do
-    (name, idType) <- refIdWith snakeId getType
+-- exist in the environment.
+refVarId :: ParserM (VarName, DataType)
+refVarId = do
+    (name, idType) <- refId snakeId
     case idType of
         PVar varType -> return (name, varType)
         _            -> fail "Expected variable"
