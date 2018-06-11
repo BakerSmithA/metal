@@ -93,6 +93,8 @@ argType = snd
 type StructName = CamelId
 -- Variable contained within a struct.
 type StructMemberVar = (VarName, DataType)
+-- Argument supplied when instantiating a struct.
+type StructMakeArg = AnyValExpr
 
 -- Returns the type of the variable in the struct.
 memberVarType :: StructMemberVar -> DataType
@@ -127,8 +129,9 @@ data Stm = MoveLeft TapeExpr
          | While Bexp Stm
          | VarDecl VarName AnyValExpr
          | FuncDecl FuncName [FuncDeclArg] Stm
-         | StructDecl StructName [StructMemberVar]
          | Call FuncName [FuncCallArg]
+         | StructDecl StructName [StructMemberVar]
+         | MakeObj StructName [StructMakeArg]
          | Comp Stm Stm
          | PrintRead TapeExpr
          | PrintStr String

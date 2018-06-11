@@ -42,15 +42,18 @@ newId p = do
         then return i
         else (fail $ i ++ " already exists")
 
+-- Uses getType to retrieve the type of the identifier, if it exists in the
+-- environment.
+refIdWith :: ParserM Identifier -> (Identifier -> ParserM EnvDecl) -> ParserM (Identifier, EnvDecl)
+refIdWith p getType = do
+    i <- p
+    idType <- getType i
+    return (i, idType)
+
 -- Parses an identifier if the identifier already exists, returning the new
 -- id and its type.
 refId :: ParserM Identifier -> ParserM (Identifier, EnvDecl)
-refId p = do
-    i <- p
-    idType <- getM i
-    case idType of
-        Nothing -> fail $ i ++ " does not exist"
-        Just t -> return (i, t)
+refId p = refIdWith p getM
 
 -- Parses an identifier if the identifier exists and has the expected type.
 expTypeId :: ParserM Identifier -> EnvDecl -> ParserM Identifier

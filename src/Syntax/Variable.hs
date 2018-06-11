@@ -11,6 +11,15 @@ import Debug.Trace
 newVarId :: ParserM VarName
 newVarId = newId snakeId
 
+-- Parses a variable and its type. Fails if the variable does not already
+-- exist in the environment (which is determined by getType).
+refVarIdWith :: (Identifier -> ParserM EnvDecl) -> ParserM (VarName, DataType)
+refVarIdWith getType = do
+    (name, idType) <- refIdWith snakeId getType
+    case idType of
+        PVar varType -> return (name, varType)
+        _            -> fail "Expected variable"
+
 -- Attempts to use a declared variable. If the variable does not exist, or the
 -- types do not match, then parsing fails.
 expTypeVarId :: DataType -> ParserM VarName
@@ -59,57 +68,3 @@ typeAnnotated p = do
     _ <- lTok ":"
     idType <- typeAnnotation
     return (name, idType)
-
--- tape :: ParserM Tape
--- tape = TapeLit <$> quoted (many tapeSymbol)
---
--- anyType :: ParserM Any
--- anyType = S <$> sym
---       <|> T <$> tape
---
--- valTyped :: (Typed a) => ParserM a -> ParserM (Val a, DataType)
--- valTyped p = _val <|> _var where
---     _val = p >>= \x -> return (New x, typeOf x)
---     _var = refVarId >>= \(name, t) -> return (Var name, t)
---
--- val :: (Typed a) => ParserM a -> ParserM (Val a)
--- val = (fmap fst) . valTyped
---
--- expTypeVal :: DataType -> ParserM a -> ParserM (Val a)
--- expTypeVal expType p = New <$> p
---                    <|> Var <$> expTypeVarId expType
---
--- symVal :: ParserM (Val Sym)
--- symVal = expTypeVal SymType sym
---
--- tapeVal :: ParserM (Val Tape)
--- tapeVal = expTypeVal TapeType tape
---
--- expTypeAny :: DataType -> ParserM Any
--- expTypeAny SymType        = S <$> sym
--- expTypeAny TapeType       = T <$> tape
--- expTypeAny (CustomType _) = undefined
---
--- expTypeAnyVal :: DataType -> ParserM (Val Any)
--- expTypeAnyVal expType = expTypeVal expType (expTypeAny expType)
---
--- -- Variable which has a type, the EBNF of which is:
--- --  TypedVar : VarName ':' Type
--- typedVar :: ParserM Identifier -> ParserM (Identifier, DataType)
--- typedVar p = do
---     name <- p
---     _ <- lTok ":"
---     idType <- annotatedType
---     return (name, idType)
---
--- -- Parses a variable declaration, i.e. 'let x = ...'
--- varDecl :: ParserM Stm
--- varDecl = do
---     _ <- lTok "let"
---     name <- newVarId
---     _ <- lTok "="
---     (v, t) <- valTyped anyType
---
---     putM name (PVar t)
---
---     return (VarDecl name v)
