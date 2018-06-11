@@ -87,6 +87,13 @@ newTape :: VarName -> Tape -> Config -> Config
 newTape name tape c = putTapePtr name addr c' where
     (addr, c') = putTape tape c
 
+-- Modifies the tape at the address, if it exists.
+modifyTape :: Address -> (Tape -> Tape) -> Config -> Maybe Config
+modifyTape addr f c = do
+    tape <- derefTape addr c
+    let tape' = f tape
+    return c { refs = Map.insert addr tape' (refs c) }
+
 --------------------------------------------------------------------------------
 -- Functions
 --------------------------------------------------------------------------------

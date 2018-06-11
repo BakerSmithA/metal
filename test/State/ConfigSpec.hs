@@ -1,7 +1,8 @@
 module State.ConfigSpec (configSpec) where
 
 import State.Config as Config
-import qualified State.Tape as Tape
+import qualified State.Tape as Tape hiding (Tape)
+import State.Tape (Tape)
 import Syntax.Tree
 import Test.Hspec
 import Data.Maybe
@@ -15,41 +16,50 @@ configSpec = do
         funcSpec
         resetEnvSpec
 
+-- Convenience method for creating a pointer to a tape from an exisiting pointer.
+copyTapePtr :: VarName -> VarName -> Config -> Maybe Config
+copyTapePtr old new c = do
+    addr <- getTapePtr old c
+    return (putTapePtr new addr c)
+
+-- Convenience method for modifying the a tape with the given name.
+modifyNamedTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
+modifyNamedTape name f c = modifyTape addr f c where
+    addr = fromJust (getTapePtr name c)
+
 tapeSpec :: Spec
 tapeSpec = do
     describe "tape environment" $ do
-        it "f" $ do
-            pending
-        -- it "returns nothing if the tape is undefined" $ do
-        --     getTape "nothing" Config.empty `shouldBe` Nothing
-        --
-        -- it "allows new tapes to be added and retrieved" $ do
-        --     let env = newTape "tape" (Tape.fromString "abc") Config.empty
-        --     getTape "tape" env `shouldBe` Just (Tape.fromString "abc")
-        --
-        -- it "allows modification of existing tapes" $ do
-        --     let env = newTape "tape" (Tape.fromString "abc") Config.empty
-        --         expected = Config.fromString "tape" "xbc"
-        --     modifyTape "tape" (Tape.setSym 'x') env `shouldBe` Just expected
-        --
-        -- it "overrides previous tape declarations" $ do
-        --     let env  = newTape "tape" (Tape.fromString "abc") Config.empty
-        --         env' = newTape "tape" (Tape.fromString "xyz") env
-        --     getTape "tape" env' `shouldBe` Just (Tape.fromString "xyz")
-        --
-        -- it "changed to referenced tape changes underlying tape" $ do
-        --     let env1 = newTape "tape1" (Tape.fromString "abc") Config.empty
-        --         env2 = fromJust $ putTapeRef "tape2" "tape1" env1
-        --         env3 = fromJust $ modifyTape "tape2" (Tape.setSym 'x') env2
-        --     getTape "tape1" env3 `shouldBe` Just (Tape.fromString "xbc")
-        --
-        -- it "fails to create a reference to another tape if it does not exist" $ do
-        --     let env = newTape "tape1" (Tape.fromString "abc") Config.empty
-        --     putTapeRef "tape2" "nothing" env `shouldBe` Nothing
-        --
-        -- it "fails if asking for a variable" $ do
-        --     let env = putSym "x" '1' Config.empty
-        --     getTape "x" env `shouldBe` Nothing
+        it "returns nothing if the tape is undefined" $ do
+            getTapeCpy "nothing" Config.empty `shouldBe` Nothing
+
+        it "allows new tapes to be added and retrieved" $ do
+            let env = newTape "tape" (Tape.fromString "abc") Config.empty
+            getTapeCpy "tape" env `shouldBe` Just (Tape.fromString "abc")
+
+        it "allows modification of existing tapes" $ do
+            let env = newTape "tape" (Tape.fromString "abc") Config.empty
+                expected = Config.fromString "tape" "xbc"
+            modifyNamedTape "tape" (Tape.setSym 'x') env `shouldBe` Just expected
+
+        it "overrides previous tape declarations" $ do
+            let env  = newTape "tape" (Tape.fromString "abc") Config.empty
+                env' = newTape "tape" (Tape.fromString "xyz") env
+            getTapeCpy "tape" env' `shouldBe` Just (Tape.fromString "xyz")
+
+        it "changed to referenced tape changes underlying tape" $ do
+            let env1 = newTape "tape1" (Tape.fromString "abc") Config.empty
+                env2 = fromJust $ copyTapePtr "tape1" "tape2" env1
+                env3 = fromJust $ modifyNamedTape "tape2" (Tape.setSym 'x') env2
+            getTapeCpy "tape1" env3 `shouldBe` Just (Tape.fromString "xbc")
+
+        it "fails to create a reference to another tape if it does not exist" $ do
+            let env = newTape "tape1" (Tape.fromString "abc") Config.empty
+            getTapePtr "tape2" env `shouldBe` Nothing
+
+        it "fails if asking for a variable" $ do
+            let env = putSym "x" '1' Config.empty
+            getTapeCpy "x" env `shouldBe` Nothing
 
 varSpec :: Spec
 varSpec = do
@@ -111,8 +121,7 @@ resetEnvSpec = do
 
         it "resets references to exisiting tapes" $ do
             let env1 = newTape "x" (Tape.fromString "abc") Config.empty
-                addr = fromJust $ getTapePtr "x" env1
-                env2 = putTapePtr "y" addr env1
+                env2 = fromJust $ copyTapePtr "x" "y" env1
                 env3 = revertEnv env1 env2
 
             getTapeCpy "x" env3 `shouldBe` Just (Tape.fromString "abc")
