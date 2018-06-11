@@ -31,14 +31,18 @@ newMemberVarId = newId snakeId
 --  MemberAccess : VarName ('.' VarName)+
 refMemberId :: ParserM (VarName, DataType)
 refMemberId = do
-    (name, idType) <- refId snakeId
-    case idType of
-        PVar (CustomType structName) -> block p where
-            p = do
-                addStructMemsToEnv structName
-                _ <- lTok "."
-                refVarId
-        _ -> fail "expected variable to have struct type"
+    (_, varType) <- refVarId
+    evalMemberId varType where
+
+    -- Recursively tries to evaluate a struct member access.
+    evalMemberId :: DataType -> ParserM (VarName, DataType)
+    evalMemberId (CustomType structName) = block p where
+        p = do
+            addStructMemsToEnv structName
+            (name, varType) <- lTok "." *> refVarId
+            -- Attempts to parse another ('.' VarName).
+            evalMemberId varType <|> return (name, varType)
+    evalMemberId _ = fail "expected variable to have struct type"
 
 -- Assuming the struct with the given name exists, adds all the member variables
 -- to the environment. Fails if the struct does not exists.
