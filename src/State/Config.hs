@@ -2,7 +2,7 @@ module State.Config where
 
 import Data.Map as Map
 import State.Tape as Tape
-import Syntax.Tree hiding (Tape)
+import Syntax.Tree
 
 type Address = Integer
 

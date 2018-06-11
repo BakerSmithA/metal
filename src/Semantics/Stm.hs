@@ -10,8 +10,7 @@ import State.Error
 import State.MachineClass
 import State.Output
 import State.Tape as Tape
-import Syntax.Tree hiding (Tape)
-import qualified Syntax.Tree as Syn (Tape)
+import Syntax.Tree
 
 -- Attempt to modify the tape, and throw if the tape does not exist.
 modify :: (Monad m) => (Tape -> Tape) -> VarName -> Config -> App m Config
@@ -20,23 +19,23 @@ modify = undefined
 -- modify f tapeName c = tryMaybe (modifyTape tapeName f c) (UndefTape tapeName)
 
 -- Evaluates moving the read-write head one cell to the left.
-evalLeft :: (Monad m) => Val Syn.Tape -> Config -> App m Config
+evalLeft :: (Monad m) => TapeExpr -> Config -> App m Config
 evalLeft = undefined
 -- evalLeft = modify left
 
 -- Evaluates moving the read-write head one cell to the right.
-evalRight :: (Monad m) => Val Syn.Tape -> Config -> App m Config
+evalRight :: (Monad m) => TapeExpr -> Config -> App m Config
 evalRight = undefined
 
 -- evalRight = modify right
 
 -- Evaluates writing to the tape.
-evalWrite :: (Monad m) => Val Syn.Tape -> Val Sym -> Config -> App m Config
+evalWrite :: (Monad m) => TapeExpr -> SymExpr -> Config -> App m Config
 evalWrite = undefined
 
 -- evalWrite tapeName sym c = do
 --     val <- derivedVal sym c
---     modify (setSym val) tapeName c
+--     modify (setSymExpr val) tapeName c
 
 -- Evaluates an if-else statement.
 evalIf :: (MonadOutput m) => Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> App m Config
@@ -52,21 +51,21 @@ evalWhile b body = fix f where
         evalLoop c = block (evalStm body) c >>= loop
 
 -- Evaluates a symbol declaration.
-evalSymDecl :: (Monad m) => VarName -> Val Sym -> Config -> App m Config
-evalSymDecl = undefined
+evalSymExprDecl :: (Monad m) => VarName -> SymExpr -> Config -> App m Config
+evalSymExprDecl = undefined
 
 -- Evaluates a tape declaration.
-evalTapeDecl :: (Monad m) => VarName -> Val Syn.Tape -> Config -> App m Config
+evalTapeDecl :: (Monad m) => VarName -> TapeExpr -> Config -> App m Config
 evalTapeDecl = undefined
 
 -- Evaluates a variable declaration.
-evalVarDecl :: (Monad m) => VarName -> Val Any -> Config -> App m Config
+evalVarDecl :: (Monad m) => VarName -> AnyValExpr -> Config -> App m Config
 evalVarDecl name = undefined
 
 -- evalVarDecl :: (Monad m) => VarName -> DerivedValue -> Config -> App m Config
 -- evalVarDecl name sym config = do
 --     val <- derivedVal sym config
---     return (putSym name val config)
+--     return (putSymExpr name val config)
 --
 -- -- Evalutes a tape declaration.
 -- evalTapeDecl :: (Monad m) => VarName -> String -> Config -> App m Config
@@ -117,7 +116,7 @@ evalComp :: (MonadOutput m) => Stm -> Stm -> Config -> App m Config
 evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 
 -- Evaluates printing the current symbol.
-evalPrintRead :: (MonadOutput m) => Val Syn.Tape -> Config -> App m Config
+evalPrintRead :: (MonadOutput m) => TapeExpr -> Config -> App m Config
 evalPrintRead = undefined
 
 -- evalPrintRead tapeName c = do
@@ -129,7 +128,7 @@ evalPrintStr :: (MonadOutput m) => String -> Config -> App m Config
 evalPrintStr = output'
 
 -- Evalutes debug printing the contents of a tape.
-evalDebugPrintTape :: (MonadOutput m) => Val Syn.Tape -> Config -> App m Config
+evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config
 evalDebugPrintTape = undefined
 
 -- evalDebugPrintTape name c = do

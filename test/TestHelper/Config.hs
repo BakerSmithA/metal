@@ -1,14 +1,20 @@
 module TestHelper.Config where
 
+import Syntax.Tree
 import State.Config
 import State.Tape as Tape
 import Data.Map as Map (assocs)
 import Data.Maybe
 
+-- Convenience method for modifying the a tape with the given name.
+modifyNamedTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
+modifyNamedTape name f c = modifyTape addr f c where
+    addr = fromJust (getTapePtr name c)
+
 -- Expectes there to only be one tape defined. If so, that tape will be
 -- modified. Otherwise an error will be thrown.
 modifySingleTape :: (Tape -> Tape) -> Config -> Config
-modifySingleTape f c = fromJust $ modifyTape tapeName f c where
+modifySingleTape f c = fromJust $ modifyNamedTape tapeName f c where
     tapeName = getFirstTape tapes
     tapes = filter isTapeRef (Map.assocs (vars c))
 

@@ -5,6 +5,7 @@ import qualified State.Tape as Tape hiding (Tape)
 import State.Tape (Tape)
 import Syntax.Tree
 import Test.Hspec
+import TestHelper.Config
 import Data.Maybe
 import Data.Map
 
@@ -21,11 +22,6 @@ copyTapePtr :: VarName -> VarName -> Config -> Maybe Config
 copyTapePtr old new c = do
     addr <- getTapePtr old c
     return (putTapePtr new addr c)
-
--- Convenience method for modifying the a tape with the given name.
-modifyNamedTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
-modifyNamedTape name f c = modifyTape addr f c where
-    addr = fromJust (getTapePtr name c)
 
 tapeSpec :: Spec
 tapeSpec = do

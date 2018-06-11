@@ -19,7 +19,8 @@ evalWith f x config = evalApp (f x config)
 
 -- Runs `bexpVal` with `b` in the given config and environment.
 evalBexp :: (Monad m) => Bexp -> Config -> AppResult m Bool
-evalBexp = evalWith bexpVal
+evalBexp = evalWith bexpVal' where
+    bexpVal' b c = fmap fst (bexpVal b c)
 
 evalSemantics :: (MonadOutput m) => Stm -> Config -> AppResult m Config
 evalSemantics = evalWith evalStm
@@ -51,12 +52,12 @@ shouldReturnFunc r name args body = shouldSatisfy r predicate where
 -- of the read-write head is in the given position.
 shouldBeAt :: IO (Machine Config) -> VarName -> Pos -> H.Expectation
 shouldBeAt r name p = shouldSatisfy r predicate where
-    predicate c = pos (fromJust (getTape name c)) == p
+    predicate c = pos (fromJust (getTapeCpy name c)) == p
 
 -- Asserts that the tape has the string `str` at the start of the tape.
 shouldRead :: IO (Machine Config) -> VarName -> [TapeSymbol] -> H.Expectation
 shouldRead r name syms = shouldSatisfy r predicate where
-    predicate c = contents (fromJust (getTape name c)) == contents (T.fromString syms)
+    predicate c = contents (fromJust (getTapeCpy name c)) == contents (T.fromString syms)
 
 -- Asserts that the machine halted in the accepting state.
 shouldAccept :: IO (Machine Config) -> H.Expectation
