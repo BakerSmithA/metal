@@ -353,14 +353,6 @@ funcCallSpec = do
 
             result `shouldThrow` (== UndefVar)
 
-        it "fails if incorrect types are supplied" $ do
-            let funcDecl = FuncDecl "f" [("x", TapeType)] (PrintStr "hello")
-                call     = Call "f" [ S $ SymLit 'x']
-                comp     = Comp funcDecl call
-                result   = evalSemantics comp Config.empty
-
-            result `shouldThrow` (== MismatchedTypes "x" "f" TapeType ( S $ SymLit 'x'))
-
         it "accepts a tape literal as argument" $ do
             let funcDecl = FuncDecl "f" [("t", TapeType)] (PrintRead (TapeVar "t"))
                 call     = Call "f" [T $ TapeLit "xyz"]

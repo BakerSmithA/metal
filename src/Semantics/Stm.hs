@@ -3,9 +3,11 @@ module Semantics.Stm (evalStm) where
 import Control.Exception
 import Data.Maybe (maybeToList)
 import Semantics.Bexp
+import Semantics.Variable
 import Semantics.Helpers
 import State.App
-import State.Config
+import State.Config hiding (modifyTape)
+import qualified State.Config as Config (modifyTape)
 import State.Error
 import State.MachineClass
 import State.Output
@@ -13,29 +15,24 @@ import State.Tape as Tape
 import Syntax.Tree
 
 -- Attempt to modify the tape, and throw if the tape does not exist.
-modify :: (Monad m) => (Tape -> Tape) -> VarName -> Config -> App m Config
-modify = undefined
-
--- modify f tapeName c = tryMaybe (modifyTape tapeName f c) (UndefTape tapeName)
+modifyTape :: (Monad m) => (Tape -> Tape) -> TapeExpr -> Config -> App m Config
+modifyTape f tapeExpr c = do
+    (addr, c') <- tapePtr tapeExpr c
+    tryMaybe (Config.modifyTape addr f c') UndefVar
 
 -- Evaluates moving the read-write head one cell to the left.
 evalLeft :: (Monad m) => TapeExpr -> Config -> App m Config
-evalLeft = undefined
--- evalLeft = modify left
+evalLeft = modifyTape left
 
 -- Evaluates moving the read-write head one cell to the right.
 evalRight :: (Monad m) => TapeExpr -> Config -> App m Config
-evalRight = undefined
-
--- evalRight = modify right
+evalRight = modifyTape right
 
 -- Evaluates writing to the tape.
 evalWrite :: (Monad m) => TapeExpr -> SymExpr -> Config -> App m Config
-evalWrite = undefined
-
--- evalWrite tapeName sym c = do
---     val <- derivedVal sym c
---     modify (setSymExpr val) tapeName c
+evalWrite tapeExpr symExpr c = do
+    (val, c') <- symVal symExpr c
+    modifyTape (setSym val) tapeExpr c'
 
 -- Evaluates an if-else statement.
 evalIf :: (MonadOutput m) => Bexp -> Stm -> [(Bexp, Stm)] -> Maybe Stm -> Config -> App m Config
@@ -51,26 +48,21 @@ evalWhile b body = fix f where
         evalLoop c = block (evalStm body) c >>= loop
 
 -- Evaluates a symbol declaration.
-evalSymExprDecl :: (Monad m) => VarName -> SymExpr -> Config -> App m Config
-evalSymExprDecl = undefined
+evalSymDecl :: (Monad m) => VarName -> SymExpr -> Config -> App m Config
+evalSymDecl name symExpr c = do
+    (val, c') <- symVal symExpr c
+    return (putSym name val c')
 
 -- Evaluates a tape declaration.
 evalTapeDecl :: (Monad m) => VarName -> TapeExpr -> Config -> App m Config
-evalTapeDecl = undefined
+evalTapeDecl name tapeExpr c = do
+    (addr, c') <- tapePtr tapeExpr c
+    return (putTapePtr name addr c')
 
 -- Evaluates a variable declaration.
 evalVarDecl :: (Monad m) => VarName -> AnyValExpr -> Config -> App m Config
-evalVarDecl name = undefined
-
--- evalVarDecl :: (Monad m) => VarName -> DerivedValue -> Config -> App m Config
--- evalVarDecl name sym config = do
---     val <- derivedVal sym config
---     return (putSymExpr name val config)
---
--- -- Evalutes a tape declaration.
--- evalTapeDecl :: (Monad m) => VarName -> String -> Config -> App m Config
--- evalTapeDecl name cs config = return (newTape name tape config) where
---     tape = Tape.fromString cs
+evalVarDecl name (S s) = evalSymDecl name s
+evalVarDecl name (T t) = evalTapeDecl name t
 
 -- Evaluates a function declaration.
 evalFuncDecl :: (Monad m) => FuncName -> [FuncDeclArg] -> Stm -> Config -> App m Config
@@ -117,11 +109,9 @@ evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 
 -- Evaluates printing the current symbol.
 evalPrintRead :: (MonadOutput m) => TapeExpr -> Config -> App m Config
-evalPrintRead = undefined
-
--- evalPrintRead tapeName c = do
---     sym <- derivedVal (Read tapeName) c
---     output' [sym] c
+evalPrintRead tapeExpr c = do
+    (sym, c') <- symVal (Read tapeExpr) c
+    output' [sym] c'
 
 -- Evaluates printing a string.
 evalPrintStr :: (MonadOutput m) => String -> Config -> App m Config
@@ -129,12 +119,10 @@ evalPrintStr = output'
 
 -- Evalutes debug printing the contents of a tape.
 evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config
-evalDebugPrintTape = undefined
-
--- evalDebugPrintTape name c = do
---     tape <- tryMaybe (getTape name c) (UndefTape name)
---     c' <- output' (toString tape) c
---     return c'
+evalDebugPrintTape tapeExpr c1 = do
+    (addr, c2) <- tapePtr tapeExpr c1
+    tape <- tryMaybe (derefTape addr c2) UndefVar
+    output' (show tape) c2
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: (MonadOutput m) => Stm -> Config -> App m Config

@@ -6,6 +6,11 @@ import State.Tape as Tape
 import Data.Map as Map (assocs)
 import Data.Maybe
 
+-- Looks up the address of the tape and then deferences it, therefore changes
+-- to the returned tape will not be reflected in the environment.
+getTapeCpy :: VarName -> Config -> Maybe Tape
+getTapeCpy name c = getTapePtr name c >>= \addr -> derefTape addr c
+
 -- Convenience method for modifying the a tape with the given name.
 modifyNamedTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
 modifyNamedTape name f c = modifyTape addr f c where

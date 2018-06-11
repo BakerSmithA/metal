@@ -11,6 +11,7 @@ import Semantics.Stm
 import qualified Test.Hspec as H
 import Data.Maybe
 import TestHelper.Output
+import TestHelper.Config
 
 type AppResult m a = m (Machine a)
 
