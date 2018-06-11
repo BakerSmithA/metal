@@ -13,7 +13,7 @@ bexp' = try (parens bexp)
     <|> try (Eq <$> p <* lTok "==" <*> p)
     <|> try (Le <$> p <* lTok "<=" <*> p)
     <|> try (Ne <$> p <* lTok "!=" <*> p) where
-        p = symVal
+        p = symExpr
 
 -- The operators that can work on boolean expressions. There is no precedence,
 -- instead the expression is evaualted from left to right.

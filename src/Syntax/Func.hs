@@ -29,9 +29,9 @@ newArgId = newId snakeId
 -- Parses an argument to a function, the EBNF of which is the same as a TypedVar.
 funcDeclArg :: ParserM FuncDeclArg
 funcDeclArg = do
-    (name, argT) <- typedVar newArgId
-    putM name (PVar argT)
-    return (name, argT)
+    (name, argType) <- typeAnnotated newArgId
+    putM name (PVar argType)
+    return (name, argType)
 
 -- Parses argument names of a function declaration, the EBNF syntax of which is:
 --  FuncDeclArgs  : FuncDeclArg (' ' TypedVar)* | ε
@@ -67,7 +67,7 @@ funcDecl stm = do
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: [DataType] -> ParserM [FuncCallArg]
-funcCallArgs = matchedTypes (\t -> expTypeAnyVal t <|> parens (expTypeAnyVal t))
+funcCallArgs = matchedTypes (\t -> expTypeExpr t <|> parens (expTypeExpr t))
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs

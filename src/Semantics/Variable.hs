@@ -21,7 +21,10 @@ newSymVal (Read tapeExpr) c = do
     tape <- tryMaybe (Config.derefTape addr c) UndefVar
     return (Tape.getSym tape, c')
 
--- newSymVal (Read tapeExpr) c = tapeVal tapeExpr c >>= return . Tape.getSym
+-- Returns the address of a newly created, unnamed, tape. Also returns the
+-- config containing the tape.
+newTapePtr :: (Monad m) => Syn.Tape -> Config -> App m (Address, Config)
+newTapePtr (TapeLit syms) = return . Config.putTape (Tape.fromString syms)
 
 -- Returns the **value** of a symbol expression (i.e. a variable or new symbol),
 -- and the new config.
@@ -30,11 +33,6 @@ symVal (New x)    c = newSymVal x c
 symVal (Var name) c = do
     sym <- tryMaybe (Config.getSym name c) UndefVar
     return (sym, c)
-
--- Returns the address of a newly created, unnamed, tape. Also returns the
--- config containing the tape.
-newTapePtr :: (Monad m) => Syn.Tape -> Config -> App m (Address, Config)
-newTapePtr (TapeLit syms) = return . Config.putTape (Tape.fromString syms)
 
 -- Returns the address of a newly created tape, or an already exisiting tape,
 -- and the config containing the tape.

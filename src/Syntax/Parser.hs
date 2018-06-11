@@ -22,7 +22,7 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  FuncName      : Identifier
 --  ArgName       : Identifier
 --  StructName    : Identifier
---  Type          : 'Tape' | 'Sym' | StructName
+--  TypeAnnotation: 'Tape' | 'Sym' | StructName
 --  TypedVar      : VarName ':' Type
 --
 --  TapeSymbol    : LowerChar | UpperChar | Digit | ASCII-Symbol
@@ -83,16 +83,16 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: ParserM Stm
 stm' = try funcCall
-   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> tapeVal
-   <|> MoveRight <$ lTok "right" <* lWhitespace <*> tapeVal
-   <|> try (Write <$ lTok "write" <*> tapeVal <* lWhitespace <*> symVal)
+   <|> MoveLeft <$ lTok "left" <* lWhitespace <*> tapeExpr
+   <|> MoveRight <$ lTok "right" <* lWhitespace <*> tapeExpr
+   <|> try (Write <$ lTok "write" <*> tapeExpr <* lWhitespace <*> symExpr)
    <|> Reject <$ lTok "reject"
    <|> Accept <$ lTok "accept"
    <|> varDecl
    <|> funcDecl stmComp
    <|> try (PrintStr <$ lTok "print" <*> quotedString)
-   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> tapeVal)
-   <|> DebugPrintTape <$ lTok "_printTape" <*> tapeVal
+   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> tapeExpr)
+   <|> DebugPrintTape <$ lTok "_printTape" <*> tapeExpr
    <|> whileStm stmComp
    <|> ifStm stmComp
    <|> structDecl

@@ -8,12 +8,12 @@ import Syntax.IdentifierSpec
 import Syntax.ParserSpec
 import Syntax.VariableSpec
 import Syntax.StructSpec
-import State.TapeSpec
-import State.ConfigSpec
-import State.TreeSpec
-import Semantics.BexpSpec
-import Semantics.StmSpec
-import Semantics.ProgramSpec
+-- import State.TapeSpec
+-- import State.ConfigSpec
+-- import State.TreeSpec
+-- import Semantics.BexpSpec
+-- import Semantics.StmSpec
+-- import Semantics.ProgramSpec
 import Test.Hspec
 
 main :: IO ()
@@ -27,9 +27,9 @@ main = hspec specs where
         parserSpec
         variableSpec
         structSpec
-        tapeSpec
-        configSpec
-        treeSpec
-        bexpValSpec
-        stmSpec
-        programSpec
+        -- tapeSpec
+        -- configSpec
+        -- treeSpec
+        -- bexpValSpec
+        -- stmSpec
+        -- programSpec

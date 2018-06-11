@@ -51,9 +51,17 @@ evalWhile b body = fix f where
     f loop = cond [(bexpVal b, evalLoop)] where
         evalLoop c = block (evalStm body) c >>= loop
 
+-- Evaluates a symbol declaration.
+evalSymDecl :: (Monad m) => VarName -> Val Sym -> Config -> App m Config
+evalSymDecl = undefined
+
+-- Evaluates a tape declaration.
+evalTapeDecl :: (Monad m) => VarName -> Val Syn.Tape -> Config -> App m Config
+evalTapeDecl = undefined
+
 -- Evaluates a variable declaration.
-evalVarDecl :: (Monad m) => VarName -> (Val Any) -> Config -> App m Config
-evalVarDecl = undefined
+evalVarDecl :: (Monad m) => VarName -> Val Any -> Config -> App m Config
+evalVarDecl name = undefined
 
 -- evalVarDecl :: (Monad m) => VarName -> DerivedValue -> Config -> App m Config
 -- evalVarDecl name sym config = do
@@ -77,17 +85,8 @@ checkNumArgs name ds cs config | (length ds) == (length cs) = return config
                                    err = WrongNumArgs name ds cs
 
 -- Binds function arguments to values supplied to the function.
-bindFuncArg :: (Monad m) => FuncName -> (FuncDeclArg, FuncCallArg) -> App m Config -> App m Config
-bindFuncArg = undefined
-
--- bindFuncArg _ ((FuncDeclArg name    SymType),  Derived sym)            app = app >>= evalVarDecl name sym
--- bindFuncArg _ ((FuncDeclArg newName TapeType), Derived (Var tapeName)) app = do
---     config <- app
---     tryMaybe (putTapeRef newName tapeName config) (UndefTape tapeName)
--- bindFuncArg _ ((FuncDeclArg name TapeType), TapeLiteral cs) app = do
---     config <- app
---     return $ newTape name (Tape.fromString cs) config
--- bindFuncArg fName ((FuncDeclArg name dataType), arg) _ = throw (MismatchedTypes name fName dataType arg)
+bindFuncArg :: (Monad m) => (FuncDeclArg, FuncCallArg) -> App m Config -> App m Config
+bindFuncArg ((name, _), valExpr) app = app >>= evalVarDecl name valExpr
 
 -- Evaluates the body of a function, after adding any arguments to the variable
 -- environment. The variable and function environments are reset after executing
@@ -98,7 +97,7 @@ evalFuncBody name ds cs body config = do
     let app = checkNumArgs name ds cs config
     let zippedArgs = zip ds cs
     -- A config where the arguments have been added to the environment.
-    addedVarsConfig <- foldr (bindFuncArg name) app zippedArgs
+    addedVarsConfig <- foldr bindFuncArg app zippedArgs
     newConfig <- block (evalStm body) addedVarsConfig
     oldConfig <- app
     -- Reset the environment so variables declared as function arguments do not

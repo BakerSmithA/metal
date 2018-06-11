@@ -19,50 +19,50 @@ funcDeclSpec = do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses function delcarations" $ do
-            let expected = FuncDecl "f_name" [] (MoveRight (Var "tape"))
+            let expected = FuncDecl "f_name" [] (MoveRight (TapeVar "tape"))
             parseEvalState state program "" "func f_name { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
             let args = [("a", SymType), ("bb", TapeType)]
-                expected = FuncDecl "f_name" args (MoveRight (Var "tape"))
+                expected = FuncDecl "f_name" args (MoveRight (TapeVar "tape"))
             parseEvalState state program "" "func f_name a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
-            let expected = FuncDecl "left_until" [] (MoveRight (Var "tape"))
+            let expected = FuncDecl "left_until" [] (MoveRight (TapeVar "tape"))
             parseEvalState state program "" "func left_until { right tape }" `shouldParseStm` expected
 
         it "allows variables to be shadowed" $ do
-            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+            let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                 func         = FuncDecl "f" [] innerVarDecl
-                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 comp         = Comp outerVarDecl func
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' }" `shouldParseStm` comp
 
         it "allows the types of variables to be changed at inner scopes" $ do
-            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
-                write        = Write (Var "tape") (Var "x")
+            let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
+                write        = Write (TapeVar "tape") (SymVar "x")
                 body         = Comp innerVarDecl write
                 func         = FuncDecl "f" [] body
-                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 comp         = Comp outerVarDecl func
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
         it "reverts variables after scope is exited" $ do
-            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+            let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                 func         = FuncDecl "f" [] innerVarDecl
-                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
-                write        = Write (Var "x") (New $ SymLit 'a')
+                outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
+                write        = Write (TapeVar "x") (SymLit 'a')
                 comp         = Comp outerVarDecl (Comp func write)
             parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
         it "allows arguments to be used inside the function" $ do
             let args = [("t", TapeType), ("x", SymType)]
-                func = FuncDecl "write_new" args (Write (Var "t") (Var "x"))
+                func = FuncDecl "write_new" args (Write (TapeVar "t") (SymVar "x"))
             parseEmptyState program "" "func write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
 
         it "allows arguments to have the same name as variables outside" $ do
             let args = [("tape", TapeType), ("x", SymType)]
-                func = FuncDecl "write_new" args (Write (Var "tape") (Var "x"))
+                func = FuncDecl "write_new" args (Write (TapeVar "tape") (SymVar "x"))
             parseEmptyState program "" "func write_new tape:Tape x:Sym { write tape x }" `shouldParseStm` func
 
         it "allows resursive functions" $ do
@@ -70,7 +70,7 @@ funcDeclSpec = do
             parseEmptyState program "" "func f { f }" `shouldParseStm` expected
 
         it "allows redefinition of function inside function" $ do
-            let expected = FuncDecl "f" [] (FuncDecl "f" [] (MoveLeft (Var "tape")))
+            let expected = FuncDecl "f" [] (FuncDecl "f" [] (MoveLeft (TapeVar "tape")))
             parseEvalState state program "" "func f { func f { left tape } }" `shouldParseStm` expected
 
         it "fails if argument names are duplicated" $ do
@@ -99,7 +99,7 @@ funcCallSpec = do
             parseEvalState state program "" "f_name" `shouldParseStm` (Call "f_name" [])
 
         it "parses function calls with arguments" $ do
-            let expected = Call "f_name" [Var "tape", fromSymVal (Read (Var "tape")), Var "x", fromSymVal (SymLit '#')]
+            let expected = Call "f_name" [T (TapeVar "tape"), S (Read (TapeVar "tape")), S (SymVar "x"), S (SymLit '#')]
                 var1     = ("tape", PVar TapeType)
                 var2     = ("x", PVar SymType)
                 func     = ("f_name", PFunc [TapeType, SymType, SymType, SymType])
@@ -107,14 +107,14 @@ funcCallSpec = do
             parseEvalState state program "" "f_name tape read tape x '#'" `shouldParseStm` expected
 
         it "parses function calls with parens around arguments" $ do
-            let expected = Call "f_name" [fromSymVal (Read (Var "tape"))]
+            let expected = Call "f_name" [S (Read (TapeVar "tape"))]
                 var      = ("tape", PVar TapeType)
                 func     = ("f_name", PFunc [SymType])
                 state    = Env.fromList [var, func]
             parseEvalState state program "" "f_name (read tape)" `shouldParseStm` expected
 
         it "parses function calls with multiple spaces between arguments" $ do
-            let expected = Call "f_name" [Var "tape", Var "x", fromSymVal (SymLit '#')]
+            let expected = Call "f_name" [T (TapeVar "tape"), S (SymVar "x"), S (SymLit '#')]
                 var1     = ("tape", PVar TapeType)
                 var2     = ("x", PVar SymType)
                 func     = ("f_name", PFunc [TapeType, SymType, SymType])
@@ -122,7 +122,7 @@ funcCallSpec = do
             parseEvalState state program "" "f_name   tape  x  '#'" `shouldParseStm` expected
 
         it "parses function calls with tabs between arguments" $ do
-            let expected = Call "f_name" [Var "tape", Var "x", fromSymVal (SymLit '#')]
+            let expected = Call "f_name" [T (TapeVar "tape"), S (SymVar "x"), S (SymLit '#')]
                 var1     = ("tape", PVar TapeType)
                 var2     = ("x", PVar SymType)
                 func     = ("f_name", PFunc [TapeType, SymType, SymType])
@@ -130,8 +130,8 @@ funcCallSpec = do
             parseEvalState state program "" "f_name \ttape\tx\t'#'" `shouldParseStm` expected
 
         it "parses function calls followed by another statement" $ do
-            let call     = Call "f_name" [Var "tape"]
-                expected = Comp call ((MoveLeft (Var "tape")))
+            let call     = Call "f_name" [T (TapeVar "tape")]
+                expected = Comp call ((MoveLeft (TapeVar "tape")))
                 var      = ("tape", PVar TapeType)
                 func     = ("f_name", PFunc [TapeType])
                 state    = Env.fromList [var, func]
@@ -143,7 +143,7 @@ funcCallSpec = do
             parseEvalState state program "" "left_until" `shouldParseStm` expected
 
         it "parses tape literal arguments" $ do
-            let expected = Call "f" [fromTapeVal (TapeLit "abcd"), fromTapeVal (TapeLit "xyz")]
+            let expected = Call "f" [T (TapeLit "abcd"), T (TapeLit "xyz")]
                 state    = Env.fromList [("f", PFunc [TapeType, TapeType])]
             parseEvalState state program "" "f \"abcd\" \"xyz\"" `shouldParseStm` expected
 

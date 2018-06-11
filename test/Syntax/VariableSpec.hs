@@ -14,8 +14,6 @@ variableSpec = do
     tapeSymbolSpec
     symSpec
     tapeSpec
-    valTypedSpec
-    expTypeValSpec
     varDeclSpec
 
 tapeSymbolSpec :: Spec
@@ -43,60 +41,46 @@ symSpec :: Spec
 symSpec = do
     describe "sym" $ do
         it "parses reading a tape variable" $ do
-            let expected = Read (Var "t")
+            let expected = Read (TapeVar "t")
                 state = Env.fromList [("t", PVar TapeType)]
-            parseEvalState state sym "" "read t" `shouldParse` expected
+            parseEvalState state symExpr "" "read t" `shouldParse` expected
 
         it "parses reading a tape literal" $ do
-            let expected = Read (New $ TapeLit "abc")
-            parseEmptyState sym "" "read \"abc\"" `shouldParse` expected
+            let expected = Read (TapeLit "abc")
+            parseEmptyState symExpr "" "read \"abc\"" `shouldParse` expected
 
-        it "fails reading if the variable is not a tape" $ do
-            let state = Env.fromList [("s", PVar SymType)]
-            parseEvalState state sym "" `shouldFailOn` "read s"
+        it "parses sym variables" $ do
+            let expected = SymVar "x"
+                state = Env.fromList [("x", PVar SymType)]
+            parseEvalState state symExpr "" "x" `shouldParse` expected
 
-        it "fails reading if the variable is a function" $ do
+        it "fails if the variable is not a symbol" $ do
+            let state = Env.fromList [("t", PVar TapeType)]
+            parseEvalState state symExpr "" `shouldFailOn` "t"
+
+        it "fails if the variable is a function" $ do
             let state = Env.fromList [("f", PFunc [])]
-            parseEvalState state sym "" `shouldFailOn` "read f"
+            parseEvalState state symExpr "" `shouldFailOn` "f"
 
 tapeSpec :: Spec
 tapeSpec = do
     describe "tape" $ do
         it "parses tape literals" $ do
             let expected = TapeLit "abc"
-            parseEmptyState tape "" "\"abc\"" `shouldParse` expected
+            parseEmptyState tapeExpr "" "\"abc\"" `shouldParse` expected
 
-valTypedSpec :: Spec
-valTypedSpec = do
-    describe "valTyped" $ do
-        it "parses a new" $ do
-            let expected = (New (TapeLit "abc"), TapeType)
-            parseEmptyState (valTyped tape) "" "\"abc\"" `shouldParse` expected
+        it "parses tape variables" $ do
+            let expected = TapeVar "t"
+                state = Env.fromList [("t", PVar TapeType)]
+            parseEvalState state tapeExpr "" "t" `shouldParse` expected
 
-        it "parses a variable" $ do
-            let expected = (Var "x", TapeType)
-                state = Env.fromList [("x", PVar TapeType)]
-            parseEvalState state (valTyped tape) "" "x" `shouldParse` expected
+        it "fails if the variable is not a tape" $ do
+            let state = Env.fromList [("x", PVar SymType)]
+            parseEvalState state tapeExpr "" `shouldFailOn` "x"
 
-expTypeValSpec :: Spec
-expTypeValSpec = do
-    describe "expTypeVal" $ do
-        it "parses a new" $ do
-            let expected = New $ SymLit 'a'
-            parseEmptyState (expTypeVal SymType sym) "" "'a'" `shouldParse` expected
-
-        it "parses a variable" $ do
-            let expected = Var "x"
-                state = Env.fromList [("x", PVar SymType)]
-            parseEvalState state (expTypeVal SymType sym) "" "x" `shouldParse` expected
-
-        it "fails if the variable has the incorrect type" $ do
-            let state = Env.fromList [("x", PVar TapeType)]
-            parseEvalState state (expTypeVal SymType sym) "" `shouldFailOn` "x"
-
-        it "fails if the variable is a function" $ do
-            let state = Env.fromList [("x", PFunc [])]
-            parseEvalState state (expTypeVal SymType sym) "" `shouldFailOn` "x"
+        it "fails reading if the variable is a function" $ do
+            let state = Env.fromList [("f", PFunc [])]
+            parseEvalState state tapeExpr "" `shouldFailOn` "f"
 
 varDeclSpec :: Spec
 varDeclSpec = do
@@ -104,12 +88,12 @@ varDeclSpec = do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses variable declarations" $ do
-            let expected = VarDecl "x" (fromSymVal (Read (Var "tape")))
+            let expected = VarDecl "x" (S (Read (TapeVar "tape")))
             parseEvalState state program "" "let x = read tape" `shouldParseStm` expected
 
         it "parses variables overwriting inside functions" $ do
-            let decl     = VarDecl "x" (fromTapeVal $ TapeLit "x")
-                func     = FuncDecl "f" [] (VarDecl "x" (fromTapeVal $ TapeLit "y"))
+            let decl     = VarDecl "x" (T (TapeLit "x"))
+                func     = FuncDecl "f" [] (VarDecl "x" (T (TapeLit "y")))
                 expected = Comp decl func
             parseEmptyState program "" "let x = \"x\" \n func f { let x = \"y\" }" `shouldParseStm` expected
 
@@ -118,8 +102,8 @@ varDeclSpec = do
             parseEmptyState program ""  `shouldFailOn` s
 
         it "infers type of a variable assigned to another variable" $ do
-            let decl      = VarDecl "new_tape" (Var "tape")
-                printRead = PrintRead (Var "new_tape")
+            let decl      = VarDecl "new_tape" (T (TapeVar "tape"))
+                printRead = PrintRead (TapeVar "new_tape")
                 expected  = Comp decl printRead
             parseEvalState state program "" "let new_tape = tape \n print new_tape" `shouldParse` expected
 

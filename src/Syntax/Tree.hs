@@ -24,11 +24,12 @@ class Typed a where
 type TapeSymbol = Char
 
 -- Values that evaluate to tape symbols.
-data Sym = Read (Val Tape)
-         | SymLit TapeSymbol
-         deriving (Eq, Show)
+data SymExpr = Read TapeExpr
+             | SymLit TapeSymbol
+             | SymVar VarName
+             deriving (Eq, Show)
 
-instance Typed Sym where
+instance Typed SymExpr where
     typeOf _ = SymType
 
 --------------------------------------------------------------------------------
@@ -36,10 +37,11 @@ instance Typed Sym where
 --------------------------------------------------------------------------------
 
 -- Values that evaluate to tape references.
-data Tape = TapeLit String
-          deriving (Eq, Show)
+data TapeExpr = TapeLit String
+              | TapeVar VarName
+              deriving (Eq, Show)
 
-instance Typed Tape where
+instance Typed TapeExpr where
   typeOf _ = TapeType
 
 --------------------------------------------------------------------------------
@@ -58,27 +60,13 @@ type CamelId    = Identifier
 type VarName = SnakeId
 
 -- Values that evaluate to either a symbol or tape.
-data Any = S Sym
-         | T Tape
-         deriving (Eq, Show)
+data AnyValExpr = S SymExpr
+                | T TapeExpr
+                deriving (Eq, Show)
 
-instance Typed Any where
+instance Typed AnyValExpr where
     typeOf (S s) = typeOf s
     typeOf (T t) = typeOf t
-
--- Values that can be looked up using a variable, or given as an expression
--- that evaluates to the type.
-data Val a = New a
-           | Var VarName
-           deriving (Eq, Show)
-
--- Convenience function.
-fromSymVal :: Sym -> Val Any
-fromSymVal s = New (S s)
-
--- Convenience function.
-fromTapeVal :: Tape -> Val Any
-fromTapeVal t = New (T t)
 
 --------------------------------------------------------------------------------
 -- Functions
@@ -91,7 +79,7 @@ type ArgName = SnakeId
 -- Argument supplied when defining the function.
 type FuncDeclArg = (ArgName, DataType)
 -- Argument supplied when calling the function.
-type FuncCallArg = Val Any
+type FuncCallArg = AnyValExpr
 
 -- Returns the type of an argument to a function invocation.
 argType :: FuncDeclArg -> DataType
@@ -120,9 +108,9 @@ data Bexp = TRUE
           | Not Bexp
           | And Bexp Bexp
           | Or Bexp Bexp
-          | Eq (Val Sym) (Val Sym)
-          | Le (Val Sym) (Val Sym)
-          | Ne (Val Sym) (Val Sym)
+          | Eq SymExpr SymExpr
+          | Le SymExpr SymExpr
+          | Ne SymExpr SymExpr
           deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
@@ -130,21 +118,21 @@ data Bexp = TRUE
 --------------------------------------------------------------------------------
 
 -- Syntax tree for statements.
-data Stm = MoveLeft (Val Tape)
-         | MoveRight (Val Tape)
-         | Write (Val Tape) (Val Sym)
+data Stm = MoveLeft TapeExpr
+         | MoveRight TapeExpr
+         | Write TapeExpr SymExpr
          | Accept
          | Reject
          | If Bexp Stm [(Bexp, Stm)] (Maybe Stm)
          | While Bexp Stm
-         | VarDecl VarName (Val Any)
+         | VarDecl VarName AnyValExpr
          | FuncDecl FuncName [FuncDeclArg] Stm
          | StructDecl StructName [StructMemberVar]
          | Call FuncName [FuncCallArg]
          | Comp Stm Stm
-         | PrintRead (Val Tape)
+         | PrintRead TapeExpr
          | PrintStr String
-         | DebugPrintTape (Val Tape)
+         | DebugPrintTape TapeExpr
          deriving (Eq, Show)
 
 --------------------------------------------------------------------------------

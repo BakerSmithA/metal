@@ -19,7 +19,7 @@ ifStmSpec = describe "ifStm" $ do
 
     context "parsing a single IF" $ do
         it "parses IF" $ do
-            let expected = (If TRUE (MoveRight (Var "tape")) [] Nothing)
+            let expected = (If TRUE (MoveRight (TapeVar "tape")) [] Nothing)
             parseEvalState state program "" "if True { right tape }" `shouldParseStm` expected
 
         it "fails to parse if a boolean expression is missing" $ do
@@ -37,12 +37,12 @@ ifStmSpec = describe "ifStm" $ do
     context "parsing an IF-ELSEIF" $ do
         it "parses with a single ELSE-IF clause" $ do
             let str      = "if True { right tape } else if False { left tape }"
-                expected = If TRUE (MoveRight (Var "tape")) [(FALSE, (MoveLeft (Var "tape")))] Nothing
+                expected = If TRUE (MoveRight (TapeVar "tape")) [(FALSE, (MoveLeft (TapeVar "tape")))] Nothing
             parseEvalState state program "" str `shouldParseStm` expected
 
         it "parses with multiple ELSE-IF clauses" $ do
             let str      = "if True { right tape } else if False { left tape } else if True { accept }"
-                expected = If TRUE (MoveRight (Var "tape")) [(FALSE, (MoveLeft (Var "tape"))), (TRUE, Accept)] Nothing
+                expected = If TRUE (MoveRight (TapeVar "tape")) [(FALSE, (MoveLeft (TapeVar "tape"))), (TRUE, Accept)] Nothing
             parseEvalState state program "" str `shouldParseStm` expected
 
         it "fails to parse if ELSE-IF is before IF" $ do
@@ -60,12 +60,12 @@ ifStmSpec = describe "ifStm" $ do
     context "parsing an ELSE clause" $ do
         it "parses ELSE with just an IF" $ do
             let str      = "if True { right tape } else { left tape }"
-                expected = If TRUE (MoveRight (Var "tape")) [] (Just (MoveLeft (Var "tape")))
+                expected = If TRUE (MoveRight (TapeVar "tape")) [] (Just (MoveLeft (TapeVar "tape")))
             parseEvalState state program "" str `shouldParseStm` expected
 
         it "parses ELSE with a preceding ELSE-IF" $ do
             let str      = "if True { right tape } else if False { left tape } else { accept }"
-                expected = If TRUE (MoveRight (Var "tape")) [(FALSE, (MoveLeft (Var "tape")))] (Just Accept)
+                expected = If TRUE (MoveRight (TapeVar "tape")) [(FALSE, (MoveLeft (TapeVar "tape")))] (Just Accept)
             parseEvalState state program "" str `shouldParseStm` expected
 
         it "fails to parse if the ELSE is before IF" $ do
@@ -82,26 +82,26 @@ ifStmSpec = describe "ifStm" $ do
 
     context "identifier scope" $ do
         it "allows variables to be shadowed" $ do
-            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+            let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                 ifStatement  = If TRUE innerVarDecl [] Nothing
-                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' }" `shouldParseStm` comp
 
         it "allows the types of variables to be changed at inner scopes" $ do
-            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
-                write        = Write (Var "tape") (Var "x")
+            let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
+                write        = Write (TapeVar "tape") (SymVar "x")
                 body         = Comp innerVarDecl write
                 ifStatement  = If TRUE body [] Nothing
-                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 comp         = Comp outerVarDecl ifStatement
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
         it "reverts variables after scope is exited" $ do
-            let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+            let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                 ifStatement  = If TRUE innerVarDecl [] Nothing
-                outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
-                write        = Write (Var "x") (New $ SymLit 'a')
+                outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
+                write        = Write (TapeVar "x") (SymLit 'a')
                 comp         = Comp outerVarDecl (Comp ifStatement write)
             parseEvalState state program "" "let x = \"xyz\" \n if True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
@@ -111,7 +111,7 @@ whileSpec = do
         let state = Env.fromList [("tape", PVar TapeType)]
 
         it "parses WHILE" $ do
-            let expected = (While TRUE (MoveRight (Var "tape")))
+            let expected = (While TRUE (MoveRight (TapeVar "tape")))
             parseEvalState state program "" "while True { right tape }" `shouldParseStm` expected
 
         it "fails to parse if a boolean expression is missing" $ do
@@ -128,25 +128,25 @@ whileSpec = do
 
         context "identifier scope" $ do
             it "allows variables to be shadowed" $ do
-                let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+                let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                     while        = While TRUE innerVarDecl
-                    outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                    outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                     comp         = Comp outerVarDecl while
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' }" `shouldParseStm` comp
 
             it "allows the types of variables to be changed at inner scopes" $ do
-                let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
-                    write        = Write (Var "tape") (Var "x")
+                let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
+                    write        = Write (TapeVar "tape") (SymVar "x")
                     body         = Comp innerVarDecl write
                     while        = While TRUE body
-                    outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
+                    outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                     comp         = Comp outerVarDecl while
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
             it "reverts variables after scope is exited" $ do
-                let innerVarDecl = VarDecl "x" (fromSymVal $ SymLit 'a')
+                let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                     while        = While TRUE innerVarDecl
-                    outerVarDecl = VarDecl "x" (fromTapeVal $ TapeLit "xyz")
-                    write        = Write (Var "x") (New $ SymLit 'a')
+                    outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
+                    write        = Write (TapeVar "x") (SymLit 'a')
                     comp         = Comp outerVarDecl (Comp while write)
                 parseEvalState state program "" "let x = \"xyz\" \n while True { let x = 'a' } \n write x 'a'" `shouldParseStm` comp

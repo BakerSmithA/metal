@@ -27,7 +27,7 @@ newMemberVarId = newId snakeId
 --  TypedVar: VarName ':' Type
 memberVar :: ParserM StructMemberVar
 memberVar = do
-    (name, memType) <- typedVar newMemberVarId
+    (name, memType) <- typeAnnotated newMemberVarId
     putM name (PVar memType)
     return (name, memType)
 
