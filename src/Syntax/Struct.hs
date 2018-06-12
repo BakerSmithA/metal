@@ -5,7 +5,6 @@ import Syntax.ParseState
 import Syntax.Identifier
 import Syntax.Common
 import Syntax.Env as Env hiding (modify)
-import Data.List as List (find)
 import Control.Monad.State (modify)
 
 -- Parses the name of a struct, making sure the struct does not already exist.
@@ -28,22 +27,21 @@ newMemberVarId = newId snakeId
 -- Parses access to a member of an instance of a struct. Fails if the variable
 -- is not a struct, or the member is not part of the struct class.
 --  MemberAccess : VarName ('.' VarName)+
-refMemberId :: DataType -> ParserM (VarName, DataType)
-refMemberId expType = do
+refMemberId :: ParserM (VarName, DataType)
+refMemberId = do
     i <- refVarId
     evalMemberId i where
-
-    -- Recursively tries to evaluate a struct member access.
-    evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
-    evalMemberId (_, CustomType structName) = block p where
-        p = do
-            addStructMemsToEnv structName
-            -- Attempts to parse another ('.' VarName).
-            lTok "." *> (try chainedAccess <|> refVarId)
-        -- Attemps to parse another chained access, e.g. x.y.z
-        chainedAccess = refVarId >>= evalMemberId
-    evalMemberId (varName, varType) = fail msg where
-        msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
+        -- Recursively tries to evaluate a struct member access.
+        evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
+        evalMemberId (_, CustomType structName) = block p where
+            p = do
+                addStructMemsToEnv structName
+                -- Attempts to parse another ('.' VarName).
+                lTok "." *> (try chainedAccess <|> refVarId)
+            -- Attemps to parse another chained access, e.g. x.y.z
+            chainedAccess = refVarId >>= evalMemberId
+        evalMemberId (varName, varType) = fail msg where
+            msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
 
 -- Assuming the struct with the given name exists, adds all the member variables
 -- to the environment. Fails if the struct does not exists.
@@ -52,7 +50,7 @@ addStructMemsToEnv name = do
     idType <- getM name
     case idType of
         PStruct mems -> modify (\env -> foldr putMem env mems) where
-            putMem (name, memType) = Env.put name (PVar memType)
+            putMem (memName, memType) = Env.put memName (PVar memType)
         _ -> fail "expected struct"
 
 -- Parses the name and type of a member variable in a struct. Given the struct
