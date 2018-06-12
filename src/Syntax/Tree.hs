@@ -58,12 +58,12 @@ instance Typed TapeExpr where
 
 -- Values that evaluate to structure instances.
 data ObjExpr = NewObj StructName [NewObjArg]
-             | ObjVar VarName StructName
+             | ObjVar StructName VarName
              deriving (Eq, Show)
 
 instance Typed ObjExpr where
     typeOf (NewObj structName _) = CustomType structName
-    typeOf (ObjVar _ structName) = CustomType structName
+    typeOf (ObjVar structName _) = CustomType structName
 
 --------------------------------------------------------------------------------
 -- Variables

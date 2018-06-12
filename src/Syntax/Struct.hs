@@ -29,10 +29,10 @@ newMemberVarId = newId snakeId
 -- Parses access to a member of an instance of a struct. Fails if the variable
 -- is not a struct, or the member is not part of the struct class.
 --  MemberAccess : VarName ('.' VarName)+
-expTypeMemberId :: DataType -> ParserM VarName
-expTypeMemberId expType = do
+refMemberId :: DataType -> ParserM (VarName, DataType)
+refMemberId expType = do
     i <- refVarId
-    fmap fst (evalMemberId i) where
+    evalMemberId i where
 
     -- Recursively tries to evaluate a struct member access.
     evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
@@ -40,13 +40,9 @@ expTypeMemberId expType = do
         p = do
             addStructMemsToEnv structName
             -- Attempts to parse another ('.' VarName).
-            lTok "." *> (try chainedAccess <|> finalMem)
+            lTok "." *> (try chainedAccess <|> refVarId)
         -- Attemps to parse another chained access, e.g. x.y.z
         chainedAccess = refVarId >>= evalMemberId
-        -- Attempts to parse the final chained member access.
-        finalMem = do
-            name <- expTypeVarId expType
-            return (name, expType)
     evalMemberId (varName, varType) = fail msg where
         msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
 
@@ -92,7 +88,7 @@ structDecl = do
 makeObj :: ParserM ObjExpr
 makeObj = do
     (name, ms) <- refStruct
-    args <- matchedTypes expTypeExpr (map memberVarType ms)
+    args <- matchedTypes expAnyValExpr (map memberVarType ms)
     return (NewObj name args)
 
 objExpr :: ParserM ObjExpr

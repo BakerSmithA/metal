@@ -3,8 +3,6 @@ module Syntax.Variable where
 import Syntax.Common
 import Syntax.Identifier
 
-import Debug.Trace
-
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist
 -- it is added to the environment.
@@ -20,30 +18,27 @@ refVarId = do
         PVar varType -> return (name, varType)
         _            -> fail "Expected variable"
 
--- Attempts to use a declared variable. If the variable does not exist, or the
--- types do not match, then parsing fails.
-expTypeVarId :: DataType -> ParserM VarName
-expTypeVarId expType = expTypeId snakeId (PVar expType)
-
 tapeSymbol :: ParserM TapeSymbol
 tapeSymbol = noneOf "\'\""
 
 symExpr :: ParserM SymExpr
 symExpr = Read <$ lTok "read" <* lWhitespace <*> tapeExpr
       <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
-      <|> SymVar <$> expTypeVarId SymType
+      <|> SymVar <$> expVarId SymType
 
 tapeExpr :: ParserM TapeExpr
 tapeExpr = TapeLit <$> quoted (many tapeSymbol)
-       <|> TapeVar <$> expTypeVarId TapeType
+       <|> TapeVar <$> expVarId TapeType
 
 anyValExpr :: ParserM AnyValExpr
 anyValExpr = try (S <$> symExpr)
          <|> T <$> tapeExpr
 
-expTypeExpr :: DataType -> ParserM AnyValExpr
-expTypeExpr SymType  = S <$> symExpr
-expTypeExpr TapeType = T <$> tapeExpr
+expVarId :: DataType -> ParserM VarName
+expVarId t = expTypeId refVarId (==t)
+
+expAnyValExpr :: DataType -> ParserM AnyValExpr
+expAnyValExpr = expDataType anyValExpr
 
 varDecl :: ParserM Stm
 varDecl = do

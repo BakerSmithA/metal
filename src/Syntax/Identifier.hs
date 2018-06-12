@@ -50,10 +50,18 @@ refId p = do
     idType <- getM i
     return (i, idType)
 
--- Parses an identifier if the identifier exists and has the expected type.
-expTypeId :: ParserM Identifier -> EnvDecl -> ParserM Identifier
-expTypeId p expType = do
-    (i, idType) <- refId p
-    if expType == idType
-        then return i
-        else (fail "mistmatched types")
+-- Checks that the value returned by p satisfies the type check predicate.
+expType :: ParserM t -> (t -> Bool) -> ParserM t
+expType p check = do
+    x <- p
+    if check x
+        then return x
+        else (fail "Mismatched types")
+
+-- Checks that an identifier has the given type.
+expTypeId :: ParserM (Identifier, t) -> (t -> Bool) -> ParserM Identifier
+expTypeId p check = fmap fst (expType p (check . snd))
+
+-- Checks that the data type of the result is the expected type.
+expDataType :: (Typed t) => ParserM t -> DataType -> ParserM t
+expDataType p ex = expType p (\x -> typeOf x == ex)
