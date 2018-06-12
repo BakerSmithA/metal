@@ -20,6 +20,12 @@ data DataType = SymType
               | CustomType StructName
               deriving (Eq, Show)
 
+-- Returns whether the data type is a custom type. Says nothing about which
+-- custom type it is.
+isCustomType :: DataType -> Bool
+isCustomType (CustomType _) = True
+isCustomType _              = False
+
 -- Types that have a data type, e.g. Symbol, Tape, Struct, etc.
 class Typed a where
     typeOf :: a -> DataType

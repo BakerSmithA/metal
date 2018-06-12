@@ -92,4 +92,7 @@ makeObj = do
     return (NewObj name args)
 
 objExpr :: ParserM ObjExpr
-objExpr = undefined
+objExpr = makeObj
+      <|> do
+          (name, (CustomType structName)) <- expType refVarId (isCustomType . snd)
+          return (ObjVar structName name)
