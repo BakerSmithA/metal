@@ -12,8 +12,9 @@ import TestHelper.Parser
 variableExprSpec :: Spec
 variableExprSpec = do
     tapeSymbolSpec
-    symSpec
-    tapeSpec
+    symExprSpec
+    tapeExprSpec
+    objExprSpec
     varDeclSpec
 
 tapeSymbolSpec :: Spec
@@ -37,9 +38,9 @@ tapeSymbolSpec = do
         it "does not parse single quotes" $ do
             parseEmptyState tapeSymbol "" `shouldFailOn` "\'"
 
-symSpec :: Spec
-symSpec = do
-    describe "sym" $ do
+symExprSpec :: Spec
+symExprSpec = do
+    describe "symExpr" $ do
         it "parses reading a tape variable" $ do
             let expected = Read (TapeVar "t")
                 state = Env.fromList [("t", PVar TapeType)]
@@ -62,9 +63,9 @@ symSpec = do
             let state = Env.fromList [("f", PFunc [])]
             parseEvalState state symExpr "" `shouldFailOn` "f"
 
-tapeSpec :: Spec
-tapeSpec = do
-    describe "tape" $ do
+tapeExprSpec :: Spec
+tapeExprSpec = do
+    describe "tapeExpr" $ do
         it "parses tape literals" $ do
             let expected = TapeLit "abc"
             parseEmptyState tapeExpr "" "\"abc\"" `shouldParse` expected
@@ -81,6 +82,37 @@ tapeSpec = do
         it "fails reading if the variable is a function" $ do
             let state = Env.fromList [("f", PFunc [])]
             parseEvalState state tapeExpr "" `shouldFailOn` "f"
+
+objExprSpec :: Spec
+objExprSpec = do
+    describe "objExpr" $ do
+        it "parses new objects" $ do
+            let expected = NewObj "S" [(S (SymLit 'a')), (T (TapeLit "abc"))]
+                state = Env.fromList [("S", PStruct [("x", SymType), ("y", TapeType)]), ("tape", PVar TapeType)]
+            parseEvalState state objExpr "" "S 'a' \"abc\"" `shouldParse` expected
+
+        it "parses new objects where arguments have parenthesis" $ do
+            let expected = NewObj "S" [(S (Read (TapeVar "tape")))]
+                state = Env.fromList [("S", PStruct [("x", SymType)]), ("tape", PVar TapeType)]
+            parseEvalState state objExpr "" "S (read tape)" `shouldParse` expected
+
+        it "fails if the incorrect number of arguments are given to a constructor" $ do
+            let state = Env.fromList [("S", PStruct [("x", SymType), ("y", SymType)])]
+            parseEvalState state objExpr "" `shouldFailOn` "S 'a'"
+            parseEvalState state objExpr "" `shouldFailOn` "S 'a' \"abc\" \"abc\""
+
+        it "fails if the incorrect type is given as an argument" $ do
+            let state = Env.fromList [("S", PStruct [("x", SymType)]), ("tape", PVar TapeType)]
+            parseEvalState state objExpr "" `shouldFailOn` "S tape"
+
+        it "parses object variables" $ do
+            let expected = ObjVar "S" "obj"
+                state = Env.fromList [("obj", PVar (CustomType "S"))]
+            parseEvalState state objExpr "" "obj" `shouldParse` expected
+
+        it "fails if the variable is not an object" $ do
+            let state = Env.fromList [("x", PVar TapeType)]
+            parseEvalState state objExpr "" `shouldFailOn` "x"
 
 varDeclSpec :: Spec
 varDeclSpec = do

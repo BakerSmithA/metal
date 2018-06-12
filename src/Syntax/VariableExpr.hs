@@ -20,7 +20,7 @@ objExpr :: ParserM ObjExpr
 objExpr = makeObj <|> objVar where
     makeObj = do
         (name, ms) <- refStruct
-        args <- matchedTypes expAnyValExpr (map memberVarType ms)
+        args <- matchedTypes (maybeParens . expAnyValExpr) (map memberVarType ms)
         return (NewObj name args)
     objVar = do
         (name, (CustomType structName)) <- expType refVarId (isCustomType . snd)

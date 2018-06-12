@@ -13,7 +13,6 @@ structSpec :: Spec
 structSpec = do
     refMemberIdSpec
     structDeclSpec
-    newObjSpec
 
 refMemberIdSpec :: Spec
 refMemberIdSpec = do
@@ -65,9 +64,3 @@ structDeclSpec = do
         it "fails if the struct has already been declared" $ do
             let state = Env.fromList [("S", PStruct [("x", TapeType)])]
             parseEvalState state program "" `shouldFailOn` "struct S { y:Sym }"
-
-newObjSpec :: Spec
-newObjSpec = do
-    describe "newObj" $ do
-        it "X" $ do
-            pending

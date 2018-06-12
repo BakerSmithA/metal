@@ -67,7 +67,7 @@ funcDecl stm = do
 -- Parses the arguments supplied to a function call, the EBNF syntax of which is:
 --  FuncCallArgs : FuncCallArg (',' FuncCallArg) | ε
 funcCallArgs :: [DataType] -> ParserM [FuncCallArg]
-funcCallArgs = matchedTypes (\t -> expAnyValExpr t <|> parens (expAnyValExpr t))
+funcCallArgs = matchedTypes (maybeParens . expAnyValExpr)
 
 -- Parses a function call, the EBNF syntax of which is:
 --  Call : FuncName FuncCallArgs
