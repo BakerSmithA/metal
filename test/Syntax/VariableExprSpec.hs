@@ -15,6 +15,7 @@ variableExprSpec = do
     symExprSpec
     tapeExprSpec
     objExprSpec
+    anyValExprSpec
     varDeclSpec
 
 tapeSymbolSpec :: Spec
@@ -113,6 +114,23 @@ objExprSpec = do
         it "fails if the variable is not an object" $ do
             let state = Env.fromList [("x", PVar TapeType)]
             parseEvalState state objExpr "" `shouldFailOn` "x"
+
+anyValExprSpec :: Spec
+anyValExprSpec = do
+    describe "anyValExprSpec" $ do
+        let state = Env.fromList [("x", PVar SymType), ("y", PVar TapeType), ("z", PVar (CustomType "S"))]
+
+        it "parses symbols" $ do
+            let expected = S (SymVar "x")
+            parseEvalState state anyValExpr "" "x" `shouldParse` expected
+
+        it "parses tapes" $ do
+            let expected = T (TapeVar "y")
+            parseEvalState state anyValExpr "" "y" `shouldParse` expected
+
+        it "parses objects" $ do
+            let expected = C (ObjVar "S" "z")
+            parseEvalState state anyValExpr "" "z" `shouldParse` expected
 
 varDeclSpec :: Spec
 varDeclSpec = do
