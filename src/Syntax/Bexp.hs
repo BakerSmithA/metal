@@ -1,7 +1,7 @@
 module Syntax.Bexp where
 
 import Syntax.Common
-import Syntax.Variable
+import Syntax.VariableExpr
 import Text.Megaparsec.Expr
 
 -- Parses the basis elements of the boolean expressions, plus boolean

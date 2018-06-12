@@ -6,7 +6,7 @@ import Syntax.ControlSpec
 import Syntax.FuncSpec
 import Syntax.IdentifierSpec
 import Syntax.ParserSpec
-import Syntax.VariableSpec
+import Syntax.VariableExprSpec
 import Syntax.StructSpec
 import State.TapeSpec
 import State.ConfigSpec
@@ -25,7 +25,7 @@ main = hspec specs where
         funcSpec
         identifierSpec
         parserSpec
-        variableSpec
+        variableExprSpec
         structSpec
         tapeSpec
         configSpec

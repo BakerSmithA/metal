@@ -2,7 +2,7 @@ module Syntax.Func where
 
 import Syntax.Common
 import Syntax.Identifier
-import Syntax.Variable
+import Syntax.VariableExpr
 
 -- Attempts to parse an identifier used to declare a new function. Does **not**
 -- add the function to the environment if it does not exist. Fails if the

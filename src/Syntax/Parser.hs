@@ -6,7 +6,7 @@ import Syntax.Control
 import Syntax.Func
 import Syntax.Struct
 import Syntax.Common
-import Syntax.Variable
+import Syntax.VariableExpr
 import qualified Text.Megaparsec.String as M
 import Control.Monad.State.Lazy (runStateT, lift, liftM)
 

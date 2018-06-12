@@ -4,7 +4,6 @@ import Syntax.Tree
 import Syntax.ParseState
 import Syntax.Identifier
 import Syntax.Common
-import Syntax.Variable
 import Syntax.Env as Env hiding (modify)
 import Data.List as List (find)
 import Control.Monad.State (modify)
@@ -80,19 +79,3 @@ structDecl = do
     name <- lTok "struct" *> newStruct
     mems <- block (braces (memberVarDecls name))
     return (StructDecl name mems)
-
--- Parses the construction of a new struct object. Fails if the struct does
--- not exist, or the incorrect number of arguments with the wrong types are
--- given. EBNF:
---  CreateStruct : StructName (Var ' ')+
-makeObj :: ParserM ObjExpr
-makeObj = do
-    (name, ms) <- refStruct
-    args <- matchedTypes expAnyValExpr (map memberVarType ms)
-    return (NewObj name args)
-
-objExpr :: ParserM ObjExpr
-objExpr = makeObj
-      <|> do
-          (name, (CustomType structName)) <- expType refVarId (isCustomType . snd)
-          return (ObjVar structName name)

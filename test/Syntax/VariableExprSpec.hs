@@ -1,16 +1,16 @@
-module Syntax.VariableSpec (variableSpec) where
+module Syntax.VariableExprSpec (variableExprSpec) where
 
 import Syntax.Tree
 import Syntax.Env as Env
 import Syntax.ParseState
-import Syntax.Variable
+import Syntax.VariableExpr
 import Syntax.Parser
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import TestHelper.Parser
 
-variableSpec :: Spec
-variableSpec = do
+variableExprSpec :: Spec
+variableExprSpec = do
     tapeSymbolSpec
     symSpec
     tapeSpec
