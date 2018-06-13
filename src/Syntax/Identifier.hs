@@ -17,6 +17,7 @@ reserveCheckedId p = (p >>= check) <* lWhitespace where
                         then return word
                         else fail $ "keyword " ++ show word ++ " cannot be an identifier"
 
+-- Parses an identifier in the form: <start> <body>*
 identifier :: ParserM Char -> ParserM Char -> ParserM Identifier
 identifier start body = reserveCheckedId p where
     p = (:) <$> start <*> many body
