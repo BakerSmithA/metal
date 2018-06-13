@@ -95,6 +95,11 @@ symExprSpec = do
                 state = Env.fromList [("x", PVar SymType)]
             parseEvalState state symExpr "" "x" `shouldParse` expected
 
+        it "parses variables in structs" $ do
+            let expected = SymVar "m_s"
+                state = Env.fromList [("S", PStruct [("m_s", SymType)]), ("x", PVar (CustomType "S"))]
+            parseEvalState state symExpr "" "x.m_s" `shouldParse` expected
+
         it "fails if the variable is not a symbol" $ do
             let state = Env.fromList [("t", PVar TapeType)]
             parseEvalState state symExpr "" `shouldFailOn` "t"
@@ -115,6 +120,11 @@ tapeExprSpec = do
                 state = Env.fromList [("t", PVar TapeType)]
             parseEvalState state tapeExpr "" "t" `shouldParse` expected
 
+        it "parses variables in structs" $ do
+            let expected = TapeVar "m_t"
+                state = Env.fromList [("S", PStruct [("m_t", TapeType)]), ("x", PVar (CustomType "S"))]
+            parseEvalState state tapeExpr "" "x.m_t" `shouldParse` expected
+
         it "fails if the variable is not a tape" $ do
             let state = Env.fromList [("x", PVar SymType)]
             parseEvalState state tapeExpr "" `shouldFailOn` "x"
@@ -131,6 +141,16 @@ objExprSpec = do
                 state = Env.fromList [("S", PStruct [("x", SymType), ("y", TapeType)]), ("tape", PVar TapeType)]
             parseEvalState state objExpr "" "S 'a' \"abc\"" `shouldParse` expected
 
+        it "parses object variables" $ do
+            let expected = ObjVar "S" "obj"
+                state = Env.fromList [("obj", PVar (CustomType "S"))]
+            parseEvalState state objExpr "" "obj" `shouldParse` expected
+
+        it "parses variables in structs" $ do
+            let expected = ObjVar "S" "m_o"
+                state = Env.fromList [("S", PStruct [("m_o", CustomType "S")]), ("x", PVar (CustomType "S"))]
+            parseEvalState state objExpr "" "x.m_o" `shouldParse` expected
+
         it "parses new objects where arguments have parenthesis" $ do
             let expected = NewObj "S" [(S (Read (TapeVar "tape")))]
                 state = Env.fromList [("S", PStruct [("x", SymType)]), ("tape", PVar TapeType)]
@@ -144,11 +164,6 @@ objExprSpec = do
         it "fails if the incorrect type is given as an argument" $ do
             let state = Env.fromList [("S", PStruct [("x", SymType)]), ("tape", PVar TapeType)]
             parseEvalState state objExpr "" `shouldFailOn` "S tape"
-
-        it "parses object variables" $ do
-            let expected = ObjVar "S" "obj"
-                state = Env.fromList [("obj", PVar (CustomType "S"))]
-            parseEvalState state objExpr "" "obj" `shouldParse` expected
 
         it "fails if the variable is not an object" $ do
             let state = Env.fromList [("x", PVar TapeType)]

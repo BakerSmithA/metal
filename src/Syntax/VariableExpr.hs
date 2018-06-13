@@ -41,6 +41,16 @@ refMemberId = do
         evalMemberId (varName, varType) = fail msg where
             msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
 
+        -- Assuming the struct with the given name exists, adds all the member variables
+        -- to the environment. Fails if the struct does not exists.
+        addStructMemsToEnv :: StructName -> ParserM ()
+        addStructMemsToEnv name = do
+            idType <- getM name
+            case idType of
+                PStruct mems -> modify (\env -> foldr putMem env mems) where
+                    putMem (memName, memType) = Env.put memName (PVar memType)
+                _ -> fail "expected struct"
+
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist
 -- it is added to the environment.
@@ -61,16 +71,6 @@ refTopVarId = do
 refVarId :: ParserM (VarName, DataType)
 refVarId = try refMemberId
        <|> refTopVarId
-
--- Assuming the struct with the given name exists, adds all the member variables
--- to the environment. Fails if the struct does not exists.
-addStructMemsToEnv :: StructName -> ParserM ()
-addStructMemsToEnv name = do
-    idType <- getM name
-    case idType of
-        PStruct mems -> modify (\env -> foldr putMem env mems) where
-            putMem (memName, memType) = Env.put memName (PVar memType)
-        _ -> fail "expected struct"
 
 -- Parses a symbol that can be written to a tape.
 tapeSymbol :: ParserM TapeSymbol
