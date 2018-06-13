@@ -28,7 +28,7 @@ foldFilesSpec = do
             let file1 = ("file1", "let x = '1'\nlet tape = \"abc\"")
                 file2 = ("file2", "write tape x")
                 decl  = Comp (VarDecl "x" (S $ SymLit '1')) (VarDecl "tape" (T $ TapeLit "abc"))
-                expected = Identity $ Comp decl (Comp (Write (TapeVar "tape") (SymVar "x")) Accept)
+                expected = Identity $ Comp decl (Comp (Write (TapeVar ["tape"]) (SymVar ["x"])) Accept)
             foldFiles Env.empty [file1, file2] `shouldBe` expected
 
         it "fails if used variables have not been declared" $ do

@@ -63,6 +63,7 @@ evalTapeDecl name tapeExpr c = do
 evalVarDecl :: (Monad m) => VarName -> AnyValExpr -> Config -> App m Config
 evalVarDecl name (S s) = evalSymDecl name s
 evalVarDecl name (T t) = evalTapeDecl name t
+evalVarDecl name (C c) = undefined
 
 -- Evaluates a function declaration.
 evalFuncDecl :: (Monad m) => FuncName -> [FuncDeclArg] -> Stm -> Config -> App m Config
