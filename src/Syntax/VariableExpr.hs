@@ -2,7 +2,69 @@ module Syntax.VariableExpr where
 
 import Syntax.Common
 import Syntax.Identifier
-import Syntax.Struct
+import Syntax.Env as Env hiding (modify)
+import Control.Monad.State (modify)
+
+-- Parses the name of a struct, making sure the struct does not already exist.
+newStructId :: ParserM StructName
+newStructId = newId camelId
+
+-- Parses the name of a struct, ensuring it already exists.
+refStruct :: ParserM (StructName, [StructMemberVar])
+refStruct = do
+    (name, idType) <- refId camelId
+    case idType of
+        PStruct ms -> return (name, ms)
+        _          -> fail "Expected struct"
+
+-- Parses the name of a member variable in a struct. Fails if the variable has
+-- already been declared.
+newMemberVarId :: ParserM VarName
+newMemberVarId = newId snakeId
+
+-- Parses access to a member of an instance of a struct. Fails if the variable
+-- is not a struct, or the member is not part of the struct class.
+--  MemberAccess : VarName ('.' VarName)+
+refMemberId :: ParserM (VarName, DataType)
+refMemberId = do
+    i <- refVarId
+    evalMemberId i where
+        -- Recursively tries to evaluate a struct member access.
+        evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
+        evalMemberId (_, CustomType structName) = block p where
+            p = do
+                addStructMemsToEnv structName
+                -- Attempts to parse another ('.' VarName).
+                lTok "." *> (try chainedAccess <|> refVarId)
+            -- Attemps to parse another chained access, e.g. x.y.z
+            chainedAccess = refVarId >>= evalMemberId
+        evalMemberId (varName, varType) = fail msg where
+            msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
+
+-- Attempts to parse an identifier used to declare a new variable.
+-- Fails if the variable already exists. If the variable does not exist
+-- it is added to the environment.
+newVarId :: ParserM VarName
+newVarId = newId snakeId
+
+-- Parses a variable and its type. Fails if the variable does not already
+-- exist in the environment.
+refVarId :: ParserM (VarName, DataType)
+refVarId = do
+    (name, idType) <- refId snakeId
+    case idType of
+        PVar varType -> return (name, varType)
+        _            -> fail "Expected variable"
+
+-- Assuming the struct with the given name exists, adds all the member variables
+-- to the environment. Fails if the struct does not exists.
+addStructMemsToEnv :: StructName -> ParserM ()
+addStructMemsToEnv name = do
+    idType <- getM name
+    case idType of
+        PStruct mems -> modify (\env -> foldr putMem env mems) where
+            putMem (memName, memType) = Env.put memName (PVar memType)
+        _ -> fail "expected struct"
 
 tapeSymbol :: ParserM TapeSymbol
 tapeSymbol = noneOf "\'\""
@@ -36,16 +98,3 @@ expVarId t = expTypeId refVarId (==t)
 
 expAnyValExpr :: DataType -> ParserM AnyValExpr
 expAnyValExpr = expDataType anyValExpr
-
--- Parses a variable (e.g. tape, symbol, object) declaration, EBNF:
---  'let' VarName '=' AnyTypeExpr
-varDecl :: ParserM Stm
-varDecl = do
-    _ <- lTok "let"
-    name <- newVarId
-    _ <- lTok "="
-    v <- anyValExpr
-
-    putM name (PVar (typeOf v))
-
-    return (VarDecl name v)

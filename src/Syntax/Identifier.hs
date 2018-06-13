@@ -66,21 +66,6 @@ expTypeId p check = fmap fst (expType p (check . snd))
 expDataType :: (Typed t) => ParserM t -> DataType -> ParserM t
 expDataType p ex = expType p (\x -> typeOf x == ex)
 
--- Attempts to parse an identifier used to declare a new variable.
--- Fails if the variable already exists. If the variable does not exist
--- it is added to the environment.
-newVarId :: ParserM VarName
-newVarId = newId snakeId
-
--- Parses a variable and its type. Fails if the variable does not already
--- exist in the environment.
-refVarId :: ParserM (VarName, DataType)
-refVarId = do
-    (name, idType) <- refId snakeId
-    case idType of
-        PVar varType -> return (name, varType)
-        _            -> fail "Expected variable"
-
 -- Type of data (passed to a function or as part of a struct member decl). EBNF:
 --  TypeAnnotation: 'Tape' | 'Sym' | StructName
 typeAnnotation :: ParserM DataType

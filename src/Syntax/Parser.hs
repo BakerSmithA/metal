@@ -4,9 +4,9 @@ import Syntax.Tree
 import Syntax.Env as E
 import Syntax.Control
 import Syntax.Func
-import Syntax.Struct
 import Syntax.Common
 import Syntax.VariableExpr
+import Syntax.Identifier
 import qualified Text.Megaparsec.String as M
 import Control.Monad.State.Lazy (runStateT, lift, liftM)
 
@@ -83,6 +83,44 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  Import        : 'import ' String
 --  Imports       : ('import ' String '\n'+)*
 --  Program       : Imports Stm
+
+-- Parses the name and type of a member variable in a struct. Given the struct
+-- name to allow for recursive structures. EBNF:
+--  TypedVar: VarName ':' Type
+memberVarDecl :: StructName -> ParserM StructMemberVar
+memberVarDecl structName = do
+    (name, memType) <- recTypeAnnotated structName newMemberVarId
+    putM name (PVar memType)
+    return (name, memType)
+
+-- Parses the member variables of a struct, failing if the variable name has
+-- already been used, or the type does not exist. Given the struct name to
+-- allow for recursive structures. EBNF:
+--  MemberVars: (TypedVar '\n')+
+memberVarDecls :: StructName -> ParserM [StructMemberVar]
+memberVarDecls structName = (memberVarDecl structName) `sepBy` some (newline <* lWhitespace)
+
+-- Declares a new structure. Fails if the structure already exists at this
+-- scope. EBNF:
+--  NewStruct : StructName (Var ' ')+ '{' MemberVars '}'
+structDecl :: ParserM Stm
+structDecl = do
+    name <- lTok "struct" *> newStructId
+    mems <- block (braces (memberVarDecls name))
+    return (StructDecl name mems)
+
+-- Parses a variable (e.g. tape, symbol, object) declaration, EBNF:
+--  'let' VarName '=' AnyTypeExpr
+varDecl :: ParserM Stm
+varDecl = do
+    _ <- lTok "let"
+    name <- newVarId
+    _ <- lTok "="
+    v <- anyValExpr
+
+    putM name (PVar (typeOf v))
+
+    return (VarDecl name v)
 
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: ParserM Stm
