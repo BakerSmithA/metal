@@ -5,16 +5,21 @@ import State.Tape as Tape
 import Syntax.Tree
 
 type Address = Integer
+type Object = Map VarName Variable
 
 data Variable = Symbol TapeSymbol
-              | TapeRef Address
-              deriving (Show, Eq)
+              | Ptr Address
+              deriving (Eq, Show)
+
+data Reference = TapeRef Tape
+               | ObjRef Object
+               deriving (Eq, Show)
 
 -- A configuration of a Turing machine.
 data Config = Config {
     vars      :: Map VarName Variable
   , funcs     :: Map FuncName ([FuncDeclArg], Stm)
-  , refs      :: Map Address Tape
+  , refs      :: Map Address Reference
   , freeAddrs :: [Address]
 } deriving (Eq)
 
@@ -31,7 +36,8 @@ empty = Config Map.empty Map.empty Map.empty [0..1000] -- HACK: Infinite list ca
 -- A configuration in which the read-write head is in the zeroed position, and
 -- `str` is at the start of the tape.
 fromString :: VarName -> String -> Config
-fromString tapeName str = newTape tapeName (Tape.fromString str) State.Config.empty
+fromString tapeName str = newRef tapeName tape State.Config.empty where
+    tape = TapeRef (Tape.fromString str)
 
 -- Retrieves a tape or symbol from the variable environment.
 getVariable :: VarName -> Config -> Maybe Variable
@@ -55,39 +61,47 @@ putSym name sym c = c { vars = Map.insert name (Symbol sym) (vars c) }
 -- Tapes
 --------------------------------------------------------------------------------
 
--- Looks up the address of a tape in the environment.
-getTapePtr :: VarName -> Config -> Maybe Address
-getTapePtr name c = do
-    (TapeRef addr) <- getVariable name c
+-- Looks up the address of a object in the environment.
+getPtr :: VarName -> Config -> Maybe Address
+getPtr name c = do
+    (Ptr addr) <- getVariable name c
     return addr
 
--- Deferences a pointer to a tape.
-derefTape :: Address -> Config -> Maybe Tape
-derefTape addr c = Map.lookup addr (refs c)
+-- Deferences a pointer to a object.
+derefPtr :: Address -> Config -> Maybe Reference
+derefPtr addr c = Map.lookup addr (refs c)
 
--- Adds a pointer to a tape to the environment.
-putTapePtr :: VarName -> Address -> Config -> Config
-putTapePtr name addr c = c { vars = Map.insert name (TapeRef addr) (vars c) }
+-- Adds a pointer to a object to the environment.
+putPtr :: VarName -> Address -> Config -> Config
+putPtr name addr c = c { vars = Map.insert name (Ptr addr) (vars c) }
 
--- Adds a tape to the environment, returning the address at which the tape was
--- added.
-putTape :: Tape -> Config -> (Address, Config)
-putTape _      (Config _ _ _ [])              = error "No space for tapes left"
-putTape tape c@(Config _ _ _ (freeAddr:rest)) = (freeAddr, c') where
+-- Adds an object to the environment, returning the address at which the object
+-- was added.
+putRef :: Reference -> Config -> (Address, Config)
+putRef _     (Config _ _ _ [])              = error "No space for tapes left"
+putRef ref c@(Config _ _ _ (freeAddr:rest)) = (freeAddr, c') where
     c'    = c { refs = refs', freeAddrs = rest }
-    refs' = Map.insert freeAddr tape (refs c)
+    refs' = Map.insert freeAddr ref (refs c)
 
--- Creates a pointer to a new tape with the given name and contents.
-newTape :: VarName -> Tape -> Config -> Config
-newTape name tape c = putTapePtr name addr c' where
-    (addr, c') = putTape tape c
+-- Creates a pointer to a new object with the given name and contents.
+newRef :: VarName -> Reference -> Config -> Config
+newRef name ref c = putPtr name addr c' where
+    (addr, c') = putRef ref c
 
--- Modifies the tape at the address, if it exists.
+-- Modifies the object at the address, if it exists.
+modifyRef :: Address -> (Reference -> Maybe Reference) -> Config -> Maybe Config
+modifyRef addr f c = do
+    ref <- derefPtr addr c
+    let ref' = f ref
+    let refs' = maybe (refs c) (\r -> Map.insert addr r (refs c)) ref'
+    return c { refs = refs' }
+
+-- Tries to modify the tape at the address. If there is no tape specifically at
+-- the address then returns Nothing.
 modifyTape :: Address -> (Tape -> Tape) -> Config -> Maybe Config
-modifyTape addr f c = do
-    tape <- derefTape addr c
-    let tape' = f tape
-    return c { refs = Map.insert addr tape' (refs c) }
+modifyTape addr f = modifyRef addr modify where
+    modify (TapeRef t) = Just (TapeRef (f t))
+    modify _           = Nothing
 
 --------------------------------------------------------------------------------
 -- Functions

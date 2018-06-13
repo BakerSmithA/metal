@@ -2,7 +2,6 @@ module State.ConfigSpec (configSpec) where
 
 import State.Config as Config
 import qualified State.Tape as Tape hiding (Tape)
-import State.Tape (Tape)
 import Syntax.Tree
 import Test.Hspec
 import TestHelper.Config
@@ -20,8 +19,8 @@ configSpec = do
 -- Convenience method for creating a pointer to a tape from an exisiting pointer.
 copyTapePtr :: VarName -> VarName -> Config -> Maybe Config
 copyTapePtr old new c = do
-    addr <- getTapePtr old c
-    return (putTapePtr new addr c)
+    addr <- getPtr old c
+    return (putPtr new addr c)
 
 tapeSpec :: Spec
 tapeSpec = do
@@ -29,29 +28,29 @@ tapeSpec = do
         it "returns nothing if the tape is undefined" $ do
             getTapeCpy "nothing" Config.empty `shouldBe` Nothing
 
-        it "allows new tapes to be added and retrieved" $ do
-            let env = newTape "tape" (Tape.fromString "abc") Config.empty
+        it "allows new references to be added and retrieved" $ do
+            let env = newRef "tape" (TapeRef $ Tape.fromString "abc") Config.empty
             getTapeCpy "tape" env `shouldBe` Just (Tape.fromString "abc")
 
-        it "allows modification of existing tapes" $ do
-            let env = newTape "tape" (Tape.fromString "abc") Config.empty
+        it "allows modification of existing references" $ do
+            let env = newRef "tape" (TapeRef $ Tape.fromString "abc") Config.empty
                 expected = Config.fromString "tape" "xbc"
             modifyNamedTape "tape" (Tape.setSym 'x') env `shouldBe` Just expected
 
-        it "overrides previous tape declarations" $ do
-            let env  = newTape "tape" (Tape.fromString "abc") Config.empty
-                env' = newTape "tape" (Tape.fromString "xyz") env
+        it "overrides previous references declarations" $ do
+            let env  = newRef "tape" (TapeRef $ Tape.fromString "abc") Config.empty
+                env' = newRef "tape" (TapeRef $ Tape.fromString "xyz") env
             getTapeCpy "tape" env' `shouldBe` Just (Tape.fromString "xyz")
 
         it "changed to referenced tape changes underlying tape" $ do
-            let env1 = newTape "tape1" (Tape.fromString "abc") Config.empty
+            let env1 = newRef "tape1" (TapeRef $ Tape.fromString "abc") Config.empty
                 env2 = fromJust $ copyTapePtr "tape1" "tape2" env1
                 env3 = fromJust $ modifyNamedTape "tape2" (Tape.setSym 'x') env2
             getTapeCpy "tape1" env3 `shouldBe` Just (Tape.fromString "xbc")
 
-        it "fails to create a reference to another tape if it does not exist" $ do
-            let env = newTape "tape1" (Tape.fromString "abc") Config.empty
-            getTapePtr "tape2" env `shouldBe` Nothing
+        it "fails to create a reference to another references if it does not exist" $ do
+            let env = newRef "tape1" (TapeRef $ Tape.fromString "abc") Config.empty
+            getPtr "tape2" env `shouldBe` Nothing
 
         it "fails if asking for a variable" $ do
             let env = putSym "x" '1' Config.empty
@@ -73,7 +72,7 @@ varSpec = do
             getSym "x" env' `shouldBe` Just '2'
 
         it "fails if asking for a tape" $ do
-            let env = newTape "tape" (Tape.fromString "abc") Config.empty
+            let env = newRef "tape" (TapeRef $ Tape.fromString "abc") Config.empty
             getSym "tape" env `shouldBe` Nothing
 
 funcSpec :: Spec
@@ -83,18 +82,18 @@ funcSpec = do
             getFunc "f" Config.empty `shouldBe` Nothing
 
         it "allows functions to be added and retrieved" $ do
-            let env = putFunc "f" [] (MoveRight (TapeVar "tape")) Config.empty
-            getFunc "f" env `shouldBe` Just ([], (MoveRight (TapeVar "tape")))
+            let env = putFunc "f" [] (MoveRight (TapeVar ["tape"])) Config.empty
+            getFunc "f" env `shouldBe` Just ([], (MoveRight (TapeVar ["tape"])))
 
         it "allows functions with arguments to be added and retrieved" $ do
             let args = [("a", SymType), ("b", TapeType)]
-                env = putFunc "f" args (MoveRight (TapeVar "tape")) Config.empty
-            getFunc "f" env `shouldBe` Just (args, (MoveRight (TapeVar "tape")))
+                env = putFunc "f" args (MoveRight (TapeVar ["tape"])) Config.empty
+            getFunc "f" env `shouldBe` Just (args, (MoveRight (TapeVar ["tape"])))
 
         it "overrides previous function declarations" $ do
-            let env  = putFunc "f" [] (MoveRight (TapeVar "tape")) Config.empty
-                env' = putFunc "f" [] (MoveLeft (TapeVar "tape")) env
-            getFunc "f" env' `shouldBe` Just ([], (MoveLeft (TapeVar "tape")))
+            let env  = putFunc "f" [] (MoveRight (TapeVar ["tape"])) Config.empty
+                env' = putFunc "f" [] (MoveLeft (TapeVar ["tape"])) env
+            getFunc "f" env' `shouldBe` Just ([], (MoveLeft (TapeVar ["tape"])))
 
 resetEnvSpec :: Spec
 resetEnvSpec = do
@@ -107,16 +106,16 @@ resetEnvSpec = do
             getSym "x" env3 `shouldBe` Just '1'
             getSym "y" env3 `shouldBe` Nothing
 
-        it "resets new tape definitions" $ do
-            let env1 = newTape "x" (Tape.fromString "abc") Config.empty
-                env2 = newTape "y" (Tape.fromString "xyz") env1
+        it "resets new reference definitions" $ do
+            let env1 = newRef "x" (TapeRef $ Tape.fromString "abc") Config.empty
+                env2 = newRef "y" (TapeRef $ Tape.fromString "xyz") env1
                 env3 = revertEnv env1 env2
 
             getTapeCpy "x" env3 `shouldBe` Just (Tape.fromString "abc")
             getTapeCpy "y" env3 `shouldBe` Nothing
 
-        it "resets references to exisiting tapes" $ do
-            let env1 = newTape "x" (Tape.fromString "abc") Config.empty
+        it "resets references to exisiting references" $ do
+            let env1 = newRef "x" (TapeRef $ Tape.fromString "abc") Config.empty
                 env2 = fromJust $ copyTapePtr "x" "y" env1
                 env3 = revertEnv env1 env2
 
@@ -124,24 +123,24 @@ resetEnvSpec = do
             getTapeCpy "y" env3 `shouldBe` Nothing
 
         it "resets function definitions" $ do
-            let env1 = putFunc "f1" [] (MoveRight (TapeVar "tape")) Config.empty
-                env2 = putFunc "f2" [] (MoveLeft (TapeVar "tape")) env1
+            let env1 = putFunc "f1" [] (MoveRight (TapeVar ["tape"])) Config.empty
+                env2 = putFunc "f2" [] (MoveLeft (TapeVar ["tape"])) env1
                 env3 = revertEnv env1 env2
 
-            getFunc "f1" env3 `shouldBe` Just ([], MoveRight (TapeVar "tape"))
+            getFunc "f1" env3 `shouldBe` Just ([], MoveRight (TapeVar ["tape"]))
             getFunc "f2" env3 `shouldBe` Nothing
 
         it "removes freed references" $ do
-            let env1 = newTape "x" (Tape.fromString "x") Config.empty
-                env2 = newTape "y" (Tape.fromString "y") env1
+            let env1 = newRef "x" (TapeRef $ Tape.fromString "x") Config.empty
+                env2 = newRef "y" (TapeRef $ Tape.fromString "y") env1
                 env3 = revertEnv env1 env2
 
-            elems (refs env3) `shouldBe` [Tape.fromString "x"]
+            elems (refs env3) `shouldBe` [TapeRef $ Tape.fromString "x"]
 
         it "adds freed addresses back to the list of free addresses" $ do
-            let env1 = newTape "x" (Tape.fromString "x") Config.empty
-                env2 = newTape "y" (Tape.fromString "y") env1
-                addr = fromJust (getTapePtr "y" env2)
+            let env1 = newRef "x" (TapeRef $ Tape.fromString "x") Config.empty
+                env2 = newRef "y" (TapeRef $ Tape.fromString "y") env1
+                addr = fromJust (getPtr "y" env2)
                 env3 = revertEnv env1 env2
 
             (freeAddrs env3) `shouldContain` [addr]

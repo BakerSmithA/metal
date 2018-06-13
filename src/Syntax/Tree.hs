@@ -13,7 +13,7 @@ type CamelId    = Identifier
 -- Used to refer to variables, functions, structs, etc.
 type VarName = SnakeId
 -- Represents how to 'reach' a variable, e.g. ["x", "m_x"] would be the
--- variable m_x, via the object x.
+-- variable m_x, via the object x. The code would be: x.m_x
 type VarPath = [VarName]
 
 --------------------------------------------------------------------------------

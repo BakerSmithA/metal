@@ -7,9 +7,9 @@ import Syntax.FuncSpec
 import Syntax.IdentifierSpec
 import Syntax.ParserSpec
 import Syntax.VariableExprSpec
--- import State.TapeSpec
--- import State.ConfigSpec
--- import State.TreeSpec
+import State.TapeSpec
+import State.ConfigSpec
+import State.TreeSpec
 -- import Semantics.BexpSpec
 -- import Semantics.StmSpec
 -- import Semantics.ProgramSpec
@@ -25,9 +25,9 @@ main = hspec specs where
         identifierSpec
         parserSpec
         variableExprSpec
-        -- tapeSpec
-        -- configSpec
-        -- treeSpec
+        tapeSpec
+        configSpec
+        treeSpec
         -- bexpValSpec
         -- stmSpec
         -- programSpec
