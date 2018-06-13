@@ -40,8 +40,13 @@ fromString tapeName str = newRef tapeName tape State.Config.empty where
     tape = TapeRef (Tape.fromString str)
 
 -- Retrieves a tape or symbol from the variable environment.
-getVariable :: VarName -> Config -> Maybe Variable
-getVariable name c = Map.lookup name (vars c)
+getVar :: VarName -> Config -> Maybe Variable
+getVar name c = Map.lookup name (vars c)
+
+-- Puts a variable in the environment, overwriting whatever variable is
+-- currently in the environment with the same name.
+putVar :: VarName -> Variable -> Config -> Config
+putVar name var c = c { vars = Map.insert name var (vars c) }
 
 --------------------------------------------------------------------------------
 -- Tape Symbols
@@ -50,12 +55,12 @@ getVariable name c = Map.lookup name (vars c)
 -- Looks up a variable in an environment.
 getSym :: VarName -> Config -> Maybe TapeSymbol
 getSym name c = do
-    (Symbol sym) <- getVariable name c
+    (Symbol sym) <- getVar name c
     return sym
 
 -- Adds a variable to the environment.
 putSym :: VarName -> TapeSymbol -> Config -> Config
-putSym name sym c = c { vars = Map.insert name (Symbol sym) (vars c) }
+putSym name sym = putVar name (Symbol sym)
 
 --------------------------------------------------------------------------------
 -- Tapes
@@ -64,7 +69,7 @@ putSym name sym c = c { vars = Map.insert name (Symbol sym) (vars c) }
 -- Looks up the address of a object in the environment.
 getPtr :: VarName -> Config -> Maybe Address
 getPtr name c = do
-    (Ptr addr) <- getVariable name c
+    (Ptr addr) <- getVar name c
     return addr
 
 -- Deferences a pointer to a object.
@@ -73,7 +78,7 @@ derefPtr addr c = Map.lookup addr (refs c)
 
 -- Adds a pointer to a object to the environment.
 putPtr :: VarName -> Address -> Config -> Config
-putPtr name addr c = c { vars = Map.insert name (Ptr addr) (vars c) }
+putPtr name addr = putVar name (Ptr addr)
 
 -- Adds an object to the environment, returning the address at which the object
 -- was added.
