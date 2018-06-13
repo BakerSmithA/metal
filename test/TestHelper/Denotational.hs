@@ -39,9 +39,9 @@ shouldReturn result expected = result `H.shouldReturn` (return expected)
 
 -- Asserts that the variable environment contains the given value for the
 -- variable name.
-shouldReturnVar :: IO (Machine Config) -> VarName -> TapeSymbol -> H.Expectation
-shouldReturnVar r name sym = shouldSatisfy r predicate where
-    predicate config = Config.getSym name config == Just sym
+shouldReturnVar :: IO (Machine Config) -> VarPath -> TapeSymbol -> H.Expectation
+shouldReturnVar r path sym = shouldSatisfy r predicate where
+    predicate config = Config.getSym path config == Just sym
 
 -- Asserts that the function environment contains the given function body for
 -- the function name.
@@ -51,14 +51,14 @@ shouldReturnFunc r name args body = shouldSatisfy r predicate where
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
-shouldBeAt :: IO (Machine Config) -> VarName -> Pos -> H.Expectation
-shouldBeAt r name p = shouldSatisfy r predicate where
-    predicate c = pos (fromJust (getTapeCpy name c)) == p
+shouldBeAt :: IO (Machine Config) -> VarPath -> Pos -> H.Expectation
+shouldBeAt r path p = shouldSatisfy r predicate where
+    predicate c = pos (fromJust (getTapeCpy path c)) == p
 
 -- Asserts that the tape has the string `str` at the start of the tape.
-shouldRead :: IO (Machine Config) -> VarName -> [TapeSymbol] -> H.Expectation
-shouldRead r name syms = shouldSatisfy r predicate where
-    predicate c = contents (fromJust (getTapeCpy name c)) == contents (T.fromString syms)
+shouldRead :: IO (Machine Config) -> VarPath -> [TapeSymbol] -> H.Expectation
+shouldRead r path syms = shouldSatisfy r predicate where
+    predicate c = contents (fromJust (getTapeCpy path c)) == contents (T.fromString syms)
 
 -- Asserts that the machine halted in the accepting state.
 shouldAccept :: IO (Machine Config) -> H.Expectation

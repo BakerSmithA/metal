@@ -57,7 +57,7 @@ evalSymDecl name symExpr c = do
 evalTapeDecl :: (Monad m) => VarName -> TapeExpr -> Config -> App m Config
 evalTapeDecl name tapeExpr c = do
     (addr, c') <- tapePtr tapeExpr c
-    return (putTapePtr name addr c')
+    return (putPtr name addr c')
 
 -- Evaluates a variable declaration.
 evalVarDecl :: (Monad m) => VarName -> AnyValExpr -> Config -> App m Config
@@ -117,7 +117,7 @@ evalPrintRead symExpr c = do
 evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config
 evalDebugPrintTape tapeExpr c1 = do
     (addr, c2) <- tapePtr tapeExpr c1
-    tape <- tryMaybe (derefTape addr c2) UndefVar
+    (TapeRef tape) <- tryMaybe (derefPtr addr c2) UndefVar
     output' (show tape) c2
 
 -- Evalautes a statement in a configuration of a Turing machine.

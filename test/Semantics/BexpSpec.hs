@@ -47,8 +47,8 @@ bexpValSpec = do
             tt `shouldReturn` True
 
         it "evaluates <=" $ do
-            let b1      = Le (Read (TapeVar "tape")) (SymLit 'c') -- The current symbol is 'b'.
-                b2      = Le (Read (TapeVar "tape")) (SymLit 'a')
+            let b1      = Le (Read (TapeVar ["tape"])) (SymLit 'c') -- The current symbol is 'b'.
+                b2      = Le (Read (TapeVar ["tape"])) (SymLit 'a')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
@@ -56,8 +56,8 @@ bexpValSpec = do
             result2 `shouldReturn` False
 
         it "evaluates ==" $ do
-            let b1      = Eq (Read (TapeVar "tape")) (SymLit 'b') -- The current symbol is 'b'.
-                b2      = Eq (Read (TapeVar "tape")) (SymLit '#')
+            let b1      = Eq (Read (TapeVar ["tape"])) (SymLit 'b') -- The current symbol is 'b'.
+                b2      = Eq (Read (TapeVar ["tape"])) (SymLit '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 
@@ -65,8 +65,8 @@ bexpValSpec = do
             result2 `shouldReturn` False
 
         it "evaluates !=" $ do
-            let b1      = Ne (Read (TapeVar "tape")) (SymLit 'b') -- The current symbol is 'b'.
-                b2      = Ne (Read (TapeVar "tape")) (SymLit '#')
+            let b1      = Ne (Read (TapeVar ["tape"])) (SymLit 'b') -- The current symbol is 'b'.
+                b2      = Ne (Read (TapeVar ["tape"])) (SymLit '#')
                 result1 = evalBexp b1 testConfig'
                 result2 = evalBexp b2 testConfig'
 

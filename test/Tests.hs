@@ -10,7 +10,7 @@ import Syntax.VariableExprSpec
 import State.TapeSpec
 import State.ConfigSpec
 import State.TreeSpec
--- import Semantics.BexpSpec
+import Semantics.BexpSpec
 -- import Semantics.StmSpec
 -- import Semantics.ProgramSpec
 import Test.Hspec
@@ -28,6 +28,6 @@ main = hspec specs where
         tapeSpec
         configSpec
         treeSpec
-        -- bexpValSpec
+        bexpValSpec
         -- stmSpec
         -- programSpec
