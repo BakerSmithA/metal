@@ -21,8 +21,8 @@ import Test.Hspec
 --  invoke
 testResetVarEnv :: (Stm -> Stm) -> Maybe Stm -> Expectation
 testResetVarEnv makeControlStruct invoke = do
-    let outerVarDecl = VarDecl "x" ( S $ SymLit '1')
-        innerVarDecl = VarDecl "x" ( S $ SymLit '2')
+    let outerVarDecl = VarDecl "x" (S $ SymLit '1')
+        innerVarDecl = VarDecl "x" (S $ SymLit '2')
         write        = Write (TapeVar "tape") (SymLit '#')
         structBody   = Comp innerVarDecl write
         structDecl   = makeControlStruct structBody
@@ -344,7 +344,7 @@ funcCallSpec = do
 
         it "removes function variables once the function exited" $ do
             let declSym  = VarDecl "x" (S $ SymLit '1')
-                body     = PrintStr "hello"
+                body     = Print (SymLit 'a')
                 funcDecl = FuncDecl "f" [("y", SymType)] body
                 comp1    = Comp declSym (Comp funcDecl (Call "f" [S $ SymVar "x"]))
                 -- Attempt to use y which was only declared as an argument of the function.
@@ -354,7 +354,7 @@ funcCallSpec = do
             result `shouldThrow` (== UndefVar)
 
         it "accepts a tape literal as argument" $ do
-            let funcDecl = FuncDecl "f" [("t", TapeType)] (PrintRead (TapeVar "t"))
+            let funcDecl = FuncDecl "f" [("t", TapeType)] (Print (Read (TapeVar "t")))
                 call     = Call "f" [T $ TapeLit "xyz"]
                 comp     = Comp funcDecl call
                 result   = evalSemantics comp Config.empty
@@ -394,53 +394,53 @@ printReadSpec = do
 
     context "evaluating printing the current symbol" $ do
         it "prints the current symbol" $ do
-            let result = evalSemantics (PrintRead (TapeVar "tape")) testConfig
+            let result = evalSemantics (Print (Read (TapeVar "tape"))) testConfig
             result `shouldOutput` ["a"]
 
         it "prints multiple symbols in the correct order" $ do
-            let comp   = Comp (PrintRead (TapeVar "tape")) (Comp (PrintRead (TapeVar "tape")) (PrintRead (TapeVar "tape")))
+            let comp   = Comp (Print (Read (TapeVar "tape"))) (Comp (Print (Read (TapeVar "tape"))) (Print (Read (TapeVar "tape"))))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "a"]
 
         it "prints multiple symbols in the correct order using movement" $ do
-            let comp   = Comp (PrintRead (TapeVar "tape")) (Comp (MoveRight (TapeVar "tape")) (Comp (PrintRead (TapeVar "tape")) (Comp (MoveRight (TapeVar "tape")) (PrintRead (TapeVar "tape")))))
+            let comp   = Comp (Print (Read (TapeVar "tape"))) (Comp (MoveRight (TapeVar "tape")) (Comp (Print (Read (TapeVar "tape"))) (Comp (MoveRight (TapeVar "tape")) (Print (Read (TapeVar "tape"))))))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
     context "evaluating printing the current symbol using an if" $ do
         it "prints using an if" $ do
-            let comp   = If TRUE (PrintRead (TapeVar "tape")) [] Nothing
+            let comp   = If TRUE (Print (Read (TapeVar "tape"))) [] Nothing
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a"]
 
         it "does not print anything before the if multiple times" $ do
-            let ifStm  = If TRUE (PrintRead (TapeVar "tape")) [] Nothing
-                comp   = Comp (PrintRead (TapeVar "tape")) ifStm
+            let ifStm  = If TRUE (Print (Read (TapeVar "tape"))) [] Nothing
+                comp   = Comp (Print (Read (TapeVar "tape"))) ifStm
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a"]
 
     context "evaluating printing the current symbol using a loop" $ do
         it "prints multiple using a loop" $ do
-            let comp = While (Not (Eq (Read (TapeVar "tape")) (SymLit ' '))) (Comp (PrintRead (TapeVar "tape")) (MoveRight (TapeVar "tape")))
+            let comp = While (Not (Eq (Read (TapeVar "tape")) (SymLit ' '))) (Comp (Print (Read (TapeVar "tape"))) (MoveRight (TapeVar "tape")))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "b", "c"]
 
         it "does not print anything before the loop multiple times" $ do
-            let loop = While (Not (Eq (Read (TapeVar "tape")) (SymLit ' '))) (Comp (PrintRead (TapeVar "tape")) (MoveRight (TapeVar "tape")))
-                comp = Comp (PrintRead (TapeVar "tape")) loop
+            let loop = While (Not (Eq (Read (TapeVar "tape")) (SymLit ' '))) (Comp (Print (Read (TapeVar "tape"))) (MoveRight (TapeVar "tape")))
+                comp = Comp (Print (Read (TapeVar "tape"))) loop
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a", "b", "c"]
 
     context "evaluating printing using a function" $ do
         it "prints multiple using a function" $ do
-            let decl   = FuncDecl "f" [] (PrintRead (TapeVar "tape"))
+            let decl   = FuncDecl "f" [] (Print (Read (TapeVar "tape")))
                 comp   = Comp decl (Call "f" [])
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a"]
 
         it "does not print anything before the function multiple times" $ do
-            let decl   = FuncDecl "f" [] (PrintRead (TapeVar "tape"))
-                comp   = Comp (PrintRead (TapeVar "tape")) (Comp decl (Call "f" []))
+            let decl   = FuncDecl "f" [] (Print (Read (TapeVar "tape")))
+                comp   = Comp (Print (Read (TapeVar "tape"))) (Comp decl (Call "f" []))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["a", "a"]
 
@@ -448,12 +448,12 @@ printStrSpec :: Spec
 printStrSpec = do
     let testConfig = Config.fromString "tape" "abc"
 
-    context "evaluating printing the current symbol" $ do
+    context "evaluating printing symbols" $ do
         it "prints a string" $ do
-            let result = evalSemantics (PrintStr "hello") testConfig
-            result `shouldOutput` ["hello"]
+            let result = evalSemantics (Print (SymLit 'a')) testConfig
+            result `shouldOutput` ["a"]
 
         it "prints multiple strings in the correct order" $ do
-            let comp   = Comp (PrintStr "1") (Comp (PrintStr "2") (PrintStr "3"))
+            let comp   = Comp (Print (SymLit '1')) (Comp (Print (SymLit '2')) (Print (SymLit '3')))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["1", "2", "3"]

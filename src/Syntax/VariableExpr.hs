@@ -81,18 +81,20 @@ symExpr :: ParserM SymExpr
 symExpr = Read <$ lTok "read" <* lWhitespace <*> tapeExpr
       <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
       <|> SymVar <$> expVarId SymType
+      <|> parens symExpr
 
 -- Parses an expression which evaluates to a tape reference.
 tapeExpr :: ParserM TapeExpr
 tapeExpr = TapeLit <$> quoted (many tapeSymbol)
        <|> TapeVar <$> expVarId TapeType
+       <|> parens tapeExpr
 
 -- Parses an expression which evaluates to an object reference.
 objExpr :: ParserM ObjExpr
-objExpr = makeObj <|> objVar where
+objExpr = makeObj <|> objVar <|> parens objExpr where
     makeObj = do
         (name, ms) <- refStruct
-        args <- matchedTypes (maybeParens . expAnyValExpr) (map memberVarType ms)
+        args <- matchedTypes expAnyValExpr (map memberVarType ms)
         return (NewObj name args)
     objVar = do
         (name, (CustomType structName)) <- expType refVarId (isCustomType . snd)

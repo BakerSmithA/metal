@@ -13,6 +13,7 @@ parserSpec :: Spec
 parserSpec = do
     describe "Parser" $ do
         structDeclSpec
+        varDeclSpec
         importPathsSpec
         programSpec
 
@@ -61,9 +62,9 @@ varDeclSpec = do
 
         it "infers type of a variable assigned to another variable" $ do
             let decl      = VarDecl "new_tape" (T (TapeVar "tape"))
-                printRead = PrintRead (TapeVar "new_tape")
+                printRead = Print (Read (TapeVar "new_tape"))
                 expected  = Comp decl printRead
-            parseEvalState state program "" "let new_tape = tape \n print new_tape" `shouldParse` expected
+            parseEvalState state program "" "let new_tape = tape \n print (read new_tape)" `shouldParse` expected
 
         it "fails if '=' is missing" $ do
             parseEvalState state program "" `shouldFailOn` "let x read tape"
@@ -182,12 +183,9 @@ programSpec = describe "program" $ do
             parseEvalState state program "" `shouldFailOn `"if \n left tape"
 
     context "parsing printing" $ do
-        it "parses printing a string" $ do
-            parseEmptyState program "" "print \"This is a string\"" `shouldParseStm` (PrintStr "This is a string")
-
-        it "parses printing the symbol read from the tape" $ do
+        it "parses printing the a symbol" $ do
             let state = Env.fromList [("tape", PVar TapeType)]
-            parseEvalState state program "" "print tape" `shouldParseStm` (PrintRead (TapeVar "tape"))
+            parseEvalState state program "" "print (read tape)" `shouldParseStm` (Print (Read (TapeVar "tape")))
 
     context "removing whitespace and comments" $ do
         let state = Env.fromList [("tape", PVar TapeType)]

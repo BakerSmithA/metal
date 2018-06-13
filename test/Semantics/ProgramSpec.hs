@@ -19,9 +19,9 @@ foldFilesSpec = do
             foldFiles Env.empty [] `shouldBe` expected
 
         it "combines parsed files" $ do
-            let file1    = ("file1", "print \"Hello\"")
+            let file1    = ("file1", "print 'a'")
                 file2    = ("file2", "import file1\nlet x = '1'")
-                expected = Identity $ Comp (PrintStr "Hello") (Comp (VarDecl "x" (S $ SymLit '1')) Accept)
+                expected = Identity $ Comp (Print (SymLit 'a')) (Comp (VarDecl "x" (S $ SymLit '1')) Accept)
             foldFiles Env.empty [file1, file2] `shouldBe` expected
 
         it "allows declarations to be used by importing files" $ do

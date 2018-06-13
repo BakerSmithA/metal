@@ -50,10 +50,6 @@ lTok = lift . tok
 parens :: ParserM a -> ParserM a
 parens = between (lTok "(") (lTok ")")
 
--- Parses a, possibly between parenthesis.
-maybeParens :: ParserM a -> ParserM a
-maybeParens p = parens p <|> p
-
 -- Parses a string enclosed in curly braces.
 braces :: ParserM a -> ParserM a
 braces = between (lTok "{" <* lWhitespaceNewline) (lTok "}")

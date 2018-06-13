@@ -17,7 +17,6 @@ variableExprSpec = do
     tapeExprSpec
     objExprSpec
     anyValExprSpec
-    varDeclSpec
 
 refVarIdSpec :: Spec
 refVarIdSpec = do

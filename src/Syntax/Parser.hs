@@ -46,9 +46,9 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --                | 'not' Bexp
 --                | Bexp 'and' Bexp
 --                | Bexp 'or' Bexp
---                | DerivedValue '==' DerivedValue
---                | DerivedValue '<=' DerivedValue
---                | DerivedValue '!=' DerivedValue
+--                | SymExpr '==' SymExpr
+--                | SymExpr '<=' SymExpr
+--                | SymExpr '!=' SymExpr
 --  Else          : 'else' { Stm } | ε
 --  ElseIf        : 'else if' { Stm } ElseIf | Else
 --  If            : 'if' { Stm } ElseIf
@@ -64,9 +64,9 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --  NewObj        : StructName (AnyTypeExpr ' ')+
 --  MemberAccess  : VarName '.' VarName
 --
---  Stm           : 'left' VarName
---                | 'right' VarName
---                | 'write' VarName DerivedValue
+--  Stm           : 'left' TapeExpr
+--                | 'right' TapeExpr
+--                | 'write' TapeExpr SymExpr
 --                | 'reject'
 --                | 'accept'
 --                | VarDecl
@@ -77,8 +77,7 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --                | FuncDecl
 --                | Call
 --                | Stm '\n' Stm
---                | 'print' VarName
---                | 'print' String
+--                | 'print' SymExpr
 --
 --  Import        : 'import ' String
 --  Imports       : ('import ' String '\n'+)*
@@ -132,8 +131,7 @@ stm' = try funcCall
    <|> Accept <$ lTok "accept"
    <|> varDecl
    <|> funcDecl stmComp
-   <|> try (PrintStr <$ lTok "print" <*> quotedString)
-   <|> try (PrintRead <$ lTok "print" <* lWhitespace <*> tapeExpr)
+   <|> try (Print <$ lTok "print" <* lWhitespace <*> symExpr)
    <|> DebugPrintTape <$ lTok "_print" <*> tapeExpr
    <|> whileStm stmComp
    <|> ifStm stmComp

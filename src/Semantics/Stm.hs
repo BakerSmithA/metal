@@ -108,14 +108,10 @@ evalComp :: (MonadOutput m) => Stm -> Stm -> Config -> App m Config
 evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 
 -- Evaluates printing the current symbol.
-evalPrintRead :: (MonadOutput m) => TapeExpr -> Config -> App m Config
-evalPrintRead tapeExpr c = do
-    (sym, c') <- symVal (Read tapeExpr) c
+evalPrintRead :: (MonadOutput m) => SymExpr -> Config -> App m Config
+evalPrintRead symExpr c = do
+    (sym, c') <- symVal symExpr c
     output' [sym] c'
-
--- Evaluates printing a string.
-evalPrintStr :: (MonadOutput m) => String -> Config -> App m Config
-evalPrintStr = output'
 
 -- Evalutes debug printing the contents of a tape.
 evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config
@@ -137,6 +133,5 @@ evalStm (VarDecl name expr)       = evalVarDecl name expr
 evalStm (FuncDecl name args body) = evalFuncDecl name args body
 evalStm (Call name args)          = evalCall name args
 evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
-evalStm (PrintRead tapeExpr)      = evalPrintRead tapeExpr
-evalStm (PrintStr str)            = evalPrintStr str
+evalStm (Print symExpr)           = evalPrintRead symExpr
 evalStm (DebugPrintTape tapeExpr) = evalDebugPrintTape tapeExpr
