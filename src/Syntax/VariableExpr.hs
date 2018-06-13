@@ -27,7 +27,7 @@ newMemberVarId = newId snakeId
 --  MemberAccess : VarName ('.' VarName)+
 refMemberId :: ParserM (VarName, DataType)
 refMemberId = do
-    i <- refVarId
+    i <- refTopVarId
     evalMemberId i where
         -- Recursively tries to evaluate a struct member access.
         evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
@@ -48,13 +48,19 @@ newVarId :: ParserM VarName
 newVarId = newId snakeId
 
 -- Parses a variable and its type. Fails if the variable does not already
--- exist in the environment.
-refVarId :: ParserM (VarName, DataType)
-refVarId = do
+-- exist in the top level of the environment, i.e. not in any structures.
+refTopVarId :: ParserM (VarName, DataType)
+refTopVarId = do
     (name, idType) <- refId snakeId
     case idType of
         PVar varType -> return (name, varType)
         _            -> fail "Expected variable"
+
+-- Parses a variable any its type. The variable may exist at the top level,
+-- or in a structure.
+refVarId :: ParserM (VarName, DataType)
+refVarId = try refMemberId
+       <|> refTopVarId
 
 -- Assuming the struct with the given name exists, adds all the member variables
 -- to the environment. Fails if the struct does not exists.
