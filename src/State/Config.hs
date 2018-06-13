@@ -40,18 +40,15 @@ fromString tapeName str = newRef tapeName tape State.Config.empty where
 fromVars :: Map VarName Variable -> Config
 fromVars vs = State.Config.empty { vars = vs }
 
-follow :: VarPath -> Config -> Maybe Variable
-follow []     _ = error "Empty variable path"
-follow [n]    c = Map.lookup n (vars c)
-follow (n:ns) c = do
+-- Retrieves a tape or symbol from the variable environment.
+getVar :: VarPath -> Config -> Maybe Variable
+getVar []     _ = error "Empty variable path"
+getVar [n]    c = Map.lookup n (vars c)
+getVar (n:ns) c = do
     (Ptr addr) <- Map.lookup n (vars c)
     (ObjRef mems) <- derefPtr addr c
     let c' = fromVars mems
-    follow ns c'
-
--- Retrieves a tape or symbol from the variable environment.
-getVar :: VarPath -> Config -> Maybe Variable
-getVar = follow
+    getVar ns c'
 
 -- Puts a variable in the environment, overwriting whatever variable is
 -- currently in the environment with the same name.
