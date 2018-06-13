@@ -7,7 +7,6 @@ import Syntax.VariableExpr
 import Syntax.Parser
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import TestHelper.Parser
 
 variableExprSpec :: Spec
 variableExprSpec = do
@@ -23,7 +22,7 @@ refVarIdSpec = do
     describe "refVarId" $ do
         it "parses existing variables" $ do
             let state = Env.fromList [("x", PVar SymType)]
-            parseEvalState state refVarId "" "x" `shouldParse` ("x", SymType)
+            parseEvalState state refVarId "" "x" `shouldParse` (["x"], SymType)
 
         it "fails to parse if the variable has not been declared" $ do
             parseEmptyState refVarId "" `shouldFailOn` "x"
@@ -34,27 +33,27 @@ refVarIdSpec = do
 
         it "accesses variables inside structures" $ do
             let state = Env.fromList [("S", PStruct [("m_x", SymType)]), ("s", PVar (CustomType "S"))]
-            parseEvalState state refVarId "" "s.m_x" `shouldParse` ("m_x", SymType)
+            parseEvalState state refVarId "" "s.m_x" `shouldParse` (["s", "m_x"], SymType)
 
         it "allows chaining" $ do
             let struct1 = ("S1", PStruct [("m_s", CustomType "S2")])
                 struct2 = ("S2", PStruct [("m_x", TapeType)])
                 var     = ("s", PVar (CustomType "S1"))
                 state   = Env.fromList [struct1, struct2, var]
-            parseEvalState state refVarId "" "s.m_s.m_x" `shouldParse` ("m_x", TapeType)
+            parseEvalState state refVarId "" "s.m_s.m_x" `shouldParse` (["s", "m_s", "m_x"], TapeType)
 
         it "fails if any intermediate member in a chain is not a struct" $ do
             let struct1 = ("S1", PStruct [("m_s", TapeType)])
                 struct2 = ("S2", PStruct [("m_x", SymType)])
                 var     = ("s", PVar (CustomType "S1"))
                 state   = Env.fromList [struct1, struct2, var]
-            parseEvalState state refVarId "" "s.m_s.m_x" `shouldParse` ("m_s", TapeType)
+            parseEvalState state refVarId "" "s.m_s.m_x" `shouldParse` (["s", "m_s"], TapeType)
 
         it "evaluates to the last access if intermediate types have the required type" $ do
             let struct = ("S", PStruct [("m_s", CustomType "S"), ("m_x", CustomType "S")])
                 var    = ("s", PVar (CustomType "S"))
                 state  = Env.fromList [struct, var]
-            parseEvalState state refVarId "" "s.m_s.m_s.m_x" `shouldParse` ("m_x", CustomType "S")
+            parseEvalState state refVarId "" "s.m_s.m_s.m_x" `shouldParse` (["s", "m_s", "m_s", "m_x"], CustomType "S")
 
 tapeSymbolSpec :: Spec
 tapeSymbolSpec = do
@@ -81,7 +80,7 @@ symExprSpec :: Spec
 symExprSpec = do
     describe "symExpr" $ do
         it "parses reading a tape variable" $ do
-            let expected = Read (TapeVar "t")
+            let expected = Read (TapeVar ["t"])
                 state = Env.fromList [("t", PVar TapeType)]
             parseEvalState state symExpr "" "read t" `shouldParse` expected
 
@@ -90,12 +89,12 @@ symExprSpec = do
             parseEmptyState symExpr "" "read \"abc\"" `shouldParse` expected
 
         it "parses sym variables" $ do
-            let expected = SymVar "x"
+            let expected = SymVar ["x"]
                 state = Env.fromList [("x", PVar SymType)]
             parseEvalState state symExpr "" "x" `shouldParse` expected
 
         it "parses variables in structs" $ do
-            let expected = SymVar "m_s"
+            let expected = SymVar ["x", "m_s"]
                 state = Env.fromList [("S", PStruct [("m_s", SymType)]), ("x", PVar (CustomType "S"))]
             parseEvalState state symExpr "" "x.m_s" `shouldParse` expected
 
@@ -115,12 +114,12 @@ tapeExprSpec = do
             parseEmptyState tapeExpr "" "\"abc\"" `shouldParse` expected
 
         it "parses tape variables" $ do
-            let expected = TapeVar "t"
+            let expected = TapeVar ["t"]
                 state = Env.fromList [("t", PVar TapeType)]
             parseEvalState state tapeExpr "" "t" `shouldParse` expected
 
         it "parses variables in structs" $ do
-            let expected = TapeVar "m_t"
+            let expected = TapeVar ["x", "m_t"]
                 state = Env.fromList [("S", PStruct [("m_t", TapeType)]), ("x", PVar (CustomType "S"))]
             parseEvalState state tapeExpr "" "x.m_t" `shouldParse` expected
 
@@ -141,17 +140,17 @@ objExprSpec = do
             parseEvalState state objExpr "" "S 'a' \"abc\"" `shouldParse` expected
 
         it "parses object variables" $ do
-            let expected = ObjVar "S" "obj"
+            let expected = ObjVar "S" ["obj"]
                 state = Env.fromList [("obj", PVar (CustomType "S"))]
             parseEvalState state objExpr "" "obj" `shouldParse` expected
 
         it "parses variables in structs" $ do
-            let expected = ObjVar "S" "m_o"
+            let expected = ObjVar "S" ["x", "m_o"]
                 state = Env.fromList [("S", PStruct [("m_o", CustomType "S")]), ("x", PVar (CustomType "S"))]
             parseEvalState state objExpr "" "x.m_o" `shouldParse` expected
 
         it "parses new objects where arguments have parenthesis" $ do
-            let expected = NewObj "S" [(S (Read (TapeVar "tape")))]
+            let expected = NewObj "S" [(S (Read (TapeVar ["tape"])))]
                 state = Env.fromList [("S", PStruct [("x", SymType)]), ("tape", PVar TapeType)]
             parseEvalState state objExpr "" "S (read tape)" `shouldParse` expected
 
@@ -174,13 +173,13 @@ anyValExprSpec = do
         let state = Env.fromList [("x", PVar SymType), ("y", PVar TapeType), ("z", PVar (CustomType "S"))]
 
         it "parses symbols" $ do
-            let expected = S (SymVar "x")
+            let expected = S (SymVar ["x"])
             parseEvalState state anyValExpr "" "x" `shouldParse` expected
 
         it "parses tapes" $ do
-            let expected = T (TapeVar "y")
+            let expected = T (TapeVar ["y"])
             parseEvalState state anyValExpr "" "y" `shouldParse` expected
 
         it "parses objects" $ do
-            let expected = C (ObjVar "S" "z")
+            let expected = C (ObjVar "S" ["z"])
             parseEvalState state anyValExpr "" "z" `shouldParse` expected

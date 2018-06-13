@@ -10,6 +10,12 @@ type Identifier = String
 type SnakeId    = Identifier
 type CamelId    = Identifier
 
+-- Used to refer to variables, functions, structs, etc.
+type VarName = SnakeId
+-- Represents how to 'reach' a variable, e.g. ["x", "m_x"] would be the
+-- variable m_x, via the object x.
+type VarPath = [VarName]
+
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
@@ -40,7 +46,7 @@ type TapeSymbol = Char
 -- Values that evaluate to tape symbols.
 data SymExpr = Read TapeExpr
              | SymLit TapeSymbol
-             | SymVar VarName
+             | SymVar VarPath
              deriving (Eq, Show)
 
 instance Typed SymExpr where
@@ -52,7 +58,7 @@ instance Typed SymExpr where
 
 -- Values that evaluate to tape references.
 data TapeExpr = TapeLit String
-              | TapeVar VarName
+              | TapeVar VarPath
               deriving (Eq, Show)
 
 instance Typed TapeExpr where
@@ -64,7 +70,7 @@ instance Typed TapeExpr where
 
 -- Values that evaluate to structure instances.
 data ObjExpr = NewObj StructName [NewObjArg]
-             | ObjVar StructName VarName
+             | ObjVar StructName VarPath
              deriving (Eq, Show)
 
 instance Typed ObjExpr where
@@ -74,9 +80,6 @@ instance Typed ObjExpr where
 --------------------------------------------------------------------------------
 -- Variables
 --------------------------------------------------------------------------------
-
--- Used to refer to variables, functions, structs, etc.
-type VarName = SnakeId
 
 -- Values that evaluate to either a symbol or tape.
 data AnyValExpr = S SymExpr

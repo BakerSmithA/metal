@@ -38,29 +38,29 @@ bexpSpec = describe "bexp" $ do
     context "parsing EQ operator" $ do
         it "parses EQ" $ do
             let state = Env.fromList [("tape", PVar TapeType), ("x", PVar SymType)]
-            parseEvalState state bexp "" "x == read tape" `shouldParse` (Eq (SymVar "x") (Read (TapeVar "tape")))
+            parseEvalState state bexp "" "x == read tape" `shouldParse` (Eq (SymVar ["x"]) (Read (TapeVar ["tape"])))
 
         it "fails to parse chains" $ do
             let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
-            parseEvalState state bexp "" "'x' == y == z" `shouldParse` (Eq (SymLit 'x') (SymVar "y"))
+            parseEvalState state bexp "" "'x' == y == z" `shouldParse` (Eq (SymLit 'x') (SymVar ["y"]))
 
     context "parsing LE operator" $ do
         it "parses LE" $ do
             let state = Env.fromList [("x", PVar SymType), ("tape", PVar TapeType)]
-            parseEvalState state bexp "" "x <= read tape" `shouldParse` (Le (SymVar "x") (Read (TapeVar "tape")))
+            parseEvalState state bexp "" "x <= read tape" `shouldParse` (Le (SymVar ["x"]) (Read (TapeVar ["tape"])))
 
         it "fails to parse chains" $ do
             let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
-            parseEvalState state bexp "" "x <= y <= z" `shouldParse` (Le (SymVar "x") (SymVar "y"))
+            parseEvalState state bexp "" "x <= y <= z" `shouldParse` (Le (SymVar ["x"]) (SymVar ["y"]))
 
     context "parsing NE operator" $ do
         it "parses NE" $ do
             let state = Env.fromList [("x", PVar SymType), ("tape", PVar TapeType)]
-            parseEvalState state bexp "" "x != read tape" `shouldParse` (Ne (SymVar "x") (Read (TapeVar "tape")))
+            parseEvalState state bexp "" "x != read tape" `shouldParse` (Ne (SymVar ["x"]) (Read (TapeVar ["tape"])))
 
         it "fails to parse chains" $ do
             let state = Env.fromList [("x", PVar SymType), ("y", PVar SymType), ("z", PVar SymType)]
-            parseEvalState state bexp "" "x != y != z" `shouldParse` (Ne (SymVar "x") (SymVar "y"))
+            parseEvalState state bexp "" "x != y != z" `shouldParse` (Ne (SymVar ["x"]) (SymVar ["y"]))
 
     context "parsing boolean expressions with parenthesis" $ do
         it "gives precedence to bracketed expressions" $ do

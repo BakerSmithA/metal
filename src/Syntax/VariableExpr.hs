@@ -25,21 +25,26 @@ newMemberVarId = newId snakeId
 -- Parses access to a member of an instance of a struct. Fails if the variable
 -- is not a struct, or the member is not part of the struct class.
 --  MemberAccess : VarName ('.' VarName)+
-refMemberId :: ParserM (VarName, DataType)
+refMemberId :: ParserM (VarPath, DataType)
 refMemberId = do
-    i <- refTopVarId
-    evalMemberId i where
+    (name, t) <- refTopVarId
+    evalMemberId ([name], t) where
         -- Recursively tries to evaluate a struct member access.
-        evalMemberId :: (VarName, DataType) -> ParserM (VarName, DataType)
-        evalMemberId (_, CustomType structName) = block p where
+        evalMemberId :: (VarPath, DataType) -> ParserM (VarPath, DataType)
+        evalMemberId (varPath, CustomType structName) = block p where
             p = do
                 addStructMemsToEnv structName
                 -- Attempts to parse another ('.' VarName).
-                lTok "." *> (try chainedAccess <|> refVarId)
-            -- Attemps to parse another chained access, e.g. x.y.z
-            chainedAccess = refVarId >>= evalMemberId
-        evalMemberId (varName, varType) = fail msg where
-            msg = "expected " ++ varName ++ " to have struct type, but got " ++ (show varType)
+                (name, t) <- lTok "." *> refTopVarId
+                try (chainedAccess name t) <|> finalAccess name t
+
+            -- Attempts to parse another chained access, e.g. x.y.z
+            chainedAccess name t = evalMemberId (varPath ++ [name], t)
+            -- Attempts to parse this access as the final access.
+            finalAccess name t = return (varPath ++ [name], t)
+
+        evalMemberId (varPath, varType) = fail msg where
+            msg = "expected " ++ (show varPath) ++ " to have struct type, but got " ++ (show varType)
 
         -- Assuming the struct with the given name exists, adds all the member variables
         -- to the environment. Fails if the struct does not exists.
@@ -68,9 +73,9 @@ refTopVarId = do
 
 -- Parses a variable any its type. The variable may exist at the top level,
 -- or in a structure.
-refVarId :: ParserM (VarName, DataType)
+refVarId :: ParserM (VarPath, DataType)
 refVarId = try refMemberId
-       <|> refTopVarId
+       <|> fmap (\(n, t) -> ([n], t)) refTopVarId
 
 -- Parses a symbol that can be written to a tape.
 tapeSymbol :: ParserM TapeSymbol
@@ -108,7 +113,7 @@ anyValExpr = try (S <$> symExpr)
          <|> try (C <$> objExpr)
 
 -- Ensures the referenced variable has the given type, otherwise fails.
-expVarId :: DataType -> ParserM VarName
+expVarId :: DataType -> ParserM VarPath
 expVarId t = expTypeId refVarId (==t)
 
 -- Ensures the expression which evaluates to either a tape symbol, tape, or

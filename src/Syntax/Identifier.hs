@@ -60,7 +60,7 @@ expType p check = do
         else (fail "Mismatched types")
 
 -- Checks that an identifier has the given type.
-expTypeId :: ParserM (Identifier, t) -> (t -> Bool) -> ParserM Identifier
+expTypeId :: ParserM (a, t) -> (t -> Bool) -> ParserM a
 expTypeId p check = fmap fst (expType p (check . snd))
 
 -- Checks that the data type of the result is the expected type.
