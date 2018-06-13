@@ -106,6 +106,13 @@ writeSpec = do
         it "writes to the cell under the read-write head" $ do
             shouldRead (evalSemantics (Write (TapeVar ["tape"]) (SymLit '2')) testConfig) ["tape"] "a2c"
 
+        it "can follow variable paths to determine symbol to write" $ do
+            let mems        = [("x", Symbol '2')]
+                testConfig' = newRef "obj" (ObjRef $ objFromList mems) testConfig
+                statement   = Write (TapeVar ["tape"]) (SymVar ["obj", "x"])
+                result      = evalSemantics statement testConfig'
+            shouldRead result ["tape"] "a2c"
+
 acceptSpec :: Spec
 acceptSpec = do
     let testConfig = right (Config.fromString "tape" "abc")
