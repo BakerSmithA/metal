@@ -66,18 +66,22 @@ addStructMemsToEnv name = do
             putMem (memName, memType) = Env.put memName (PVar memType)
         _ -> fail "expected struct"
 
+-- Parses a symbol that can be written to a tape.
 tapeSymbol :: ParserM TapeSymbol
 tapeSymbol = noneOf "\'\""
 
+-- Parses an expression which evaluates to a tape symbol.
 symExpr :: ParserM SymExpr
 symExpr = Read <$ lTok "read" <* lWhitespace <*> tapeExpr
       <|> SymLit <$> between (char '\'') (lTok "\'") tapeSymbol
       <|> SymVar <$> expVarId SymType
 
+-- Parses an expression which evaluates to a tape reference.
 tapeExpr :: ParserM TapeExpr
 tapeExpr = TapeLit <$> quoted (many tapeSymbol)
        <|> TapeVar <$> expVarId TapeType
 
+-- Parses an expression which evaluates to an object reference.
 objExpr :: ParserM ObjExpr
 objExpr = makeObj <|> objVar where
     makeObj = do
@@ -88,13 +92,18 @@ objExpr = makeObj <|> objVar where
         (name, (CustomType structName)) <- expType refVarId (isCustomType . snd)
         return (ObjVar structName name)
 
+-- Parses an expression which evaluates to either a tape symbol, tape reference,
+-- or object reference.
 anyValExpr :: ParserM AnyValExpr
 anyValExpr = try (S <$> symExpr)
          <|> try (T <$> tapeExpr)
          <|> try (C <$> objExpr)
 
+-- Ensures the referenced variable has the given type, otherwise fails.
 expVarId :: DataType -> ParserM VarName
 expVarId t = expTypeId refVarId (==t)
 
+-- Ensures the expression which evaluates to either a tape symbol, tape, or
+-- object has the correct type, e.g. object.
 expAnyValExpr :: DataType -> ParserM AnyValExpr
 expAnyValExpr = expDataType anyValExpr
