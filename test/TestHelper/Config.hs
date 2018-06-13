@@ -8,21 +8,21 @@ import Data.Maybe
 
 -- Looks up the address of the tape and then deferences it, therefore changes
 -- to the returned tape will not be reflected in the environment.
-getTapeCpy :: VarName -> Config -> Maybe Tape
+getTapeCpy :: VarPath -> Config -> Maybe Tape
 getTapeCpy name c = do
     addr <- getPtr name c
     (TapeRef t) <- derefPtr addr c
     return t
 
 -- Convenience method for modifying the a tape with the given name.
-modifyNamedTape :: VarName -> (Tape -> Tape) -> Config -> Maybe Config
+modifyNamedTape :: VarPath -> (Tape -> Tape) -> Config -> Maybe Config
 modifyNamedTape name f c = modifyTape addr f c where
     addr = fromJust (getPtr name c)
 
 -- Expectes there to only be one object defined, i.e. a tape If so, that tape
 -- will be modified. Otherwise an error will be thrown.
 modifySingleTape :: (Tape -> Tape) -> Config -> Config
-modifySingleTape f c = fromJust $ modifyNamedTape ptrName f c where
+modifySingleTape f c = fromJust $ modifyNamedTape [ptrName] f c where
     ptrName = getFirstPtr ptrs
     ptrs = filter isPtr (Map.assocs (vars c))
 

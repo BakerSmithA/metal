@@ -21,13 +21,10 @@ data Config = Config {
   , funcs     :: Map FuncName ([FuncDeclArg], Stm)
   , refs      :: Map Address Reference
   , freeAddrs :: [Address]
-} deriving (Eq)
+} deriving (Eq, Show)
 
-instance Show Config where
-    -- show :: Config -> String
-    show (Config vs fs rs _) =   "vars: " ++ (show vs)
-                            ++ ", refs: " ++ (show rs)
-                            ++ ", funcs: " ++ (show (keys fs))
+objFromList :: [(VarName, Variable)] -> Object
+objFromList = Map.fromList
 
 -- Config which contains nothing.
 empty :: Config
@@ -39,9 +36,22 @@ fromString :: VarName -> String -> Config
 fromString tapeName str = newRef tapeName tape State.Config.empty where
     tape = TapeRef (Tape.fromString str)
 
+-- Empty config except for the variables contained.
+fromVars :: Map VarName Variable -> Config
+fromVars vs = State.Config.empty { vars = vs }
+
+follow :: VarPath -> Config -> Maybe Variable
+follow []     _ = error "Empty variable path"
+follow [n]    c = Map.lookup n (vars c)
+follow (n:ns) c = do
+    (Ptr addr) <- Map.lookup n (vars c)
+    (ObjRef mems) <- derefPtr addr c
+    let c' = fromVars mems
+    follow ns c'
+
 -- Retrieves a tape or symbol from the variable environment.
-getVar :: VarName -> Config -> Maybe Variable
-getVar name c = Map.lookup name (vars c)
+getVar :: VarPath -> Config -> Maybe Variable
+getVar = follow
 
 -- Puts a variable in the environment, overwriting whatever variable is
 -- currently in the environment with the same name.
@@ -53,7 +63,7 @@ putVar name var c = c { vars = Map.insert name var (vars c) }
 --------------------------------------------------------------------------------
 
 -- Looks up a variable in an environment.
-getSym :: VarName -> Config -> Maybe TapeSymbol
+getSym :: VarPath -> Config -> Maybe TapeSymbol
 getSym name c = do
     (Symbol sym) <- getVar name c
     return sym
@@ -67,7 +77,7 @@ putSym name sym = putVar name (Symbol sym)
 --------------------------------------------------------------------------------
 
 -- Looks up the address of a object in the environment.
-getPtr :: VarName -> Config -> Maybe Address
+getPtr :: VarPath -> Config -> Maybe Address
 getPtr name c = do
     (Ptr addr) <- getVar name c
     return addr
