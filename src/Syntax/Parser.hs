@@ -97,7 +97,7 @@ memberVarDecl structName = do
 -- allow for recursive structures. EBNF:
 --  MemberVars: (TypedVar '\n')+
 memberVarDecls :: StructName -> ParserM [StructMemberVar]
-memberVarDecls structName = (memberVarDecl structName) `sepBy` some (newline <* lWhitespace)
+memberVarDecls structName = (memberVarDecl structName) `sepEndBy` some (newline <* lWhitespace)
 
 -- Declares a new structure. Fails if the structure already exists at this
 -- scope. EBNF:
@@ -105,7 +105,7 @@ memberVarDecls structName = (memberVarDecl structName) `sepBy` some (newline <* 
 structDecl :: ParserM Stm
 structDecl = do
     name <- lTok "struct" *> newStructId
-    mems <- block (braces (memberVarDecls name))
+    mems <- block (braces (memberVarDecls name)) <* lWhitespaceNewline
     return (StructDecl name mems)
 
 -- Parses a variable (e.g. tape, symbol, object) declaration, EBNF:
@@ -146,9 +146,7 @@ compose xs  = foldr1 Comp xs
 -- Parses statements separated by newlines into a composition of statements.stmComp :: ParserM Stm
 stmComp :: ParserM Stm
 stmComp = (stms <* lWhitespaceNewline) >>= (return . compose) where
-    stms :: ParserM [Stm]
-    stms = try ((:) <$> (stm' <* some (newline <* lWhitespace)) <*> stms)
-       <|> (:) <$> stm' <*> pure []
+    stms = stm' `sepEndBy` some (newline <* lWhitespace)
 
 -- Parses a statement, the EBNF syntax of which is given below. The parser will
 -- fail if not all input is consumed.
@@ -178,8 +176,7 @@ importPath = tok "import" *> many (noneOf "\n\r")
 --  Imports : ('import ' String '\n'+)*
 importPaths :: Parser [ImportPath]
 importPaths = whitespaceNewline *> paths <* whitespaceNewline where
-    paths = try (many (importPath <* some newline))
-        <|> (:) <$> importPath <*> pure []
+    paths = importPath `sepEndBy` some newline
 
 -- Parses a program, the EBNF syntax of which is:
 --  Program : Import* Stm

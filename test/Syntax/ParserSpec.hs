@@ -37,6 +37,10 @@ structDeclSpec = do
             let expected = StructDecl "S" [("x", CustomType "S")]
             parseEmptyState program "" "struct S { x:S }" `shouldParseStm` expected
 
+        it "allows newlines after the last member variable" $ do
+            let expected = StructDecl "S" [("x", CustomType "S")]
+            parseEmptyState program "" "struct S { x:S \n }" `shouldParseStm` expected
+
         it "fails if the struct has already been declared" $ do
             let state = Env.fromList [("S", PStruct [("x", TapeType)])]
             parseEvalState state program "" `shouldFailOn` "struct S { y:Sym }"
