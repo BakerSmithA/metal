@@ -4,6 +4,7 @@ import Syntax.Tree
 import Control.Exception
 
 data RuntimeError = UndefVar
+                  | UndefStruct StructName
                   | UndefFunc FuncName -- An undefined function was attempted to be called.
                   | WrongNumArgs FuncName [FuncDeclArg] [FuncCallArg] -- The wrong number of arguments was supplied.
                   | MismatchedTypes VarName FuncName DataType FuncCallArg

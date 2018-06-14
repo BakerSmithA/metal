@@ -7,7 +7,7 @@ import Semantics.Variable
 import Semantics.Helpers
 import State.App
 import State.Config hiding (modifyTape)
-import qualified State.Config as Config (modifyTape)
+import qualified State.Config as Config (modifyTape, putStructMems)
 import State.Error
 import State.MachineClass
 import State.Output
@@ -59,11 +59,17 @@ evalTapeDecl name tapeExpr c = do
     (addr, c') <- tapePtr tapeExpr c
     return (putPtr name addr c')
 
+-- Evaluates an object declaration.
+evalObjDecl :: (Monad m) => VarName -> ObjExpr -> Config -> App m Config
+evalObjDecl name objExpr c = do
+    (addr, c') <- objPtr objExpr c
+    return (putPtr name addr c')
+
 -- Evaluates a variable declaration.
 evalVarDecl :: (Monad m) => VarName -> AnyValExpr -> Config -> App m Config
 evalVarDecl name (S s) = evalSymDecl name s
 evalVarDecl name (T t) = evalTapeDecl name t
-evalVarDecl name (C c) = undefined
+evalVarDecl name (C c) = evalObjDecl name c
 
 -- Evaluates a function declaration.
 evalFuncDecl :: (Monad m) => FuncName -> [FuncDeclArg] -> Stm -> Config -> App m Config
@@ -104,6 +110,11 @@ evalCall name args config = do
         err                   = throw (UndefFunc name)
         eval (argNames, body) = evalFuncBody name argNames args body config
 
+-- Evaluates a structure declaration, e.g. struct S { x:Tape }
+evalStructDecl :: (Monad m) => StructName -> [StructMemberVar] -> Config -> App m Config
+evalStructDecl name mems c = return (Config.putStructMems name memNames c) where
+    memNames = fmap fst mems
+
 -- Evaluates the composition of two statements.
 evalComp :: (MonadOutput m) => Stm -> Stm -> Config -> App m Config
 evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
@@ -123,16 +134,17 @@ evalDebugPrintTape tapeExpr c1 = do
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: (MonadOutput m) => Stm -> Config -> App m Config
-evalStm (MoveLeft tapeExpr)       = evalLeft tapeExpr
-evalStm (MoveRight tapeExpr)      = evalRight tapeExpr
-evalStm (Write tapeExpr sym)      = evalWrite tapeExpr sym
-evalStm (Accept)                  = const accept
-evalStm (Reject)                  = const reject
-evalStm (If b stm elseIf elseStm) = evalIf b stm elseIf elseStm
-evalStm (While b stm)             = evalWhile b stm
-evalStm (VarDecl name expr)       = evalVarDecl name expr
-evalStm (FuncDecl name args body) = evalFuncDecl name args body
-evalStm (Call name args)          = evalCall name args
-evalStm (Comp stm1 stm2)          = evalComp stm1 stm2
-evalStm (Print symExpr)           = evalPrintRead symExpr
-evalStm (DebugPrintTape tapeExpr) = evalDebugPrintTape tapeExpr
+evalStm (MoveLeft tapeExpr)          = evalLeft tapeExpr
+evalStm (MoveRight tapeExpr)         = evalRight tapeExpr
+evalStm (Write tapeExpr sym)         = evalWrite tapeExpr sym
+evalStm (Accept)                     = const accept
+evalStm (Reject)                     = const reject
+evalStm (If b stm elseIf elseStm)    = evalIf b stm elseIf elseStm
+evalStm (While b stm)                = evalWhile b stm
+evalStm (VarDecl name expr)          = evalVarDecl name expr
+evalStm (FuncDecl name args body)    = evalFuncDecl name args body
+evalStm (Call name args)             = evalCall name args
+evalStm (StructDecl structName mems) = evalStructDecl structName mems
+evalStm (Comp stm1 stm2)             = evalComp stm1 stm2
+evalStm (Print symExpr)              = evalPrintRead symExpr
+evalStm (DebugPrintTape tapeExpr)    = evalDebugPrintTape tapeExpr

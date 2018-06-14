@@ -19,6 +19,7 @@ data Reference = TapeRef Tape
 data Config = Config {
     vars      :: Map VarName Variable
   , funcs     :: Map FuncName ([FuncDeclArg], Stm)
+  , structs   :: Map StructName [VarName]
   , refs      :: Map Address Reference
   , freeAddrs :: [Address]
 } deriving (Eq, Show)
@@ -28,7 +29,7 @@ objFromList = Map.fromList
 
 -- Config which contains nothing.
 empty :: Config
-empty = Config Map.empty Map.empty Map.empty [0..1000] -- HACK: Infinite list causes hanging.
+empty = Config Map.empty Map.empty Map.empty Map.empty [0..1000] -- HACK: Infinite list causes hanging.
 
 -- A configuration in which the read-write head is in the zeroed position, and
 -- `str` is at the start of the tape.
@@ -54,6 +55,15 @@ getVar (n:ns) c = do
 -- currently in the environment with the same name.
 putVar :: VarName -> Variable -> Config -> Config
 putVar name var c = c { vars = Map.insert name var (vars c) }
+
+-- Resets the variable and function environment of `cNew` to that provided
+-- by `cOld`. Also frees any references that are in the new environment but not
+-- in the old.
+revertEnv :: Config -> Config -> Config
+revertEnv cOld cNew = Config (vars cOld) (funcs cOld) (structs cOld) refs' freeAddrs' where
+    refs' = Map.intersection (refs cNew) (refs cOld)
+    freeAddrs' = (freeAddrs cOld) ++ removedAddrs
+    removedAddrs = Map.keys (Map.difference (refs cNew) (refs cOld))
 
 --------------------------------------------------------------------------------
 -- Tape Symbols
@@ -90,8 +100,8 @@ putPtr name addr = putVar name (Ptr addr)
 -- Adds an object to the environment, returning the address at which the object
 -- was added.
 putRef :: Reference -> Config -> (Address, Config)
-putRef _     (Config _ _ _ [])              = error "No space for tapes left"
-putRef ref c@(Config _ _ _ (freeAddr:rest)) = (freeAddr, c') where
+putRef _     (Config _ _ _ _ [])              = error "No space for tapes left"
+putRef ref c@(Config _ _ _ _ (freeAddr:rest)) = (freeAddr, c') where
     c'    = c { refs = refs', freeAddrs = rest }
     refs' = Map.insert freeAddr ref (refs c)
 
@@ -127,11 +137,16 @@ getFunc name c = Map.lookup name (funcs c)
 putFunc :: FuncName -> [FuncDeclArg] -> Stm -> Config -> Config
 putFunc name args body c = c { funcs = Map.insert name (args, body) (funcs c) }
 
--- Resets the variable and function environment of `cNew` to that provided
--- by `cOld`. Also frees any references that are in the new environment but not
--- in the old.
-revertEnv :: Config -> Config -> Config
-revertEnv cOld cNew = Config (vars cOld) (funcs cOld) refs' freeAddrs' where
-    refs' = Map.intersection (refs cNew) (refs cOld)
-    freeAddrs' = (freeAddrs cOld) ++ removedAddrs
-    removedAddrs = Map.keys (Map.difference (refs cNew) (refs cOld))
+--------------------------------------------------------------------------------
+-- Structs
+--------------------------------------------------------------------------------
+
+-- Looks up the names of the member variables in a structure in the environment.
+-- Note, a structure is not an object, but rather the 'template' for an object.
+getStructMems :: StructName -> Config -> Maybe [VarName]
+getStructMems name c = Map.lookup name (structs c)
+
+-- Adds a structure in the environment. Note, this is not an object, but
+-- rather the 'template' for an object.
+putStructMems :: StructName -> [VarName] -> Config -> Config
+putStructMems name vs c = c { structs = Map.insert name vs (structs c) }
