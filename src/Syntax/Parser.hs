@@ -97,7 +97,7 @@ memberVarDecl structName = do
 -- allow for recursive structures. EBNF:
 --  MemberVars: (TypedVar '\n')+
 memberVarDecls :: StructName -> ParserM [StructMemberVar]
-memberVarDecls structName = (memberVarDecl structName) `sepEndBy` some (newline <* lWhitespace)
+memberVarDecls structName = (memberVarDecl structName) `sepEndBy` (newline <* lWhitespace)
 
 -- Declares a new structure. Fails if the structure already exists at this
 -- scope. EBNF:
