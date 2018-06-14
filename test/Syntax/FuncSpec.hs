@@ -91,6 +91,9 @@ funcDeclSpec = do
         it "fails if the same function is declared twice in the same scope" $ do
             parseEvalState state program "" `shouldFailOn` "func f { left tape } \n func f { left tape }"
 
+        it "fails if the function contains no statements" $ do
+            parseEmptyState program "" `shouldFailOn` "func f {}"
+
 funcCallSpec :: Spec
 funcCallSpec = do
     describe "parsing function calls" $ do

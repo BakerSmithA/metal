@@ -146,7 +146,7 @@ compose xs  = foldr1 Comp xs
 -- Parses statements separated by newlines into a composition of statements.stmComp :: ParserM Stm
 stmComp :: ParserM Stm
 stmComp = (stms <* lWhitespaceNewline) >>= (return . compose) where
-    stms = stm' `sepEndBy` some (newline <* lWhitespace)
+    stms = stm' `sepEndBy1` some (newline <* lWhitespace)
 
 -- Parses a statement, the EBNF syntax of which is given below. The parser will
 -- fail if not all input is consumed.
