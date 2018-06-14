@@ -24,13 +24,6 @@ refVarIdSpec = do
             let state = Env.fromList [("x", PVar SymType)]
             parseEvalState state refVarId "" "x" `shouldParse` (["x"], SymType)
 
-        it "fails to parse if the variable has not been declared" $ do
-            parseEmptyState refVarId "" `shouldFailOn` "x"
-
-        it "fails to parse if the identifier does not evaluate to a variable" $ do
-            let state = Env.fromList [("f", PFunc [SymType])]
-            parseEvalState state refVarId "" `shouldFailOn` "f"
-
         it "accesses variables inside structures" $ do
             let state = Env.fromList [("S", PStruct [("m_x", SymType)]), ("s", PVar (CustomType "S"))]
             parseEvalState state refVarId "" "s.m_x" `shouldParse` (["s", "m_x"], SymType)
@@ -42,6 +35,12 @@ refVarIdSpec = do
                 state   = Env.fromList [struct1, struct2, var]
             parseEvalState state refVarId "" "s.m_s.m_x" `shouldParse` (["s", "m_s", "m_x"], TapeType)
 
+        it "evaluates to the last access if intermediate types have the required type" $ do
+            let struct = ("S", PStruct [("m_s", CustomType "S"), ("m_x", CustomType "S")])
+                var    = ("s", PVar (CustomType "S"))
+                state  = Env.fromList [struct, var]
+            parseEvalState state refVarId "" "s.m_s.m_s.m_x" `shouldParse` (["s", "m_s", "m_s", "m_x"], CustomType "S")
+
         it "fails if any intermediate member in a chain is not a struct" $ do
             let struct1 = ("S1", PStruct [("m_s", TapeType)])
                 struct2 = ("S2", PStruct [("m_x", SymType)])
@@ -49,11 +48,20 @@ refVarIdSpec = do
                 state   = Env.fromList [struct1, struct2, var]
             parseEvalState state refVarId "" "s.m_s.m_x" `shouldParse` (["s", "m_s"], TapeType)
 
-        it "evaluates to the last access if intermediate types have the required type" $ do
-            let struct = ("S", PStruct [("m_s", CustomType "S"), ("m_x", CustomType "S")])
-                var    = ("s", PVar (CustomType "S"))
-                state  = Env.fromList [struct, var]
-            parseEvalState state refVarId "" "s.m_s.m_s.m_x" `shouldParse` (["s", "m_s", "m_s", "m_x"], CustomType "S")
+        it "fails to parse if the variable has not been declared" $ do
+            parseEmptyState refVarId "" `shouldFailOn` "x"
+
+        it "fails to parse if the identifier does not evaluate to a variable" $ do
+            let state = Env.fromList [("f", PFunc [SymType])]
+            parseEvalState state refVarId "" `shouldFailOn` "f"
+
+        it "fails if any of the variables are not members" $ do
+            let struct1 = ("S1", PStruct [("m_s", TapeType)])
+                struct2 = ("S2", PStruct [("m_t", SymType)])
+                var1    = ("s1", PVar (CustomType "S1"))
+                var2    = ("s2", PVar (CustomType "S1"))
+                state   = Env.fromList [struct1, struct2, var1, var2]
+            parseEvalState state refVarId "" `shouldFailOn` "s1.s2"
 
 tapeSymbolSpec :: Spec
 tapeSymbolSpec = do

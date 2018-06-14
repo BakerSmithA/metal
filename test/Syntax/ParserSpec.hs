@@ -49,7 +49,7 @@ structDeclSpec = do
 
         it "allows other statements to use the custom type" $ do
             let struct = StructDecl "S" [("x", CustomType "S")]
-                func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymVar ["s", "x"]))
+                func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymLit 'a'))
                 comp   = Comp struct func
             parseEmptyState program "" "struct S { x:S }\nfunc f s:S { print s.x }" `shouldParseStm` comp
 
@@ -202,6 +202,12 @@ programSpec = describe "program" $ do
         it "parses printing the a symbol" $ do
             let state = Env.fromList [("tape", PVar TapeType)]
             parseEvalState state program "" "print (read tape)" `shouldParseStm` (Print (Read (TapeVar ["tape"])))
+
+        it "parses printing variables in structs" $ do
+            let struct = ("S", PStruct [("x", SymType)])
+                var    = ("s", PVar (CustomType "S"))
+                state  = Env.fromList [struct, var]
+            parseEvalState state program "" "print s.x" `shouldParseStm` (Print (SymVar ["s", "x"]))
 
     context "removing whitespace and comments" $ do
         let state = Env.fromList [("tape", PVar TapeType)]

@@ -52,19 +52,19 @@ refId p = do
     return (i, idType)
 
 -- Checks that the value returned by p satisfies the type check predicate.
-expType :: ParserM t -> (t -> Bool) -> ParserM t
+expType :: (Show t) => ParserM t -> (t -> Bool) -> ParserM t
 expType p check = do
     x <- p
     if check x
         then return x
-        else (fail "Mismatched types")
+        else (fail $ "Mismatched types: " ++ (show x))
 
 -- Checks that an identifier has the given type.
-expTypeId :: ParserM (a, t) -> (t -> Bool) -> ParserM a
+expTypeId :: (Show a, Show t) => ParserM (a, t) -> (t -> Bool) -> ParserM a
 expTypeId p check = fmap fst (expType p (check . snd))
 
 -- Checks that the data type of the result is the expected type.
-expDataType :: (Typed t) => ParserM t -> DataType -> ParserM t
+expDataType :: (Typed t, Show t) => ParserM t -> DataType -> ParserM t
 expDataType p ex = expType p (\x -> typeOf x == ex)
 
 -- Type of data (passed to a function or as part of a struct member decl). EBNF:
