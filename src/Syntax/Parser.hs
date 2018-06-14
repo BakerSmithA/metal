@@ -105,7 +105,7 @@ memberVarDecls structName = (memberVarDecl structName) `sepEndBy` some (newline 
 structDecl :: ParserM Stm
 structDecl = do
     name <- lTok "struct" *> newStructId
-    mems <- block (braces (memberVarDecls name)) <* lWhitespaceNewline
+    mems <- block (braces (memberVarDecls name))
     return (StructDecl name mems)
 
 -- Parses a variable (e.g. tape, symbol, object) declaration, EBNF:
