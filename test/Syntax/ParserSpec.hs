@@ -47,6 +47,12 @@ structDeclSpec = do
                 comp     = Comp struct printSym
             parseEmptyState program "" "struct S { x:S }\nprint 'a'" `shouldParseStm` comp
 
+        it "allows other statements to use the custom type" $ do
+            let struct = StructDecl "S" [("x", CustomType "S")]
+                func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymVar ["s", "x"]))
+                comp   = Comp struct func
+            parseEmptyState program "" "struct S { x:S }\nfunc f s:S { print s.x }" `shouldParseStm` comp
+
         it "fails if the struct has already been declared" $ do
             let state = Env.fromList [("S", PStruct [("x", TapeType)])]
             parseEvalState state program "" `shouldFailOn` "struct S { y:Sym }"
