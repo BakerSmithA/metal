@@ -49,9 +49,15 @@ structDeclSpec = do
 
         it "allows other statements to use the custom type" $ do
             let struct = StructDecl "S" [("x", CustomType "S")]
-                func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymLit 'a'))
+                func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymVar ["s", "x"]))
                 comp   = Comp struct func
             parseEmptyState program "" "struct S { x:S }\nfunc f s:S { print s.x }" `shouldParseStm` comp
+
+        it "does not allow member access without using the dot operator" $ do
+            let struct = StructDecl "S" [("x", CustomType "S")]
+                func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymLit 'a'))
+                comp   = Comp struct func
+            parseEmptyState program "" `shouldFailOn` "struct S { x:S }\nprint x"
 
         it "fails if the struct has already been declared" $ do
             let state = Env.fromList [("S", PStruct [("x", TapeType)])]
