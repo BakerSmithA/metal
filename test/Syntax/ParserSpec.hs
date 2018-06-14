@@ -48,10 +48,10 @@ structDeclSpec = do
             parseEmptyState program "" "struct S { x:S }\nprint 'a'" `shouldParseStm` comp
 
         it "allows other statements to use the custom type" $ do
-            let struct = StructDecl "S" [("x", CustomType "S")]
+            let struct = StructDecl "S" [("x", SymType)]
                 func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymVar ["s", "x"]))
                 comp   = Comp struct func
-            parseEmptyState program "" "struct S { x:S }\nfunc f s:S { print s.x }" `shouldParseStm` comp
+            parseEmptyState program "" "struct S { x:Sym }\nfunc f s:S { print s.x }" `shouldParseStm` comp
 
         it "does not allow member access without using the dot operator" $ do
             let struct = StructDecl "S" [("x", CustomType "S")]

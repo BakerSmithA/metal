@@ -89,7 +89,6 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 memberVarDecl :: StructName -> ParserM StructMemberVar
 memberVarDecl structName = do
     (name, memType) <- recTypeAnnotated structName newMemberVarId
-    putM name (PVar memType)
     return (name, memType)
 
 -- Parses the member variables of a struct, failing if the variable name has
@@ -107,7 +106,7 @@ structDecl = do
     name <- lTok "struct" *> newStructId
     mems <- block (braces (memberVarDecls name))
 
-    putM name (PVar (CustomType name))
+    putM name (PStruct mems)
 
     return (StructDecl name mems)
 
