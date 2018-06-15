@@ -183,13 +183,31 @@ Tapes can also be stored in variables. This allows for the easy construction of 
 import io
 
 let tape = "xyz"
-write tape (read main) // copy
+write tape (read main) // Copy
 printAll tape
 ```
 
 ```sh
 $ metal multi "abc"
 ayz
+```
+
+### References
+
+Tapes have reference semantics, and so if a variable assigned to an exisiting tape, and then that tape is modified, the original tape will also be modified. This behaviour is what allow functions such as `left`, `right`, and `write` to work.
+
+```c
+// ref_tape.al
+let tape1 = "abc"
+let tape2 = tape1
+
+write tape2 'X'
+printAll tape1 // Read from a different tape.
+```
+
+```sh
+$ metal ref_tape
+Xbc
 ```
 
 # Booleans
