@@ -212,6 +212,8 @@ Tapes have reference semantics, and so if a variable assigned to an exisiting ta
 
 ```c
 // ref_tape.al
+import io
+
 let tape1 = "abc"
 let tape2 = tape1
 
@@ -224,17 +226,218 @@ $ metal ref_tape.al
 Xbc
 ```
 
-# Booleans
-
-- Can be used in if- and while-statements.
-- Cannot be stored in variables, as are not part of the tape symbols.
-
 # If statements
+Branching in Metal is performed using if-else statements. Note that you do not need parenthesis around the conditional. However, braces are required, even if the branch only contains one statement.
 
-- Can have a single if, if-else, and if-elseif-else
+```c
+if read main == 'a' {
+	print '2'
+} 
+else if read main == 'a' && read tape != 'b' {
+	print '2'
+}
+else {
+	print '3'
+}
+```
+
+## Scope
+Inside the braces of one of the conditionals variables, functions, and struct definitions can be overwritten. When running the program, the innermost definition will be used.
+
+```c
+// scope.al
+let x = 'a'
+if True {
+	let x = 'b'
+	print x
+}
+```
+
+```sh
+$ metal scope.al 
+b
+```
 
 # While 
+While loops are Metal's only looping structure. It is executed until the loop condition becomes false. The same scoping rules that apply to if-statements also apply to while-statements. 
+
+The program below shows how to print the character before the first `'a'`.
+
+```c
+// find.al
+
+// Find the first 'a'.
+while read main != 'a' {
+	right main
+}
+// Move to the character before.
+left main 
+print (read main)
+```
+
+```sh
+$ metal find.al "xyzabc"
+z
+```
 
 # Functions
+Functions in Metal have no return, however they can modify tapes and objects due to their reference semantics. Functions also require the type of the arguments to be explicitly stated. The same scope rules that apply to if-statements and while-statements also apply to functions.
+
+Below is a function which takes a tape and a symbol as input. It then writes this symbol to the current and next positions on the tape. The function is then run by giving it's name followed by the required arguments.
+
+```c
+// write2.al
+import io
+
+func write2 t:Tape s:Sym {
+	write t s 
+	right t
+	write t s
+}
+
+write_right main 'c'
+
+printAll main
+```
+
+```sh
+$ metal write2.al xyz
+ccz
+```
+
+## Recursion
+Functions may also be recursive. For example, the function below moves the read-write head to the start of the tape.
+
+```c
+// zero.al
+
+func zero t:Tape {
+    let saved = read t
+    // Mark the current position of the head.
+    write t '#'
+
+    // Try to move left. If we are at the start then this will have no effect.
+    left t
+
+    if read t == '#' {
+        // The head did not move, therefore we're at the start.
+        // This is the base case of the function.
+        write t saved
+    } 
+    else {
+        // The head did move, therefore we are not at the start.
+        // We need to replace the overwritten symbol with the original and
+        // then continue searching.
+        right t
+        write t saved
+        left t
+        left t
+
+        // Recursive call.
+        zero t
+    }
+}
+```
+
+To test out the function, we'll first move the read-write head to the right. Then we can check the head is moved back to the start.
+
+```c
+// zero.al (continued)
+right main 
+right main 
+print (read main)
+
+zero main
+print (read main)
+```
+
+```sh
+$ metal zero.al "abc"
+ca
+```
+
+## Nested Functions
+Functions need not only exist at the topmost level; they can be nested within other functions. This can be useful for hiding functions that don't need to be exposed to other users. The following shows the slightly contrived example of copying the contents of one tape to anothe tape.
+
+```c
+// nested_funcs.al
+import io
+
+func copy_all src:Tape dest:Tape {
+	// Copies a single symbol from one tape to the other.
+	func copy_move src:Tape dest:Tape {
+		write dest (read src) 
+		right src
+		right dest
+	}
+	
+	while read src != ' ' {
+		copy_move src dest
+	}
+}
+
+let t = ""
+copy_all main t
+printAll t
+```
+
+```sh
+$ metal nested_funcs.al "xyz"
+xyz
+```
 
 # Structs
+Metal's structs are a typed collection of fields. They're useful for grouping data together. They are mutable, however, they do not contain functions but are instead acted upon by outside functions.
+
+```c
+// struct.al
+struct Person {
+	name:Tape
+	age:Tape
+}
+```
+
+Instances of objects are created using the constructor provided. This is a function which takes, as arguments, values for each member variable in the order they are defined in the struct.
+
+```c
+// struct.al (continued)
+let jeff = Person "Jeff" "20"
+```
+
+Member variables can be accessed using the dot operator. It can also be chained to access objects inside other objects.
+
+```c
+// struct.al (continued)
+printAll jeff.name
+printAll ", "
+printAll jell.age
+```
+
+```sh
+// struct.al (continued)
+$ metal struct.al
+Jeff, 20
+```
+
+Structure instances are called objects and can be used as arguments to functions. Reference semantics are also used for objects, therefore modification to an object reference will mean changes to the original too. 
+
+```c
+// modify_struct.al
+import struct
+
+func change_age person:Person {
+	write person.age '3'
+}
+
+change_age jeff
+printAll jeff.age
+```
+
+```sh
+$ metal modify_struct.al
+30 
+```
+
+# Imports
+
+## Circular Imports
