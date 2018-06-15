@@ -1,5 +1,7 @@
 # Metal 
 
+[![CircleCI](https://circleci.com/gh/BakerSmithA/metal.svg?style=svg)](https://circleci.com/gh/BakerSmithA/metal)
+
 Metal is a programming language used to describe the function of a Turing machine. This means you're not given a lot of help to do what would normally be essential parts of a language, such as maths. However, since the language is Turing complete any possible computation can still be performed, even with a limited toolset.
 
 # Turing Machine
@@ -21,7 +23,7 @@ printAll "Hello World!"
 To run the program, put the code in a `hello_world.al` file and run using `metal  hello_world`. This runs an interpreter which executes the code.
 
 ```sh
-$ metal hello_world
+$ metal hello_world.al
 Hello World!
 Accepted
 ```
@@ -37,7 +39,7 @@ print (read main)
 The program above reads the symbol underneath the head of the `main` tape. The `main` tape is used to give data into the program, and its contents comes from the second command line argument. Initially, the position of the head is in the leftmost position.
 
 ```sh
-$ metal read "abc"
+$ metal read.al "abc"
 a
 Accepted
 ```
@@ -54,7 +56,7 @@ print (read main)
 Running the program, we can see that even though the first letter of input was an `a`, the output is an `X` since the first symbol on the tape was overwritten.
 
 ```sh
-$ metal write "abc"
+$ metal write.al "abc"
 X
 Accepted
 ```
@@ -73,7 +75,7 @@ print (read main)
 The output of the program will be the second symbol on the tape.
 
 ```sh
-$ metal move "abc"
+$ metal move.al "abc"
 b
 Accepted
 ```
@@ -88,7 +90,7 @@ print (read main)
 ```
 
 ```sh
-$ metal left "abc"
+$ metal left.al "abc"
 a
 Accepted
 ```
@@ -98,12 +100,11 @@ It is possible to move the tape past the input. Reading from this area results i
 ```c
 // space.al
 right main
-right main
 print (read main)
 ```
 
 ```sh
-$ metal space "ab"
+$ metal space.al "a"
 
 Accepted
 ```
@@ -111,6 +112,19 @@ Accepted
 # Accepting and Rejecting
 
 Accepting and rejecting are done using the `accept` and `reject` keywords respectively. They immediately halt the TM and cause the program to exit. If neither if encountered before the end of the program the TM accepts, and hence `Accepted` is given as output to the shell.
+
+```c
+// halt.al
+print 'a'
+reject
+print 'b'
+```
+
+```sh
+$ metal halt.al 
+a
+Rejected
+```
 
 # Variables
 
@@ -157,7 +171,7 @@ print sym_var
 ```
 
 ```sh
-$ metal sym_lit
+$ metal sym_lit.al
 aa
 ```
 
@@ -188,7 +202,7 @@ printAll tape
 ```
 
 ```sh
-$ metal multi "abc"
+$ metal multi.al "abc"
 ayz
 ```
 
@@ -206,7 +220,7 @@ printAll tape1 // Read from a different tape.
 ```
 
 ```sh
-$ metal ref_tape
+$ metal ref_tape.al
 Xbc
 ```
 
