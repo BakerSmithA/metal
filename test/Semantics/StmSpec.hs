@@ -7,6 +7,23 @@ import TestHelper.Config
 import TestHelper.Denotational
 import Test.Hspec
 
+stmSpec :: Spec
+stmSpec = do
+    describe "evalStm" $ do
+        leftSpec
+        rightSpec
+        writeSpec
+        acceptSpec
+        rejectSpec
+        ifSpec
+        whileSpec
+        varDeclSpec
+        funcCallSpec
+        structDeclSpec
+        compSpec
+        printReadSpec
+        printStrSpec
+
 -- Takes a function to construct a control structure (e.g. function, while-loop,
 -- if-statement), given the body of the structure. Also takes an optional
 -- statement to invoke the construct. The code below is executed and it is
@@ -31,7 +48,7 @@ testResetVarEnv makeControlStruct invoke = do
         testConfig   = Config.fromString "tape" "abc"
         result       = evalSemantics comp testConfig
 
-    shouldReturnVar result ["x"] '1'
+    shouldReturnSym result ["x"] '1'
 
 -- Takes a function to construct a control structure (e.g. function, while-loop,
 -- if-statement), given the body of the structure. Also takes an
@@ -65,22 +82,6 @@ testResetFuncEnv makeControlStruct invoke = do
         result     = evalSemantics comp testConfig
 
     shouldReturnFunc result "f" args outerFBody
-
-stmSpec :: Spec
-stmSpec = do
-    describe "evalStm" $ do
-        leftSpec
-        rightSpec
-        writeSpec
-        acceptSpec
-        rejectSpec
-        ifSpec
-        whileSpec
-        varDeclSpec
-        funcCallSpec
-        compSpec
-        printReadSpec
-        printStrSpec
 
 leftSpec :: Spec
 leftSpec = do
@@ -234,15 +235,44 @@ whileSpec = do
 
 varDeclSpec :: Spec
 varDeclSpec = do
-    let testConfig = Config.fromString "tape" "abc"
+    context "evaluating a symbol declaration" $ do
+        it "adds symbols to the environment" $ do
+            let decl     = VarDecl "new_sym" (S $ SymLit 'a')
+                printSym = Print (SymVar ["new_sym"])
+                comp     = Comp decl printSym
+                result   = evalSemantics comp Config.empty
 
-    context "evaluating a variable declaration" $ do
-        it "adds the variable to the environment" $ do
-            let decl   = VarDecl "y" (S $ SymLit '1')
-                ifStm  = If (Eq (SymVar ["y"]) (SymLit '1')) (Write (TapeVar ["tape"]) (SymLit '#')) [] Nothing
-                comp   = Comp decl ifStm
+            result `shouldOutput` ["a"]
 
-            shouldRead (evalSemantics comp testConfig) ["tape"] "#bc"
+    context "evaluating a tape declaration" $ do
+        it "adds tapes to the environment" $ do
+            let decl      = VarDecl "new_tape" (T $ TapeLit "abc")
+                printRead = Print (Read (TapeVar ["new_tape"]))
+                comp      = Comp decl printRead
+                result    = evalSemantics comp Config.empty
+
+            result `shouldOutput` ["a"]
+
+    context "evaluating a struct and then object declaration" $ do
+        it "adds objects to the environment" $ do
+            let structDecl  = StructDecl "S" [("s1", SymType), ("s2", SymType)]
+                objArgs     = [(S $ SymLit 'a'), (S $ SymLit 'b')]
+                objDecl     = VarDecl "obj" (C $ NewObj "S" objArgs)
+                comp        = Comp structDecl objDecl
+                result      = evalSemantics comp Config.empty
+                expectedObj = objFromList $ [("s1", Symbol 'a'), ("s2", Symbol 'b')]
+
+            shouldReturnObj result ["obj"] expectedObj
+
+structDeclSpec :: Spec
+structDeclSpec = do
+    context "evaluating a struct declaration" $ do
+        it "adds a struct to the environment" $ do
+            let decl     = StructDecl "S" [("s", SymType), ("t", TapeType)]
+                result   = evalSemantics decl Config.empty
+                expected = ["s", "t"] -- names of member variables
+
+            shouldReturnStruct result "S" expected
 
 funcCallSpec :: Spec
 funcCallSpec = do

@@ -18,14 +18,14 @@ fmapFst :: (Functor f) => (a -> b) -> f (a, c) -> f (b, c)
 fmapFst f z = fmap (\(x, y) -> (f x, y)) z
 
 -- Follows the variable path to find the address of the object being referred to.
-var :: (Monad m) => (Config -> Maybe a) -> Config -> App m (a, Config)
-var get c = do
-    x <- tryMaybe (get c) UndefVar
+var :: (Monad m) => (VarPath -> Config -> Maybe a) -> VarPath -> Config -> App m (a, Config)
+var get path c = do
+    x <- tryMaybe (get path c) UndefVar
     return (x, c)
 
 -- Returns the **value** of a new symbol expression, and the new config.
 symVal :: (Monad m) => SymExpr -> Config -> App m (TapeSymbol, Config)
-symVal (SymVar namePath) c = var (Config.getSym namePath) c
+symVal (SymVar namePath) c = var Config.getSym namePath c
 symVal (SymLit sym)      c = return (sym, c)
 symVal (Read tapeExpr)   c = do
     (addr, c') <- tapePtr tapeExpr c
@@ -35,17 +35,28 @@ symVal (Read tapeExpr)   c = do
 -- Returns the address of a newly created tape, or an already exisiting tape,
 -- and the config containing the tape.
 tapePtr :: (Monad m) => TapeExpr -> Config -> App m (Address, Config)
-tapePtr (TapeVar namePath) c = var (Config.getPtr namePath) c
+tapePtr (TapeVar namePath) c = var Config.getPtr namePath c
 tapePtr (TapeLit syms)     c = return (Config.putRef tapeRef c) where
     tapeRef = TapeRef (Tape.fromString syms)
+
+-- Evaluates the value of expr and add it to the list of evaluated variables.
+combineObjArgs :: (Monad m) => NewObjArg -> App m ([Variable], Config) -> App m ([Variable], Config)
+combineObjArgs expr app = do
+    (vs, c) <- app
+    (val, c') <- anyVal expr c
+    return (val:vs, c')
 
 -- Returns the address of the newly created object, or an existing object,
 -- and the config containing the object.s
 objPtr :: (Monad m) => ObjExpr -> Config -> App m (Address, Config)
-objPtr (ObjVar _ namePath)         c = var (Config.getPtr namePath) c
+objPtr (ObjVar _ namePath)         c = var Config.getPtr namePath c
 objPtr (NewObj structName memArgs) c = do
     memNames <- tryMaybe (Config.getStructMems structName c) (UndefStruct structName)
-    undefined
+    (vs, c') <- foldr combineObjArgs (return ([], c)) memArgs
+
+    let mems = zip memNames vs
+    let objRef = ObjRef (objFromList mems)
+    return (Config.putRef objRef c') where
 
 -- Returns the value of an expression which may evaluate to either a tape
 -- symbol, tape, or object.

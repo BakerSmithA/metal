@@ -6,12 +6,22 @@ import State.Tape as Tape
 import Data.Map as Map (assocs)
 import Data.Maybe
 
+import Debug.Trace
+
 -- Looks up the address of the tape and then deferences it, therefore changes
 -- to the returned tape will not be reflected in the environment.
 getTapeCpy :: VarPath -> Config -> Maybe Tape
 getTapeCpy name c = do
     addr <- getPtr name c
     (TapeRef t) <- derefPtr addr c
+    return t
+
+-- Looks up the address of the object and then deferences it, therefore changes
+-- to the returned tape will not be reflected in the environment.
+getObjCpy :: VarPath -> Config -> Maybe Object
+getObjCpy name c = do
+    addr <- getPtr name c
+    (ObjRef t) <- derefPtr addr c
     return t
 
 -- Convenience method for modifying the a tape with the given name.

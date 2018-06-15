@@ -13,6 +13,8 @@ import Data.Maybe
 import TestHelper.Output
 import TestHelper.Config
 
+import Debug.Trace
+
 type AppResult m a = m (Machine a)
 
 evalWith :: (a -> Config -> App m b) -> a -> Config -> AppResult m b
@@ -37,17 +39,30 @@ shouldSatisfy result predicate = result >>= (`H.shouldSatisfy` f) where
 shouldReturn :: (Eq a, Show a) => IO (Machine a) -> a -> H.Expectation
 shouldReturn result expected = result `H.shouldReturn` (return expected)
 
--- Asserts that the variable environment contains the given value for the
+-- Asserts that the variable environment contains the given tape symbol for the
 -- variable name.
-shouldReturnVar :: IO (Machine Config) -> VarPath -> TapeSymbol -> H.Expectation
-shouldReturnVar r path sym = shouldSatisfy r predicate where
+shouldReturnSym :: IO (Machine Config) -> VarPath -> TapeSymbol -> H.Expectation
+shouldReturnSym r path sym = shouldSatisfy r predicate where
     predicate config = Config.getSym path config == Just sym
+
+-- Asserts that the environment contains the given object for the
+-- variable name.
+shouldReturnObj :: IO (Machine Config) -> VarPath -> Object -> H.Expectation
+shouldReturnObj r path obj = shouldSatisfy r predicate where
+    predicate config = do
+        let x = getObjCpy path config
+        trace (show x) $ x == Just obj
 
 -- Asserts that the function environment contains the given function body for
 -- the function name.
 shouldReturnFunc :: IO (Machine Config) -> FuncName -> [FuncDeclArg] -> Stm -> H.Expectation
 shouldReturnFunc r name args body = shouldSatisfy r predicate where
     predicate config = getFunc name config == Just (args, body)
+
+-- Asserts that the environment contains the given struct.
+shouldReturnStruct :: IO (Machine Config) -> StructName -> [VarName] -> H.Expectation
+shouldReturnStruct r name vars = shouldSatisfy r predicate where
+    predicate config = getStructMems name config == Just vars
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.

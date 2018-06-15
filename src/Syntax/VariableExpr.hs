@@ -56,7 +56,7 @@ newVarId = newId snakeId
 refTopVarId :: ParserM (VarName, DataType)
 refTopVarId = do
     (name, idType) <- refId snakeId
-    trace ("Var " ++  name) $ case idType of
+    case idType of
         PVar varType -> return (name, varType)
         _            -> fail "Expected variable"
 

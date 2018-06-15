@@ -13,6 +13,7 @@ data RuntimeError = UndefVar
 instance Show RuntimeError where
     -- show :: RuntimeError -> String
     show (UndefVar)                        = "Undefined variable"
+    show (UndefStruct name)                = "Undefined struct: " ++ name
     show (UndefFunc name)                  = "Undefined function: " ++ name
     show (WrongNumArgs fName expected got) =
         "Wrong number of arguments supplied to '" ++ fName ++ "'.\n"

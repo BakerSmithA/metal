@@ -9,8 +9,6 @@ import qualified Syntax.Env as E
 import Control.Monad.State.Lazy (StateT, modify, get)
 import Text.Megaparsec.String
 
-import Debug.Trace
-
 -- Types that can be declared. Used to keep track of identifiers while parsing.
 data EnvDecl = PVar DataType
              | PFunc [DataType]
@@ -45,9 +43,9 @@ getM i = do
 
 getStruct :: (Monad m) => Identifier -> ParseState -> m [StructMemberVar]
 getStruct i state = do
-    decl <- trace ("Get " ++ i ++ " in " ++ show state) $ getP i state
+    decl <- getP i state
     case decl of
-        PStruct mems -> (trace $ "Got " ++ show decl) $ return mems
+        PStruct mems -> return mems
         _            -> fail $ "expected " ++ i ++ " to be struct"
 
 -- Retrive the identifier from the environment and modify it. If the identifier
