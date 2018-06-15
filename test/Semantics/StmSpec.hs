@@ -264,6 +264,16 @@ varDeclSpec = do
 
             shouldReturnObj result ["obj"] expectedObj
 
+        it "allows access to member variables" $ do
+            let structDecl  = StructDecl "S" [("s1", SymType), ("s2", SymType)]
+                objArgs     = [(S $ SymLit 'a'), (S $ SymLit 'b')]
+                objDecl     = VarDecl "obj" (C $ NewObj "S" objArgs)
+                printSym    = Print (SymVar ["obj", "s2"])
+                comp        = Comp structDecl (Comp objDecl printSym)
+                result      = evalSemantics comp Config.empty
+
+            result `shouldOutput` ["b"]
+
 structDeclSpec :: Spec
 structDeclSpec = do
     context "evaluating a struct declaration" $ do

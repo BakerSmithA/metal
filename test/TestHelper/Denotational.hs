@@ -13,8 +13,6 @@ import Data.Maybe
 import TestHelper.Output
 import TestHelper.Config
 
-import Debug.Trace
-
 type AppResult m a = m (Machine a)
 
 evalWith :: (a -> Config -> App m b) -> a -> Config -> AppResult m b
@@ -49,9 +47,7 @@ shouldReturnSym r path sym = shouldSatisfy r predicate where
 -- variable name.
 shouldReturnObj :: IO (Machine Config) -> VarPath -> Object -> H.Expectation
 shouldReturnObj r path obj = shouldSatisfy r predicate where
-    predicate config = do
-        let x = getObjCpy path config
-        trace (show x) $ x == Just obj
+    predicate config = getObjCpy path config == Just obj
 
 -- Asserts that the function environment contains the given function body for
 -- the function name.
@@ -61,8 +57,8 @@ shouldReturnFunc r name args body = shouldSatisfy r predicate where
 
 -- Asserts that the environment contains the given struct.
 shouldReturnStruct :: IO (Machine Config) -> StructName -> [VarName] -> H.Expectation
-shouldReturnStruct r name vars = shouldSatisfy r predicate where
-    predicate config = getStructMems name config == Just vars
+shouldReturnStruct r name vs = shouldSatisfy r predicate where
+    predicate config = getStructMems name config == Just vs
 
 -- Asserts that when the semantics have finished being evauluated, the position
 -- of the read-write head is in the given position.
