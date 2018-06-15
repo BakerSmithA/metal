@@ -61,7 +61,7 @@ refVarIdSpec = do
                 var1    = ("s1", PVar (CustomType "S1"))
                 var2    = ("s2", PVar (CustomType "S1"))
                 state   = Env.fromList [struct1, struct2, var1, var2]
-            parseEvalState state refVarId "" `shouldFailOn` "s1.s2"
+            parseEvalState state refVarId "" "s1.s2" `shouldParse` (["s1"], CustomType "S1")
 
 tapeSymbolSpec :: Spec
 tapeSymbolSpec = do

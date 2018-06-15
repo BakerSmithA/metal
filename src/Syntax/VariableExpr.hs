@@ -3,7 +3,10 @@ module Syntax.VariableExpr where
 import Syntax.Common
 import Syntax.Identifier
 import Syntax.Env as Env hiding (modify)
-import Control.Monad.State (modify)
+import Syntax.ParseState as ParseState
+import Control.Monad.State as State (put, get)
+
+import Debug.Trace
 
 -- Parses the name of a struct, making sure the struct does not already exist.
 newStructId :: ParserM StructName
@@ -22,39 +25,25 @@ refStruct = do
 newMemberVarId :: ParserM VarName
 newMemberVarId = newId snakeId
 
+-- Recursively tries to evaluate a struct member access.
+refChainedMemberId :: ParseState -> VarPath -> DataType -> ParserM (VarPath, DataType)
+refChainedMemberId baseState path (CustomType structName) = do
+    mems <- getStruct structName baseState
+    State.put (ParseState.fromVars mems)
+    (name, t) <- lTok "." *> refTopVarId
+    chaninedAccess path name t <|> finalAccess path name t where
+        chaninedAccess path name t = refChainedMemberId baseState (path ++ [name]) t
+        finalAccess    path name t = return (path ++ [name], t)
+refChainedMemberId _ path t = fail "Expected struct"
+
 -- Parses access to a member of an instance of a struct. Fails if the variable
 -- is not a struct, or the member is not part of the struct class.
 --  MemberAccess : VarName ('.' VarName)+
 refMemberId :: ParserM (VarPath, DataType)
 refMemberId = do
     (name, t) <- refTopVarId
-    evalMemberId ([name], t) where
-        -- Recursively tries to evaluate a struct member access.
-        evalMemberId :: (VarPath, DataType) -> ParserM (VarPath, DataType)
-        evalMemberId (varPath, CustomType structName) = block p where
-            p = do
-                addStructMemsToEnv structName
-                -- Attempts to parse another ('.' VarName).
-                (name, t) <- lTok "." *> refTopVarId
-                try (chainedAccess name t) <|> finalAccess name t
-
-            -- Attempts to parse another chained access, e.g. x.y.z
-            chainedAccess name t = evalMemberId (varPath ++ [name], t)
-            -- Attempts to parse this access as the final access.
-            finalAccess name t = return (varPath ++ [name], t)
-
-        evalMemberId (varPath, varType) = fail msg where
-            msg = "expected " ++ (show varPath) ++ " to have struct type, but got " ++ (show varType)
-
-        -- Assuming the struct with the given name exists, adds all the member variables
-        -- to the environment. Fails if the struct does not exists.
-        addStructMemsToEnv :: StructName -> ParserM ()
-        addStructMemsToEnv name = do
-            idType <- getM name
-            case idType of
-                PStruct mems -> modify (\env -> foldr putMem env mems) where
-                    putMem (memName, memType) = Env.put memName (PVar memType)
-                _ -> fail "expected struct"
+    baseState <- State.get
+    block $ refChainedMemberId baseState [name] t
 
 -- Attempts to parse an identifier used to declare a new variable.
 -- Fails if the variable already exists. If the variable does not exist
@@ -67,7 +56,7 @@ newVarId = newId snakeId
 refTopVarId :: ParserM (VarName, DataType)
 refTopVarId = do
     (name, idType) <- refId snakeId
-    case idType of
+    trace ("Var " ++  name) $ case idType of
         PVar varType -> return (name, varType)
         _            -> fail "Expected variable"
 

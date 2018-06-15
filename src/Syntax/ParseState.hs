@@ -9,6 +9,8 @@ import qualified Syntax.Env as E
 import Control.Monad.State.Lazy (StateT, modify, get)
 import Text.Megaparsec.String
 
+import Debug.Trace
+
 -- Types that can be declared. Used to keep track of identifiers while parsing.
 data EnvDecl = PVar DataType
              | PFunc [DataType]
@@ -20,18 +22,33 @@ data EnvDecl = PVar DataType
 type ParseState = E.Env EnvDecl
 type ParserM = StateT ParseState Parser
 
+-- Populates a parse state with the given variables.
+fromVars :: [(Identifier, DataType)] -> ParseState
+fromVars vs = E.fromList $ fmap (\(i,t) -> (i, PVar t)) vs
+
 -- Adds a variable name to the current scope.
 putM :: Identifier -> EnvDecl -> ParserM ()
 putM i v = modify (E.put i v)
+
+getP :: (Monad m) => Identifier -> ParseState -> m EnvDecl
+getP i state = do
+    case E.get i state of
+        Nothing -> fail $ i ++ " does not exist"
+        Just x  -> return x
 
 -- Returns whether a identifier can be used, i.e. if the identifier has been
 -- declared in this scope or the scope above.
 getM :: Identifier -> ParserM EnvDecl
 getM i = do
     state <- get
-    case E.get i state of
-        Nothing -> fail $ i ++ " does not exist"
-        Just x  -> return x
+    getP i state
+
+getStruct :: (Monad m) => Identifier -> ParseState -> m [StructMemberVar]
+getStruct i state = do
+    decl <- trace ("Get " ++ i ++ " in " ++ show state) $ getP i state
+    case decl of
+        PStruct mems -> (trace $ "Got " ++ show decl) $ return mems
+        _            -> fail $ "expected " ++ i ++ " to be struct"
 
 -- Retrive the identifier from the environment and modify it. If the identifier
 -- does not exist then the supplied env is returned.
