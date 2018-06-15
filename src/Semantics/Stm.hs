@@ -47,29 +47,11 @@ evalWhile b body = fix f where
     f loop = cond [(bexpVal b, evalLoop)] where
         evalLoop c = block (evalStm body) c >>= loop
 
--- Evaluates a symbol declaration.
-evalSymDecl :: (Monad m) => VarName -> SymExpr -> Config -> App m Config
-evalSymDecl name symExpr c = do
-    (val, c') <- symVal symExpr c
-    return (putSym name val c')
-
--- Evaluates a tape declaration.
-evalTapeDecl :: (Monad m) => VarName -> TapeExpr -> Config -> App m Config
-evalTapeDecl name tapeExpr c = do
-    (addr, c') <- tapePtr tapeExpr c
-    return (putPtr name addr c')
-
--- Evaluates an object declaration.
-evalObjDecl :: (Monad m) => VarName -> ObjExpr -> Config -> App m Config
-evalObjDecl name objExpr c = do
-    (addr, c') <- objPtr objExpr c
-    return (putPtr name addr c')
-
 -- Evaluates a variable declaration.
 evalVarDecl :: (Monad m) => VarName -> AnyValExpr -> Config -> App m Config
-evalVarDecl name (S s) = evalSymDecl name s
-evalVarDecl name (T t) = evalTapeDecl name t
-evalVarDecl name (C c) = evalObjDecl name c
+evalVarDecl name anyExpr c = do
+    (v, c') <- anyVal anyExpr c
+    return (putVar name v c')
 
 -- Evaluates a function declaration.
 evalFuncDecl :: (Monad m) => FuncName -> [FuncDeclArg] -> Stm -> Config -> App m Config
