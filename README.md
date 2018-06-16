@@ -17,7 +17,7 @@ Our first program will be the classic "Hello World" message. Here's the full sou
 // hello_world.al
 import io
 
-printAll "Hello World!"
+print_all "Hello World!"
 ```
 
 To run the program, put the code in a `hello_world.al` file and run using `metal  hello_world`. This runs an interpreter which executes the code.
@@ -198,7 +198,7 @@ import io
 
 let tape = "xyz"
 write tape (read main) // Copy
-printAll tape
+print_all tape
 ```
 
 ```sh
@@ -218,7 +218,7 @@ let tape1 = "abc"
 let tape2 = tape1
 
 write tape2 'X'
-printAll tape1 // Read from a different tape.
+print_all tape1 // Read from a different tape.
 ```
 
 ```sh
@@ -297,7 +297,7 @@ func write2 t:Tape s:Sym {
 
 write_right main 'c'
 
-printAll main
+print_all main
 ```
 
 ```sh
@@ -306,7 +306,7 @@ ccz
 ```
 
 ## Recursion
-Functions may also be recursive. For example, the function below moves the read-write head to the start of the tape.
+Functions may also be recursive. For example, the function below moves the read-write head to the start of the tape. Note that the symbol `'#'` is used to mark the position of the head. It is assumed that `'#'` is unique and therefore not used anywhere else.
 
 ```c
 // zero.al
@@ -378,7 +378,7 @@ func copy_all src:Tape dest:Tape {
 
 let t = ""
 copy_all main t
-printAll t
+print_all t
 ```
 
 ```sh
@@ -389,53 +389,45 @@ xyz
 # Structs
 Metal's structs are a typed collection of fields. They're useful for grouping data together. They are mutable, however, they do not contain functions but are instead acted upon by outside functions.
 
+To motivate a possible usage, one problem that arises is ensuring that symbols used to mark a tape are unique (an example of marking the tape is given in *Functions: Recursion*). The marking symbols need to be unique to ensure the computation is performed correctly. 
+
+To keep track of used marking symbols we will use a struct. The struct also contains the saved characters which have been overwritten with a mark.
+
 ```c
 // struct.al
-struct Person {
-	name:Tape
-	age:Tape
+struct Marks {
+	// Keeps track of symbols that have not yet been used to mark a tape.
+	free:Tape
+	// Keeps track of symbols that have been overwritten with marks.
+	saved:Tape
 }
 ```
 
-Instances of objects are created using the constructor provided. This is a function which takes, as arguments, values for each member variable in the order they are defined in the struct.
+To create an instance of the struct (an object) we use the constructor provided by the struct. This is a function which takes, as arguments, values for each member variable in the order they are defined in the struct.
+
+Below, an object is created containing `free` initialised to the tape containing `#%$`. These are the symbols that can be used to mark a tape. `saved` has also been initialised with an empty tape.
 
 ```c
 // struct.al (continued)
-let jeff = Person "Jeff" "20"
+let marks = Marks "#%$" ""
 ```
 
-Member variables can be accessed using the dot operator. It can also be chained to access objects inside other objects.
+Next, we'll define a function which is called when a user of the struct wants to mark a tape `t` with a marking symbol. The dot operator `.` is used to access members of an object. This can also be chained to access objects within other objects.
 
 ```c
 // struct.al (continued)
-printAll jeff.name
-printAll ", "
-printAll jell.age
-```
-
-```sh
-// struct.al (continued)
-$ metal struct.al
-Jeff, 20
-```
-
-Structure instances are called objects and can be used as arguments to functions. Reference semantics are also used for objects, therefore modification to an object reference will mean changes to the original too. 
-
-```c
-// modify_struct.al
-import struct
-
-func change_age person:Person {
-	write person.age '3'
+func mark t:Tape marks:Marks {
+	// Save the symbol on the tape.
+	write marks.saved (read t)
+	// Move to the next position to avoid overwriting the saved symbol.
+	right marks.saved
+	
+	// Overwrite the symbol on the tape.
+	write t (read marks.free)
+	// Move to the next available symbol. Therefore a different symbol 
+	// will be used when `mark` is called again.
+	right marks.free
 }
-
-change_age jeff
-printAll jeff.age
-```
-
-```sh
-$ metal modify_struct.al
-30 
 ```
 
 # Imports
