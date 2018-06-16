@@ -31,7 +31,7 @@ parseImports sourceFileName contents = tryParse parsed where
 ioTree :: FilePath -> ImportPath -> IO ([ImportPath], FileData)
 ioTree dirPath importPath = do
     -- Add Metal ".al" extension to end of file.
-    let fullPath = dirPath </> addExtension importPath "al"
+    let fullPath = dirPath </> replaceExtension importPath "al"
     contents <- readFile fullPath
 
     imports <- parseImports fullPath contents

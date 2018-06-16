@@ -25,6 +25,7 @@ main = do
     let parseState = Env.fromList [(mainTapeName, PVar TapeType)]
     let config = Config.fromString mainTapeName tapeSyms
     let startDir = takeDirectory filePath
-    app <- evalProg (ioTree startDir) filePath parseState config
+    let fileName = takeFileName filePath
+    app <- evalProg (ioTree startDir) fileName parseState config
     result <- evalApp app
     putStrLn $ "\n" ++ (show result)
