@@ -177,12 +177,12 @@ aa
 
 ### Immutability
 
-Since variables containing symbols are used to store state, they are immutable and cannot be changed after initialisation. 
+Since variables containing symbols are used to store state, they are immutable and cannot be changed after initialisation. Immutable variables also disallow anything other than tapes to be used to perform computations.
 
 ```c
 let x = 'a'
 
-x = 'b' 
+x = 'b'
 // Fails to compile.
 
 let x = 'c' 
@@ -430,6 +430,36 @@ func mark t:Tape marks:Marks {
 }
 ```
 
+We need another matching function which is used to put back used marks and overwritten symbols. 
+
+```c
+// struct.al (continued)
+func unmark t:Tape marks:Marks {
+	// Get the saved symbol and put it back in the tape.
+	left marks.saved
+	write t (read marks.saved)
+	left marks.saved
+	
+	// Free the used mark.
+	left marks.free
+}
+```
+
+These two functions must be called in pairs to ensure the state is correctly maintained. Below shows some example usage.
+
+```c
+// struct.al (continued)
+mark main marks
+// Perform computation...
+mark main marks 
+// Perform another, nested computation...
+// Then put back the used symbol and replaced symbol on the main tape.
+unmark main marks
+unmark main marks
+```
+
 # Imports
+
+Importing other files is done using the `import` keyword followed by the path from the current file to the imported file. 
 
 ## Circular Imports
