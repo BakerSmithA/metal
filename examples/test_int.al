@@ -17,8 +17,23 @@ func test_add {
 
     assert_add (Int "0") (Int "0") (Int "00") "0+0"
     assert_add (Int "1") (Int "0") (Int "10") "1+0"
-    assert_add (Int "10") (Int "01") (Int "110") "10+01"
-    assert_add (Int "110") (Int "111") (Int "0101") "011+111"
+    assert_add (Int "1011") (Int "0110") (Int "11001") "1101+110"
+    assert_add (Int "101101011") (Int "010101110") (Int "1110100101") "110101101+011101010"
+}
+
+// Tests the binary subtraction of integers.
+func test_sub {
+    func assert_sub x:Int y:Int exp:Int name:Tape {
+        let out = Int ""
+        sub x y out
+        assert_int_eq out exp name
+    }
+
+    assert_sub (Int "0") (Int "0") (Int "00") "0-0"
+    assert_sub (Int "1") (Int "0") (Int "10") "1-0"
+    assert_sub (Int "1011") (Int "0110") (Int "11100") "1101-110"
+    assert_sub (Int "101101011") (Int "010101110") (Int "1100001100") "110101101-011101010"
 }
 
 test_add
+test_sub

@@ -1,6 +1,6 @@
-# Metal 
-
 [![CircleCI](https://circleci.com/gh/BakerSmithA/metal.svg?style=svg)](https://circleci.com/gh/BakerSmithA/metal)
+
+# Metal
 
 Metal is a programming language used to describe the function of a Turing machine. This means you're not given a lot of help to do what would normally be essential parts of a language, such as maths. However, since the language is Turing complete any possible computation can still be performed, even with a limited toolset.
 
@@ -13,7 +13,7 @@ In Metal, any ASCII symbol can be stored on the tape. The code is used to descri
 # Hello World
 Our first program will be the classic "Hello World" message. Here's the full source code.
 
-```c 
+```c
 // hello_world.al
 import io
 
@@ -29,7 +29,7 @@ Accepted
 ```
 
 # Reading
-To read from a tape, the `read` function is used. This takes as an argument the tape to read from. 
+To read from a tape, the `read` function is used. This takes as an argument the tape to read from.
 
 ```c
 // read.al
@@ -62,7 +62,7 @@ Accepted
 ```
 
 # Moving the Read-Write Head
-To move the head, the builtin `left` and `right` functions are used. These take one argument which is the head of which tape to move. 
+To move the head, the builtin `left` and `right` functions are used. These take one argument which is the head of which tape to move.
 
 ```c
 // move.al
@@ -84,7 +84,7 @@ The head can be moved infinitely to the right, however, it cannot be moved left 
 
 ```c
 // left.al
-left main 
+left main
 left main
 print (read main)
 ```
@@ -121,7 +121,7 @@ print 'b'
 ```
 
 ```sh
-$ metal halt.al 
+$ metal halt.al
 a
 Rejected
 ```
@@ -129,7 +129,7 @@ Rejected
 # Variables
 
 ## Tape Symbols
-It is common to want to read a symbol from the tape, overwrite it, move around to perform some computation, and then finally write back the same symbol. 
+It is common to want to read a symbol from the tape, overwrite it, move around to perform some computation, and then finally write back the same symbol.
 
 One such example is moving to the start of a tape. To do this a marking symbol (e.g. `'#'`) is written to the tape. The TM then tries to move left towards the start. A read is then performed to check whether the move was successful. If the `'#'` is read then we know we are at the start of the tape. Otherwise, we are not at the start and so the `'#'` must be replaced with the original symbol. We can then try moving left again.
 
@@ -163,7 +163,7 @@ write main saved
 Symbol literals, or other symbol variables, can also be stored inside variables. Such as shown below.
 
 ```c
-// sym_lit.al 
+// sym_lit.al
 let sym_lit = 'a'
 let sym_var = sym_lit
 
@@ -186,7 +186,7 @@ let x = 'a'
 x = 'b'
 // Fails to compile.
 
-let x = 'c' 
+let x = 'c'
 // Fails to compile as redefinition of x.
 ```
 
@@ -233,7 +233,7 @@ Branching in Metal is performed using if-else statements. Note that you do not n
 ```c
 if read main == 'a' {
 	print '2'
-} 
+}
 else if read main == 'a' && read tape != 'b' {
 	print '2'
 }
@@ -255,12 +255,12 @@ if True {
 ```
 
 ```sh
-$ metal scope.al 
+$ metal scope.al
 b
 ```
 
-# While 
-While loops are Metal's only looping structure. It is executed until the loop condition becomes false. The same scoping rules that apply to if-statements also apply to while-statements. 
+# While
+While loops are Metal's only looping structure. It is executed until the loop condition becomes false. The same scoping rules that apply to if-statements also apply to while-statements.
 
 The program below shows how to print the character before the first `'a'`.
 
@@ -272,7 +272,7 @@ while read main != 'a' {
 	right main
 }
 // Move to the character before.
-left main 
+left main
 print (read main)
 ```
 
@@ -291,7 +291,7 @@ Below is a function which takes a tape and a symbol as input. It then writes thi
 import io
 
 func write2 t:Tape s:Sym {
-	write t s 
+	write t s
 	right t
 	write t s
 }
@@ -324,7 +324,7 @@ func zero t:Tape {
         // The head did not move, therefore we're at the start.
         // This is the base case of the function.
         write t saved
-    } 
+    }
     else {
         // The head did move, therefore we are not at the start.
         // We need to replace the overwritten symbol with the original and
@@ -344,8 +344,8 @@ To test out the function, we'll first move the read-write head to the right. The
 
 ```c
 // zero.al (continued)
-right main 
-right main 
+right main
+right main
 print (read main)
 
 zero main
@@ -367,11 +367,11 @@ import io
 func copy_all src:Tape dest:Tape {
 	// Copies a single symbol from one tape to the other.
 	func copy_move src:Tape dest:Tape {
-		write dest (read src) 
+		write dest (read src)
 		right src
 		right dest
 	}
-	
+
 	while read src != ' ' {
 		copy_move src dest
 	}
@@ -390,7 +390,7 @@ xyz
 # Structs
 Metal's structs are a typed collection of fields. They're useful for grouping data together. They are mutable, however, they do not contain functions but are instead acted upon by outside functions.
 
-To motivate a possible usage, one problem that arises is ensuring that symbols used to mark a tape are unique (an example of marking the tape is given in *Functions: Recursion*). The marking symbols need to be unique to ensure the computation is performed correctly. 
+To motivate a possible usage, one problem that arises is ensuring that symbols used to mark a tape are unique (an example of marking the tape is given in *Functions: Recursion*). The marking symbols need to be unique to ensure the computation is performed correctly.
 
 To keep track of used marking symbols we will use a struct. The struct also contains the saved characters which have been overwritten with a mark.
 
@@ -422,16 +422,16 @@ func mark t:Tape marks:Marks {
 	write marks.saved (read t)
 	// Move to the next position to avoid overwriting the saved symbol.
 	right marks.saved
-	
+
 	// Overwrite the symbol on the tape.
 	write t (read marks.free)
-	// Move to the next available symbol. Therefore a different symbol 
+	// Move to the next available symbol. Therefore a different symbol
 	// will be used when `mark` is called again.
 	right marks.free
 }
 ```
 
-We need another matching function which is used to put back used marks and overwritten symbols. 
+We need another matching function which is used to put back used marks and overwritten symbols.
 
 ```c
 // struct.al (continued)
@@ -440,7 +440,7 @@ func unmark t:Tape marks:Marks {
 	left marks.saved
 	write t (read marks.saved)
 	left marks.saved
-	
+
 	// Free the used mark.
 	left marks.free
 }
@@ -452,7 +452,7 @@ These two functions must be called in pairs to ensure the state is correctly mai
 // struct.al (continued)
 mark main marks
 // Perform computation...
-mark main marks 
+mark main marks
 // Perform another, nested computation...
 // Then put back the used symbol and replaced symbol on the main tape.
 unmark main marks
@@ -495,6 +495,6 @@ let y = 'b'
 Running file 1 we get the following output.
 
 ```sh
-$ metal file1.al 
+$ metal file1.al
 ab
 ```
