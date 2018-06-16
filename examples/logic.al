@@ -58,10 +58,10 @@ func bin_xor p:Sym q:Sym t:Tape {
 // complexity : O(1)
 // ref: http  ://www.electronics-tutorials.ws/combination/comb_7.html
 func bin_half_adder p:Sym q:Sym t:Tape {
-    // The sum bit is computed as 'a XOR b'.
+    // Sum bit = p xor q
     bin_xor p q t
 
-    // The carry bit is computed as 'a AND b'.
+    // Carry bit = p and q
     right t
     bin_and p q t
 }
@@ -85,4 +85,39 @@ func bin_full_adder p:Sym q:Sym carry_in:Sym t:Tape {
     // The final carry is computed as the OR of the carry-out from both half
     // adders.
     bin_or (read t) carry0 t
+}
+
+// Binary half subractor, which performs binary subtraction of two 1 bit operands.
+// writes t+0 : the difference bit of p - q.
+// writes t+1 : the borrow bit of p - q.
+// complexity : O(1)
+// ref        : https://www.electronics-tutorials.ws/combination/binary-subtractor.html
+func bin_half_sub p:Sym q:Sym t:Tape {
+    // Different bit = p xor q
+    bin_xor p q t
+
+    // Borrow bit = (not p) and q
+    right t
+    bin_not p t
+    bin_and (read t) q t
+}
+
+// Binary full subtractor, which performs binary subtraction of three 1 bit operands.
+// writes t+0 : the difference bit of the subtraction.
+// writes t+1 : the borrow bit of the subtraction.
+// complexity : O(1)
+// ref        : https://www.electronics-tutorials.ws/combination/binary-subtractor.html
+func bin_full_sub p:Sym q:Sym borrow_in:Sym t:Tape {
+    bin_half_sub p q t
+    // ..|diff0|*borrow0|..
+    let borrow0 = read t
+    left t
+    let diff0 = read t
+
+    bin_half_sub diff0 borrow_in t
+    // ..|diff1|*borrow1|...
+
+    // The final borrow is computed as the OR of the borrow out from both
+    // half subtractors.
+    bin_or (read t) borrow0 t
 }
