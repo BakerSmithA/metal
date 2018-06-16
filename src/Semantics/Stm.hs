@@ -112,7 +112,7 @@ evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config
 evalDebugPrintTape tapeExpr c1 = do
     (addr, c2) <- tapePtr tapeExpr c1
     (TapeRef tape) <- tryMaybe (derefPtr addr c2) UndefVar
-    output' (show tape) c2
+    output' (show tape ++ "\n") c2
 
 -- Evalautes a statement in a configuration of a Turing machine.
 evalStm :: (MonadOutput m) => Stm -> Config -> App m Config
