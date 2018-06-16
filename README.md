@@ -4,7 +4,7 @@
 
 Metal is a programming language used to describe the function of a Turing machine. This means you're not given a lot of help to do what would normally be essential parts of a language, such as maths. However, since the language is Turing complete any possible computation can still be performed, even with a limited toolset.
 
-# Turing Machine
+# Turing Machines
 
 The machine operates on a tape which extends infinitely to the right. A read-write head can move left and right along the tape, reading and writing symbols to it. They can also 'accept' or 'reject' depending on the input.
 
@@ -460,6 +460,40 @@ unmark main marks
 
 # Imports
 
-Importing other files is done using the `import` keyword followed by the path from the current file to the imported file. 
+Importing other files is done using the `import` keyword followed by the path from the current file to the imported file. This allows variables, functions, and structs to be shared among files. Clashes or redefinitions, however, will cause compilation errors. Given the file structure:
 
-## Circular Imports
+```
+.
+├── dir
+│   └── file3.al
+├── file1.al
+└── file2.al
+```
+
+File 1 can import files 2 and 3 in the following way.
+
+```c
+// file1.al
+import file1
+import dir/file2
+
+print x
+print y
+```
+
+```c
+// file2.al
+let x = 'a'
+```
+
+```c
+// file3.al
+let y = 'b'
+```
+
+Running file 1 we get the following output.
+
+```sh
+$ metal file1.al 
+ab
+```
