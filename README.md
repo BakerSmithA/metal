@@ -153,6 +153,7 @@ Here, the character that was overwritten is saved in the branch (i.e. state) tha
 
 ```c
 let saved = read main
+write main '#'
 // Perform computation
 write main saved
 ```
