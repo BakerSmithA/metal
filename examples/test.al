@@ -1,3 +1,5 @@
+import zero
+
 // effect: writes either '0' or '1' to out depending on whether t1 and t2 are equal.
 func eq_tape t1:Tape t2:Tape out:Tape {
     write out '1'
@@ -24,32 +26,6 @@ func assert_tape actual:Tape expected:Tape result:Tape name:Tape {
         _print expected
         _print "\n\tGot:\t"
         _print actual
-    }
-}
-
-func zero t:Tape {
-    let saved = read t
-    // Mark the current position of the head.
-    write t '#'
-
-    // Try to move left. If we are at the start then this will have no effect.
-    left t
-
-    if read t == '#' {
-        // The head did not move, therefore we're at the start.
-        // This is the base case of the function.
-        write t saved
-    } else {
-        // The head did move, therefore we are not at the start.
-        // We need to replace the overwritten symbol with the original and
-        // then continue searching.
-        right t
-        write t saved
-        left t
-        left t
-
-        // Recursive call.
-        zero t
     }
 }
 
