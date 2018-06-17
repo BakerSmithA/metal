@@ -45,6 +45,12 @@ func copy_operands x:Int y:Int cx:Int cy:Int {
     copy_int y cy
 }
 
+func zero_operands x:Int y:Int r:Int {
+    zero x.bin
+    zero y.bin
+    zero r.bin
+}
+
 // effect     : moves the read-write head of both x and y one position to the right.
 // complexity : O(1)
 func right_operands x:Int y:Int {
@@ -60,8 +66,7 @@ func add x:Int y:Int r:Int {
         let p = read x.bin
         let q = read y.bin
 
-        // OR allows operands of different lengths to be added.
-        if p != ' ' or q != ' ' {
+        if p != ' ' and q != ' ' {
             bin_full_adder p q c_in r.bin
             // Read the carry bit from the tape to be used the next time add is called.
             let new_cin = read r.bin
@@ -76,6 +81,7 @@ func add x:Int y:Int r:Int {
     copy_operands x y cx cy
 
     r_add cx cy '0' r
+    zero r.bin
 }
 
 // Computes r=x-y
@@ -86,8 +92,7 @@ func sub x:Int y:Int r:Int {
         let p = read x.bin
         let q = read y.bin
 
-        // OR allows operands of different lengths to be added.
-        if p != ' ' or q != ' ' {
+        if p != ' ' and q != ' ' {
             bin_full_sub p q borr_in r.bin
             // Read the carry bit from the tape to be used the next time add is called.
             let new_borr_in = read r.bin
@@ -102,4 +107,5 @@ func sub x:Int y:Int r:Int {
     copy_operands x y cx cy
 
     r_sub cx cy '0' r
+    zero r.bin
 }
