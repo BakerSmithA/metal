@@ -15,10 +15,40 @@ func test_is_zero {
         assert_tape_eq out exp name
     }
 
-    assert_is_zero (Int "0") "1" "0==0"
-    assert_is_zero (Int "1") "0" "0!=1"
-    assert_is_zero (Int "000") "1" "000==0"
-    assert_is_zero (Int "00000100") "0" "00000100!=0"
+    assert_is_zero (Int "0") "1" "is_zero 0"
+    assert_is_zero (Int "1") "0" "is_zero 1"
+    assert_is_zero (Int "000") "1" "is_zero 000"
+    assert_is_zero (Int "00000100") "0" "is_zero 00000100"
+}
+
+// Tests checking whether two numbers are equal, ignoring leading zeros.
+func test_int_eq {
+    func assert_is_eq x:Int y:Int exp:Tape name:Tape {
+        let out = ""
+        int_eq x y out
+        assert_tape_eq out exp name
+    }
+
+    // Tests equality when there are the same number of bits in each operand.
+    func test_same_num_bits {
+        assert_is_eq (Int "0") (Int "0") "1" "0==0"
+        assert_is_eq (Int "1") (Int "1") "1" "1==1"
+        assert_is_eq (Int "0") (Int "1") "0" "0==1"
+        assert_is_eq (Int "101101") (Int "101101") "1" "101101==101101"
+        assert_is_eq (Int "1011010") (Int "1011011") "0" "1011010==1011011"
+    }
+    test_same_num_bits
+
+    // Tests equality when there are different number of bits in each operand.
+    func test_diff_num_bits {
+        assert_is_eq (Int "00") (Int "0") "1" "00==0"
+        assert_is_eq (Int "10") (Int "1") "1" "10==1"
+        assert_is_eq (Int "10000") (Int "1") "1" "10000==1"
+        assert_is_eq (Int "100001") (Int "1") "0" "100001==1"
+        assert_is_eq (Int "011") (Int "0110000") "1" "011==0110000"
+        assert_is_eq (Int "011") (Int "011000010") "0" "011==011000010"
+    }
+    test_diff_num_bits
 }
 
 // Tests addition of binary integers.
@@ -30,13 +60,13 @@ func test_add {
     }
 
     // Tests basic adding of integers with same number of bits.
-    func test_same_len_operands {
+    func test_same_num_bits {
         assert_add (Int "0") (Int "0") (Int "00") "0+0"
         assert_add (Int "1") (Int "0") (Int "10") "1+0"
         assert_add (Int "1011") (Int "0110") (Int "11001") "1101+110"
         assert_add (Int "101101011") (Int "010101110") (Int "1110100101") "110101101+011101010"
     }
-    test_same_len_operands
+    test_same_num_bits
 
     // Tests using the same integer as both operands.
     func test_same_operand {
@@ -86,13 +116,13 @@ func test_sub {
     }
 
     // Tests basic subtraction of integers with the same number of bits.
-    func test_same_len_operands {
+    func test_same_num_bits {
         assert_sub (Int "0") (Int "0") (Int "00") "0-0"
         assert_sub (Int "1") (Int "0") (Int "10") "1-0"
         assert_sub (Int "1011") (Int "0110") (Int "11100") "1101-110"
         assert_sub (Int "101101011") (Int "010101110") (Int "1100001100") "110101101-011101010"
     }
-    test_same_len_operands
+    test_same_num_bits
 
     // Tests using the same integer as both operands.
     func test_same_operand {
@@ -134,5 +164,6 @@ func test_sub {
 }
 
 test_is_zero
+test_int_eq
 test_add
 test_sub

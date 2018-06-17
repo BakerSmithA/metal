@@ -28,6 +28,45 @@ func is_zero num:Int r:Tape {
     zero num.bin
 }
 
+// Checks the value of x against y.
+// effect     : checks whether x==y, ignoring leading zeros. The result, either
+//              '0' or '1', is written to r. Also returns the read-write head
+//              of both integers to the start position after.
+// complexity : O(n)
+//
+//  > eq_int (Int "01") (Int "01") r
+//  Writes '1' to r
+//
+//  > eq_int (Int "010") (Int "01") r
+//  Writes '1' to r
+//
+//  > eq_int (Int "0") (Int "1") r
+//  Writes '0' to r
+func int_eq x:Int y:Int r:Tape {
+    write r '1'
+    while read x.bin != ' ' and read y.bin != ' ' {
+        if read x.bin != read y.bin {
+            write r '0'
+        }
+        right x.bin
+        right y.bin
+    }
+
+    // In case the operands are different lengths, check for leading zeros.
+    if (read r == '1') {
+        if (read x.bin == ' ') and (read y.bin != ' ') {
+            // Got to the end of x, but not of y.
+            is_zero y r
+        } else if (read x.bin != ' ') and (read y.bin == ' ') {
+            // Got to the end of y, but not of x.
+            is_zero x r
+        }
+    }
+
+    zero x.bin
+    zero y.bin
+}
+
 // Convenience function for copying operands of binary operations.
 // effect     : copies the contents of x to cx and y to cy. The head of all
 //              integers is also placed back at the start.
@@ -45,6 +84,9 @@ func copy_operands x:Int y:Int cx:Int cy:Int {
     copy_int y cy
 }
 
+// Convenience function for moving the read write head to the start.
+// effect     : moves the read-write head of x, y, and r to the start.
+// complexity : O(n)
 func zero_operands x:Int y:Int r:Int {
     zero x.bin
     zero y.bin
@@ -81,6 +123,7 @@ func add x:Int y:Int r:Int {
     copy_operands x y cx cy
 
     r_add cx cy '0' r
+    // To allow r to be used with other operations later.
     zero r.bin
 }
 
@@ -107,5 +150,20 @@ func sub x:Int y:Int r:Int {
     copy_operands x y cx cy
 
     r_sub cx cy '0' r
+    // To allow r to be used with other operations later.
     zero r.bin
+}
+
+// Computes x+=dx
+// effect     : writes the binary representation of x+dx to x.
+// complexity : O(n)
+func inc x:Int dx:Int {
+    add x dx x
+}
+
+// Computes x-=dx
+// effect     : writes the binary representation of x-dx to x.
+// complexity : O(n)
+func dec x:Int dx:Int {
+    sub x dx x
 }
