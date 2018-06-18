@@ -1,5 +1,4 @@
 import logic
-import zero
 import tape
 
 // A binary integer where bits are ordered from least to most significant.
@@ -16,8 +15,8 @@ struct Int {
 // complexity : O(n), where n is the number of bits.
 func set num:Int new:Int {
     copy_until new.bin ' ' num.bin
-    zero num.bin
-    zero new.bin
+    to_start num.bin
+    to_start new.bin
 }
 
 // Checks whether num has the value 0.
@@ -34,7 +33,7 @@ func is_zero num:Int r:Tape {
         }
         right num.bin
     }
-    zero num.bin
+    to_start num.bin
 }
 
 // Checks the value of x against y.
@@ -72,8 +71,8 @@ func int_eq x:Int y:Int r:Tape {
         }
     }
 
-    zero x.bin
-    zero y.bin
+    to_start x.bin
+    to_start y.bin
 }
 
 // Convenience function for copying operands of binary operations.
@@ -85,8 +84,8 @@ func copy_operands x:Int y:Int cx:Int cy:Int {
         copy_until in.bin ' ' out.bin
         // Zero both so the tapes are ready to be used in the addition,
         // subtraction, etc.
-        zero in.bin
-        zero out.bin
+        to_start in.bin
+        to_start out.bin
     }
 
     copy_int x cx
@@ -97,9 +96,9 @@ func copy_operands x:Int y:Int cx:Int cy:Int {
 // effect     : moves the read-write head of x, y, and r to the start.
 // complexity : O(n)
 func zero_operands x:Int y:Int r:Int {
-    zero x.bin
-    zero y.bin
-    zero r.bin
+    to_start x.bin
+    to_start y.bin
+    to_start r.bin
 }
 
 // effect     : moves the read-write head of both x and y one position to the right.
@@ -133,7 +132,7 @@ func add x:Int y:Int r:Int {
 
     r_add cx cy '0' r
     // To allow r to be used with other operations later.
-    zero r.bin
+    to_start r.bin
 }
 
 // Computes r=x-y
@@ -160,7 +159,7 @@ func sub x:Int y:Int r:Int {
 
     r_sub cx cy '0' r
     // To allow r to be used with other operations later.
-    zero r.bin
+    to_start r.bin
 }
 
 // Computes x+=dx

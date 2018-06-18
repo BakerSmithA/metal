@@ -1,4 +1,4 @@
-import zero
+import tape
 
 // effect: writes either '0' or '1' to out depending on whether t1 and t2 are equal.
 func eq_tape t1:Tape t2:Tape out:Tape {
@@ -32,8 +32,8 @@ func assert_tape actual:Tape expected:Tape result:Tape name:Tape {
 // effect: tests that actual and expected are equal. If not then the message
 //      will be printed.
 func assert_tape_eq actual:Tape expected:Tape name:Tape {
-    zero actual
-    zero expected
+    to_start actual
+    to_start expected
 
     let result = ""
     eq_tape actual expected result
