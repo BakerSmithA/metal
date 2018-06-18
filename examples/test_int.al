@@ -4,8 +4,18 @@ import int
 // effect: tests that actual and expected are equal. If not then the message
 //      will be printed.
 func assert_int_eq actual:Int expected:Int name:Tape {
-    assert_tape_eq actual.bin expected.bin name
+    let r = ""
+    int_eq actual expected r
+    assert_tape actual.bin expected.bin r name
 }
+
+// Tests setting the value of an integer.
+func test_set {
+    let num = Int "001"
+    set num (Int "101")
+    assert_int_eq num (Int "101") "Setting int"
+}
+test_set
 
 // Tests checking whether an integer is zero.
 func test_is_zero {
@@ -20,6 +30,7 @@ func test_is_zero {
     assert_is_zero (Int "000") "1" "is_zero 000"
     assert_is_zero (Int "00000100") "0" "is_zero 00000100"
 }
+test_is_zero
 
 // Tests checking whether two numbers are equal, ignoring leading zeros.
 func test_int_eq {
@@ -50,6 +61,7 @@ func test_int_eq {
     }
     test_diff_num_bits
 }
+test_int_eq
 
 // Tests addition of binary integers.
 func test_add {
@@ -79,7 +91,7 @@ func test_add {
     func test_same_out {
         let x = Int "01"
         add x (Int "10") x
-        assert_int_eq x (Int "110") "Using integer as input and output"
+        assert_int_eq x (Int "11") "Using integer as input and output"
     }
     test_same_out
 
@@ -87,7 +99,7 @@ func test_add {
     func test_all_same_operands {
         let x = Int "10"
         add x x x
-        assert_int_eq x (Int "010") "Using integer as all inputs and output"
+        assert_int_eq x (Int "01") "Using integer as all inputs and output"
     }
     test_all_same_operands
 
@@ -102,10 +114,11 @@ func test_add {
         add x y r1
         add r1 y r2
 
-        assert_int_eq r2 (Int "110") "Chaining additions"
+        assert_int_eq r2 (Int "11") "Chaining additions"
     }
     test_multiple_adds
 }
+test_add
 
 // Tests the binary subtraction of integers.
 func test_sub {
@@ -127,7 +140,7 @@ func test_sub {
     // Tests using the same integer as both operands.
     func test_same_operand {
         let x = Int ("01")
-        assert_sub x x (Int "000") "Subtracting same integer as both operands"
+        assert_sub x x (Int "0") "Subtracting same integer as both operands"
     }
     test_same_operand
 
@@ -135,7 +148,7 @@ func test_sub {
     func test_same_out {
         let x = Int "11"
         sub x (Int "10") x
-        assert_int_eq x (Int "010") "Using integer as input and output"
+        assert_int_eq x (Int "01") "Using integer as input and output"
     }
     test_same_out
 
@@ -143,7 +156,7 @@ func test_sub {
     func test_all_same_operands {
         let x = Int "10"
         sub x x x
-        assert_int_eq x (Int "000") "Using integer as all inputs and output"
+        assert_int_eq x (Int "0") "Using integer as all inputs and output"
     }
     test_all_same_operands
 
@@ -158,12 +171,34 @@ func test_sub {
         sub x y r1
         sub r1 y r2
 
-        assert_int_eq r2 (Int "100") "Chaining subtractions"
+        assert_int_eq r2 (Int "1") "Chaining subtractions"
     }
     test_multiple_subs
 }
-
-test_is_zero
-test_int_eq
-test_add
 test_sub
+
+// Tests the increment function, i.e. which performs x+=dx
+func test_inc {
+    func assert_inc x:Int dx:Int exp:Int name:Tape {
+        inc x dx
+        assert_int_eq x exp name
+    }
+
+    assert_inc (Int "0") (Int "1") (Int "1") "0+=1"
+    assert_inc (Int "1") (Int "1") (Int "01") "1+=1"
+    assert_inc (Int "1011") (Int "0110") (Int "11001") "1+=1"
+}
+test_inc
+
+// Tests the decrement function, i.e. which perform x-=dx
+func test_dec {
+    func assert_dec x:Int dx:Int exp:Int name:Tape {
+        dec x dx
+        assert_int_eq x exp name
+    }
+
+    assert_dec (Int "1") (Int "0") (Int "1") "1-=0"
+    assert_dec (Int "1") (Int "1") (Int "0") "1-=1"
+    assert_dec (Int "1011") (Int "0110") (Int "11100") "1101-=110"
+}
+test_dec

@@ -11,6 +11,15 @@ struct Int {
     bin:Tape
 }
 
+// Sets the value contained in num to the value contained in new.
+// effect     : writes the contents of new to num.
+// complexity : O(n), where n is the number of bits.
+func set num:Int new:Int {
+    copy_until new.bin ' ' num.bin
+    zero num.bin
+    zero new.bin
+}
+
 // Checks whether num has the value 0.
 // E.g. 0000 has the value zero, but 0010 does not.
 // effect     : writes either '0' or '1' to r depending on whether num is zero or not.
