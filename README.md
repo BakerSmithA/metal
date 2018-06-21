@@ -498,3 +498,16 @@ Running file 1 we get the following output.
 $ metal file1.al
 ab
 ```
+
+# Debugging
+
+Sometime it can be hard to understand exactly why a program is not working. To help with this, the builtin function `_print` can be used to print the contents of a tape along with the position of the read-write head.
+
+```c
+// debugging.al
+_print main 
+```
+
+```sh
+$ metal debugging.al "abc"
+pos=0 contents="abc"
