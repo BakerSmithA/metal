@@ -101,11 +101,17 @@ evalStructDecl name mems c = return (Config.putStructMems name memNames c) where
 evalComp :: (MonadOutput m) => Stm -> Stm -> Config -> App m Config
 evalComp stm1 stm2 config = (evalStm stm1 config) >>= (evalStm stm2)
 
--- Evaluates printing the current symbol.
+-- Evaluates printing a symbol.
 evalPrintRead :: (MonadOutput m) => SymExpr -> Config -> App m Config
 evalPrintRead symExpr c = do
     (sym, c') <- symVal symExpr c
     output' [sym] c'
+
+-- Evalutes printing a symbol and a newline.
+evalPrintReadLn :: (MonadOutput m) => SymExpr -> Config -> App m Config
+evalPrintReadLn symExpr c = do
+    (sym, c') <- symVal symExpr c
+    output' (sym: "\n") c'
 
 -- Evalutes debug printing the contents of a tape.
 evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config
@@ -129,4 +135,5 @@ evalStm (Call name args)             = evalCall name args
 evalStm (StructDecl structName mems) = evalStructDecl structName mems
 evalStm (Comp stm1 stm2)             = evalComp stm1 stm2
 evalStm (Print symExpr)              = evalPrintRead symExpr
+evalStm (PrintLn symExpr)            = evalPrintReadLn symExpr
 evalStm (DebugPrintTape tapeExpr)    = evalDebugPrintTape tapeExpr

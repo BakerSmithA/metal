@@ -5,4 +5,4 @@ class Monad m => MonadOutput m where
 
 instance MonadOutput IO where
     -- output :: String -> IO ()
-    output str = putStr (read $ "\"" ++ str ++ "\"") -- Account for escaped characters.
+    output str = putStr str

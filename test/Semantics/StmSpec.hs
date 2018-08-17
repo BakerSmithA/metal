@@ -23,6 +23,7 @@ stmSpec = do
         compSpec
         printReadSpec
         printStrSpec
+        printlnSpec
 
 -- Takes a function to construct a control structure (e.g. function, while-loop,
 -- if-statement), given the body of the structure. Also takes an optional
@@ -512,3 +513,12 @@ printStrSpec = do
             let comp   = Comp (Print (SymLit '1')) (Comp (Print (SymLit '2')) (Print (SymLit '3')))
                 result = evalSemantics comp testConfig
             result `shouldOutput` ["1", "2", "3"]
+
+printlnSpec :: Spec
+printlnSpec = do
+    let testConfig = Config.fromString "tape" "abc"
+
+    context "evaluating println" $ do
+        it "prints a symbol followed by a newline" $ do
+            let result = evalSemantics (PrintLn (SymLit 'a')) testConfig
+            result `shouldOutput` ["a\n"]

@@ -78,6 +78,7 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --                | Call
 --                | Stm '\n' Stm
 --                | 'print' SymExpr
+--                | 'println' SymExpr
 --
 --  Import        : 'import ' String
 --  Imports       : ('import ' String '\n'+)*
@@ -134,6 +135,7 @@ stm' = try funcCall
    <|> varDecl
    <|> funcDecl stmComp
    <|> try (Print <$ lTok "print" <* lWhitespace <*> symExpr)
+   <|> try (PrintLn <$ lTok "println" <* lWhitespace <*> symExpr)
    <|> DebugPrintTape <$ lTok "_print" <*> tapeExpr
    <|> whileStm stmComp
    <|> ifStm stmComp
@@ -163,8 +165,8 @@ stmComp = (stms <* lWhitespaceNewline) >>= (return . compose) where
 --      | FuncDecl
 --      | Call
 --      | Stm '\n' Stm
---      | 'print'
---      | 'print' String
+--      | 'print' SymExpr
+--      | 'println' SymExpr
 --      | Import
 stm :: ParserM Stm
 stm = stmComp <* lWhitespaceNewline

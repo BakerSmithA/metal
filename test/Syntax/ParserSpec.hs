@@ -215,6 +215,9 @@ programSpec = describe "program" $ do
                 state  = Env.fromList [struct, var]
             parseEvalState state program "" "print s.x" `shouldParseStm` (Print (SymVar ["s", "x"]))
 
+        it "parses println" $ do
+            parseEmptyState program "" "println 'a'" `shouldParseStm` (PrintLn (SymLit 'a'))
+
     context "removing whitespace and comments" $ do
         let state = Env.fromList [("tape", PVar TapeType)]
 
