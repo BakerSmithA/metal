@@ -108,10 +108,11 @@ evalPrintRead symExpr c = do
     output' [sym] c'
 
 -- Evalutes printing a symbol and a newline.
-evalPrintReadLn :: (MonadOutput m) => SymExpr -> Config -> App m Config
-evalPrintReadLn symExpr c = do
+evalPrintReadLn :: (MonadOutput m) => Maybe SymExpr -> Config -> App m Config
+evalPrintReadLn Nothing        c = output' ['\n'] c
+evalPrintReadLn (Just symExpr) c = do
     (sym, c') <- symVal symExpr c
-    output' (sym: "\n") c'
+    output' (sym:"\n") c'
 
 -- Evalutes debug printing the contents of a tape.
 evalDebugPrintTape :: (MonadOutput m) => TapeExpr -> Config -> App m Config

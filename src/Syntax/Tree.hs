@@ -157,7 +157,7 @@ data Stm = MoveLeft TapeExpr
          | StructDecl StructName [StructMemberVar]
          | Comp Stm Stm
          | Print SymExpr
-         | PrintLn SymExpr
+         | PrintLn (Maybe SymExpr)
          | DebugPrintTape TapeExpr
          deriving (Eq, Show)
 

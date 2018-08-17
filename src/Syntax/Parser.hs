@@ -78,7 +78,7 @@ import Control.Monad.State.Lazy (runStateT, lift, liftM)
 --                | Call
 --                | Stm '\n' Stm
 --                | 'print' SymExpr
---                | 'println' SymExpr
+--                | 'println' [SymExpr]
 --
 --  Import        : 'import ' String
 --  Imports       : ('import ' String '\n'+)*
@@ -124,6 +124,9 @@ varDecl = do
 
     return (VarDecl name v)
 
+maybeSymExpr :: ParserM (Maybe SymExpr)
+maybeSymExpr = optional (lWhitespace *> symExpr)
+
 -- Parses the elements of the syntactic class Stm, except for composition.
 stm' :: ParserM Stm
 stm' = try funcCall
@@ -135,7 +138,7 @@ stm' = try funcCall
    <|> varDecl
    <|> funcDecl stmComp
    <|> try (Print <$ lTok "print" <* lWhitespace <*> symExpr)
-   <|> try (PrintLn <$ lTok "println" <* lWhitespace <*> symExpr)
+   <|> try (PrintLn <$ lTok "println" <*> maybeSymExpr)
    <|> DebugPrintTape <$ lTok "_print" <*> tapeExpr
    <|> whileStm stmComp
    <|> ifStm stmComp

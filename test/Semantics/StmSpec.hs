@@ -520,5 +520,9 @@ printlnSpec = do
 
     context "evaluating println" $ do
         it "prints a symbol followed by a newline" $ do
-            let result = evalSemantics (PrintLn (SymLit 'a')) testConfig
+            let result = evalSemantics (PrintLn (Just (SymLit 'a'))) testConfig
             result `shouldOutput` ["a\n"]
+
+        it "prints just a newline" $ do
+            let result = evalSemantics (PrintLn Nothing) testConfig
+            result `shouldOutput` ["\n"]
