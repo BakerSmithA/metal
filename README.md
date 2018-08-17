@@ -29,7 +29,7 @@ Accepted
 ```
 
 # Reading
-To read from a tape, the `read` function is used. This takes as an argument the tape to read from.
+To read from a tape, the `read` procedure is used. This takes as an argument the tape to read from.
 
 ```c
 // read.al
@@ -45,7 +45,7 @@ Accepted
 ```
 
 # Writing
-To write to the tape, the `write` function is used. This takes the tape to write to as the first argument, and the symbol to write as the second.
+To write to the tape, the `write` procedure is used. This takes the tape to write to as the first argument, and the symbol to write as the second.
 
 ```c
 // write.al
@@ -62,7 +62,7 @@ Accepted
 ```
 
 # Moving the Read-Write Head
-To move the head, the builtin `left` and `right` functions are used. These take one argument which is the head of which tape to move.
+To move the head, the builtin `left` and `right` procedures are used. These take one argument which is the head of which tape to move.
 
 ```c
 // move.al
@@ -209,7 +209,7 @@ ayz
 
 ### References
 
-Tapes have reference semantics, and so if a variable assigned to an exisiting tape, and then that tape is modified, the original tape will also be modified. This behaviour is what allow functions such as `left`, `right`, and `write` to work.
+Tapes have reference semantics, and so if a variable assigned to an exisiting tape, and then that tape is modified, the original tape will also be modified. This behaviour is what allow procedures such as `left`, `right`, and `write` to work.
 
 ```c
 // ref_tape.al
@@ -243,7 +243,7 @@ else {
 ```
 
 ## Scope
-Inside the braces of one of the conditionals variables, functions, and struct definitions can be overwritten. When running the program, the innermost definition will be used.
+Inside the braces of one of the conditionals variables, procedures, and struct definitions can be overwritten. When running the program, the innermost definition will be used.
 
 ```c
 // scope.al
@@ -281,10 +281,10 @@ $ metal find.al "xyzabc"
 z
 ```
 
-# Functions
-Functions in Metal have no return, however they can modify tapes and objects due to their reference semantics. Functions also require the type of the arguments to be explicitly stated. The same scope rules that apply to if-statements and while-statements also apply to functions.
+# Procedures
+Produces in Metal allow for easy resuse of code. They have no return, however they can modify tapes and objects due to their reference semantics. Procedures also require the type of the arguments to be explicitly stated. The same scope rules that apply to if-statements and while-statements also apply to procedures.
 
-Below is a function which takes a tape and a symbol as input. It then writes this symbol to the current and next positions on the tape. The function is then run by giving it's name followed by the required arguments.
+Below is a procedure which takes a tape and a symbol as input. It then writes this symbol to the current and next positions on the tape. The procedure is then run by giving it's name followed by the required arguments.
 
 ```c
 // write2.al
@@ -307,7 +307,7 @@ ccz
 ```
 
 ## Recursion
-Functions may also be recursive. For example, the function below moves the read-write head to the start of the tape. Note that the symbol `'#'` is used to mark the position of the head. It is assumed that `'#'` is unique and therefore not used anywhere else.
+Procedures may also be recursive. For example, the procedure below moves the read-write head to the start of the tape. Note that the symbol `'#'` is used to mark the position of the head. It is assumed that `'#'` is unique and therefore not used anywhere else.
 
 ```c
 // zero.al
@@ -322,7 +322,7 @@ func zero t:Tape {
 
     if read t == '#' {
         // The head did not move, therefore we're at the start.
-        // This is the base case of the function.
+        // This is the base case of the procedure.
         write t saved
     }
     else {
@@ -340,7 +340,7 @@ func zero t:Tape {
 }
 ```
 
-To test out the function, we'll first move the read-write head to the right. Then we can check the head is moved back to the start.
+To test out the procedure, we'll first move the read-write head to the right. Then we can check the head is moved back to the start.
 
 ```c
 // zero.al (continued)
@@ -357,8 +357,8 @@ $ metal zero.al "abc"
 ca
 ```
 
-## Nested Functions
-Functions need not only exist at the topmost level; they can be nested within other functions. This can be useful for hiding functions that don't need to be exposed to other users. The following shows the slightly contrived example of copying the contents of one tape to anothe tape.
+## Nested Procedures
+Procedure need not only exist at the topmost level; they can be nested within other procedures. This can be useful for hiding procedures that don't need to be exposed to other users. The following shows the slightly contrived example of copying the contents of one tape to anothe tape.
 
 ```c
 // nested_funcs.al
@@ -388,9 +388,9 @@ xyz
 ```
 
 # Structs
-Metal's structs are a typed collection of fields. They're useful for grouping data together. They are mutable, however, they do not contain functions but are instead acted upon by outside functions.
+Metal's structs are a typed collection of fields. They're useful for grouping data together. They are mutable, however, they do not contain procedures but are instead acted upon by outside procedures.
 
-To motivate a possible usage, one problem that arises is ensuring that symbols used to mark a tape are unique (an example of marking the tape is given in *Functions: Recursion*). The marking symbols need to be unique to ensure the computation is performed correctly.
+To motivate a possible usage, one problem that arises is ensuring that symbols used to mark a tape are unique (an example of marking the tape is given in *Procedures: Recursion*). The marking symbols need to be unique to ensure the computation is performed correctly.
 
 To keep track of used marking symbols we will use a struct. The struct also contains the saved characters which have been overwritten with a mark.
 
@@ -404,7 +404,7 @@ struct Marks {
 }
 ```
 
-To create an instance of the struct (an object) we use the constructor provided by the struct. This is a function which takes, as arguments, values for each member variable in the order they are defined in the struct.
+To create an instance of the struct (an object) we use the constructor provided by the struct. This is a procedure which takes, as arguments, values for each member variable in the order they are defined in the struct.
 
 Below, an object is created containing `free` initialised to the tape containing `#%$`. These are the symbols that can be used to mark a tape. `saved` has also been initialised with an empty tape.
 
@@ -413,7 +413,7 @@ Below, an object is created containing `free` initialised to the tape containing
 let marks = Marks "#%$" ""
 ```
 
-Next, we'll define a function which is called when a user of the struct wants to mark a tape `t` with a marking symbol. The dot operator `.` is used to access members of an object. This can also be chained to access objects within other objects.
+Next, we'll define a procedure which is called when a user of the struct wants to mark a tape `t` with a marking symbol. The dot operator `.` is used to access members of an object. This can also be chained to access objects within other objects.
 
 ```c
 // struct.al (continued)
@@ -431,7 +431,7 @@ func mark t:Tape marks:Marks {
 }
 ```
 
-We need another matching function which is used to put back used marks and overwritten symbols.
+We need another matching procedure which is used to put back used marks and overwritten symbols.
 
 ```c
 // struct.al (continued)
@@ -446,7 +446,7 @@ func unmark t:Tape marks:Marks {
 }
 ```
 
-These two functions must be called in pairs to ensure the state is correctly maintained. Below shows some example usage.
+These two procedures must be called in pairs to ensure the state is correctly maintained. Below shows some example usage.
 
 ```c
 // struct.al (continued)
@@ -461,7 +461,7 @@ unmark main marks
 
 # Imports
 
-Importing other files is done using the `import` keyword followed by the path from the current file to the imported file. This allows variables, functions, and structs to be shared among files. Clashes or redefinitions, however, will cause compilation errors. Given the file structure:
+Importing other files is done using the `import` keyword followed by the path from the current file to the imported file. This allows variables, procedures, and structs to be shared among files. Clashes or redefinitions, however, will cause compilation errors. Given the file structure:
 
 ```
 .
@@ -501,7 +501,7 @@ ab
 
 # Debugging
 
-Sometime it can be hard to understand exactly why a program is not working. To help with this, the builtin function `_print` can be used to print the contents of a tape along with the position of the read-write head.
+Sometime it can be hard to understand exactly why a program is not working. To help with this, the builtin procedure `_print` can be used to print the contents of a tape along with the position of the read-write head.
 
 ```c
 // debugging.al
