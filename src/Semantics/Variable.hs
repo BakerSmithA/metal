@@ -29,7 +29,7 @@ symVal (SymVar namePath) c = var Config.getSym namePath c
 symVal (SymLit sym)      c = return (sym, c)
 symVal (Read tapeExpr)   c = do
     (addr, c') <- tapePtr tapeExpr c
-    (TapeRef tape) <- tryMaybe (Config.derefPtr addr c) UndefVar
+    (TapeRef tape) <- tryMaybe (Config.derefPtr addr c') UndefVar
     return (Tape.getSym tape, c')
 
 -- Returns the address of a newly created tape, or an already exisiting tape,
