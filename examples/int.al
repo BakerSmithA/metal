@@ -19,6 +19,37 @@ proc set num:Int new:Int {
     to_start new.bin
 }
 
+// Sets new to contain 0, but with the same number of bits as num.
+// E.g.
+// > let new = (Int "")
+// > set0_same_len (Int "11") new
+// Leaves new containing "00"
+//
+// effect     : sets new to contain 0, but with the same number of bits as num.
+// complexity : O(n), where n is the number of bits.
+proc set0_same_len num:Int new:Int {
+    while read num.bin != ' ' {
+        write new.bin '0'
+        right num.bin
+        right new.bin
+    }
+    to_start num.bin
+    to_start new.bin
+}
+
+// Sets new to contain 1, but with the same number of bits as num.
+// E.g.
+// > let new = (Int "")
+// > set0_same_len (Int "111") new
+// Leaves new containing "100"
+//
+// effect     : sets new to contain 1, but with the same number of bits as num.
+// complexity : O(n), where n is the number of bits.
+proc set1_same_len num:Int one:Int {
+    set0_same_len num one
+    write one.bin '1'
+}
+
 // Checks whether num has the value 0.
 // E.g. 0000 has the value zero, but 0010 does not.
 // effect     : writes either '0' or '1' to r depending on whether num is zero or not.
@@ -75,19 +106,23 @@ proc int_eq x:Int y:Int r:Tape {
     to_start y.bin
 }
 
+// Convenience function for copying integers.
+// effect     : copies the contents of in to out. The head of all x is also
+//              placed back at the start.
+// complexity : O(n)
+proc copy_int in:Int out:Int {
+    copy_until in.bin ' ' out.bin
+    // Zero both so the tapes are ready to be used in the addition,
+    // subtraction, etc.
+    to_start in.bin
+    to_start out.bin
+}
+
 // Convenience function for copying operands of binary operations.
 // effect     : copies the contents of x to cx and y to cy. The head of all
 //              integers is also placed back at the start.
 // complexity : O(n)
 proc copy_operands x:Int y:Int cx:Int cy:Int {
-    proc copy_int in:Int out:Int {
-        copy_until in.bin ' ' out.bin
-        // Zero both so the tapes are ready to be used in the addition,
-        // subtraction, etc.
-        to_start in.bin
-        to_start out.bin
-    }
-
     copy_int x cx
     copy_int y cy
 }
@@ -175,3 +210,34 @@ proc inc x:Int dx:Int {
 proc dec x:Int dx:Int {
     sub x dx x
 }
+
+// Computes r=x*y
+// effect:    : writes the binary representation of x*y to r.
+// complexity : O(n^2) where n is the number of bits.
+proc mult x:Int y:Int r:Int {
+    // Copying allows the same object to be used for both operands.
+    let cx = Int ""
+    let cy = Int ""
+    copy_operands x y cx cy
+
+    // Used to count y down to zero.
+    let count = Int ""
+    copy_int y count
+
+    // Used to store true or false to indicate whether y == 0
+    let is_z = ""
+    is_zero count is_z
+
+    let one = Int ""
+    set1_same_len y one
+
+    while (read is_z) == '0' {
+        dec count one
+        print 'a'
+        is_zero count is_z
+    }
+}
+
+let r = Int ""
+mult (Int "11") (Int "111") r
+_print r.bin

@@ -13,7 +13,7 @@ proc assert_int_eq actual:Int expected:Int name:Tape {
 proc test_set {
     let num = Int "001"
     set num (Int "101")
-    assert_int_eq num (Int "101") "Setting int"
+    assert_int_eq num (Int "101") "Setting_int"
 }
 test_set
 
@@ -25,12 +25,32 @@ proc test_is_zero {
         assert_tape_eq out exp name
     }
 
-    assert_is_zero (Int "0") "1" "is_zero 0"
-    assert_is_zero (Int "1") "0" "is_zero 1"
-    assert_is_zero (Int "000") "1" "is_zero 000"
-    assert_is_zero (Int "00000100") "0" "is_zero 00000100"
+    assert_is_zero (Int "0") "1" "is_zero_0"
+    assert_is_zero (Int "1") "0" "is_not_zero_1"
+    assert_is_zero (Int "000") "1" "is_zero_000"
+    assert_is_zero (Int "00000100") "0" "is_not_zero_00000100"
 }
 test_is_zero
+
+// Tests setting a number to 0.
+proc test_set0_same_len {
+    let x = Int "01010111"
+    let zero = Int ""
+    set0_same_len x zero
+
+    assert_int_eq zero (Int "00000000") "set0_same_len"
+}
+test_set0_same_len
+
+// Tests setting a number to 1.
+proc test_set1_same_len {
+    let x = Int "01010111"
+    let zero = Int ""
+    set1_same_len x zero
+
+    assert_int_eq zero (Int "10000000") "set1_same_len"
+}
+test_set1_same_len
 
 // Tests checking whether two numbers are equal, ignoring leading zeros.
 proc test_int_eq {
@@ -83,7 +103,7 @@ proc test_add {
     // Tests using the same integer as both operands.
     proc test_same_operand {
         let x = Int "01"
-        assert_add x x (Int "001") "Adding same integer as both operands"
+        assert_add x x (Int "001") "Adding_same_integer_as_both_operands"
     }
     test_same_operand
 
@@ -91,7 +111,7 @@ proc test_add {
     proc test_same_out {
         let x = Int "01"
         add x (Int "10") x
-        assert_int_eq x (Int "11") "Using integer as input and output"
+        assert_int_eq x (Int "11") "Using_integer_as_input_and_output"
     }
     test_same_out
 
@@ -99,7 +119,7 @@ proc test_add {
     proc test_all_same_operands {
         let x = Int "10"
         add x x x
-        assert_int_eq x (Int "01") "Using integer as all inputs and output"
+        assert_int_eq x (Int "01") "Using_integer_as_all_inputs_and_output"
     }
     test_all_same_operands
 
@@ -114,7 +134,7 @@ proc test_add {
         add x y r1
         add r1 y r2
 
-        assert_int_eq r2 (Int "11") "Chaining additions"
+        assert_int_eq r2 (Int "11") "Chaining_additions"
     }
     test_multiple_adds
 }
@@ -140,7 +160,7 @@ proc test_sub {
     // Tests using the same integer as both operands.
     proc test_same_operand {
         let x = Int ("01")
-        assert_sub x x (Int "0") "Subtracting same integer as both operands"
+        assert_sub x x (Int "0") "Subtracting_same_integer_as_both_operands"
     }
     test_same_operand
 
@@ -148,7 +168,7 @@ proc test_sub {
     proc test_same_out {
         let x = Int "11"
         sub x (Int "10") x
-        assert_int_eq x (Int "01") "Using integer as input and output"
+        assert_int_eq x (Int "01") "Using_integer_as_input and_output"
     }
     test_same_out
 
@@ -156,7 +176,7 @@ proc test_sub {
     proc test_all_same_operands {
         let x = Int "10"
         sub x x x
-        assert_int_eq x (Int "0") "Using integer as all inputs and output"
+        assert_int_eq x (Int "0") "Using_integer_as_all_inputs_and_output"
     }
     test_all_same_operands
 
@@ -171,7 +191,7 @@ proc test_sub {
         sub x y r1
         sub r1 y r2
 
-        assert_int_eq r2 (Int "1") "Chaining subtractions"
+        assert_int_eq r2 (Int "1") "Chaining_subtractions"
     }
     test_multiple_subs
 }
