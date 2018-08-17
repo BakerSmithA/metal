@@ -12,6 +12,7 @@ import State.Tree
 import Semantics.Stm
 import System.FilePath
 import Text.Megaparsec as M
+import Debug.Trace
 
 type FileData = (ImportPath, FileContents)
 type ImportTree m = Tree m ImportPath FileData
@@ -57,4 +58,4 @@ evalProg :: (MonadOutput m, Monad t) => ImportTree t -> ImportPath -> ParseState
 evalProg tree filePath initialState config = do
     fileDatas <- dfFlattenTree tree [filePath]
     stm <- foldFiles initialState fileDatas
-    return (evalStm stm config)
+    return $ trace (show stm) $ (evalStm stm config)

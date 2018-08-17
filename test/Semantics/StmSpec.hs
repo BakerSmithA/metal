@@ -245,13 +245,21 @@ varDeclSpec = do
             result `shouldOutput` ["a"]
 
     context "evaluating a tape declaration" $ do
-        it "adds tapes to the environment" $ do
+        it "adds tape literals to the environment" $ do
             let decl      = VarDecl "new_tape" (T $ TapeLit "abc")
                 printRead = Print (Read (TapeVar ["new_tape"]))
                 comp      = Comp decl printRead
                 result    = evalSemantics comp Config.empty
 
             result `shouldOutput` ["a"]
+
+    context "evaluting tape literals" $ do
+        it "allows tape literals to be used as function arguments" $ do
+            let comp   = Print (Read (TapeLit "abc"))
+                result = evalSemantics comp Config.empty
+
+            result `shouldOutput` ["a"]
+
 
     context "evaluating a struct and then object declaration" $ do
         it "adds objects to the environment" $ do
