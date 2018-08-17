@@ -1,5 +1,17 @@
 import tape
 
+proc unsafe_print_all t:Tape {
+    while (read t) != ' ' {
+        print (read t)
+        right t
+    }
+}
+
+proc unsafe_print_all_start t:Tape {
+    to_start t
+    unsafe_print_all t
+}
+
 // effect: writes either '0' or '1' to out depending on whether t1 and t2 are equal.
 proc eq_tape t1:Tape t2:Tape out:Tape {
     write out '1'
@@ -16,16 +28,22 @@ proc eq_tape t1:Tape t2:Tape out:Tape {
 // effect: prints that the test passed or failed.
 proc assert_tape actual:Tape expected:Tape result:Tape name:Tape {
     if read result == '1' {
-        _print "Passed: "
-        _print name
+        unsafe_print_all "Passed:"
+        unsafe_print_all name
+        println
 
     } else {
-        _print "Failed: "
-        _print name
-        _print "\n\tExpect:\t"
-        _print expected
-        _print "\n\tGot:\t"
-        _print actual
+        println
+        unsafe_print_all "Failed:"
+        unsafe_print_all name
+        println
+        unsafe_print_all "Expect:"
+        unsafe_print_all_start expected
+        println
+        unsafe_print_all "Got:"
+        unsafe_print_all_start actual
+        println
+        println
     }
 }
 
