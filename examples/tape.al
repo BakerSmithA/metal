@@ -36,3 +36,9 @@ proc to_start t:Tape {
         to_start t
     }
 }
+
+proc right_until t:Tape term:Sym {
+    while read t != term {
+        right t
+    }
+}
