@@ -3,14 +3,14 @@ import int
 
 // effect: tests that actual and expected are equal. If not then the message
 //      will be printed.
-func assert_int_eq actual:Int expected:Int name:Tape {
+proc assert_int_eq actual:Int expected:Int name:Tape {
     let r = ""
     int_eq actual expected r
     assert_tape actual.bin expected.bin r name
 }
 
 // Tests setting the value of an integer.
-func test_set {
+proc test_set {
     let num = Int "001"
     set num (Int "101")
     assert_int_eq num (Int "101") "Setting int"
@@ -18,8 +18,8 @@ func test_set {
 test_set
 
 // Tests checking whether an integer is zero.
-func test_is_zero {
-    func assert_is_zero num:Int exp:Tape name:Tape {
+proc test_is_zero {
+    proc assert_is_zero num:Int exp:Tape name:Tape {
         let out = ""
         is_zero num out
         assert_tape_eq out exp name
@@ -33,15 +33,15 @@ func test_is_zero {
 test_is_zero
 
 // Tests checking whether two numbers are equal, ignoring leading zeros.
-func test_int_eq {
-    func assert_is_eq x:Int y:Int exp:Tape name:Tape {
+proc test_int_eq {
+    proc assert_is_eq x:Int y:Int exp:Tape name:Tape {
         let out = ""
         int_eq x y out
         assert_tape_eq out exp name
     }
 
     // Tests equality when there are the same number of bits in each operand.
-    func test_same_num_bits {
+    proc test_same_num_bits {
         assert_is_eq (Int "0") (Int "0") "1" "0==0"
         assert_is_eq (Int "1") (Int "1") "1" "1==1"
         assert_is_eq (Int "0") (Int "1") "0" "0==1"
@@ -51,7 +51,7 @@ func test_int_eq {
     test_same_num_bits
 
     // Tests equality when there are different number of bits in each operand.
-    func test_diff_num_bits {
+    proc test_diff_num_bits {
         assert_is_eq (Int "00") (Int "0") "1" "00==0"
         assert_is_eq (Int "10") (Int "1") "1" "10==1"
         assert_is_eq (Int "10000") (Int "1") "1" "10000==1"
@@ -64,15 +64,15 @@ func test_int_eq {
 test_int_eq
 
 // Tests addition of binary integers.
-func test_add {
-    func assert_add x:Int y:Int exp:Int name:Tape {
+proc test_add {
+    proc assert_add x:Int y:Int exp:Int name:Tape {
         let out = Int ""
         add x y out
         assert_int_eq out exp name
     }
 
     // Tests basic adding of integers with same number of bits.
-    func test_same_num_bits {
+    proc test_same_num_bits {
         assert_add (Int "0") (Int "0") (Int "00") "0+0"
         assert_add (Int "1") (Int "0") (Int "10") "1+0"
         assert_add (Int "1011") (Int "0110") (Int "11001") "1101+110"
@@ -81,14 +81,14 @@ func test_add {
     test_same_num_bits
 
     // Tests using the same integer as both operands.
-    func test_same_operand {
+    proc test_same_operand {
         let x = Int "01"
         assert_add x x (Int "001") "Adding same integer as both operands"
     }
     test_same_operand
 
     // Tests writing to one of the input operands.
-    func test_same_out {
+    proc test_same_out {
         let x = Int "01"
         add x (Int "10") x
         assert_int_eq x (Int "11") "Using integer as input and output"
@@ -96,7 +96,7 @@ func test_add {
     test_same_out
 
     // Tests adding when both inputs and the output are the same integer.
-    func test_all_same_operands {
+    proc test_all_same_operands {
         let x = Int "10"
         add x x x
         assert_int_eq x (Int "01") "Using integer as all inputs and output"
@@ -104,7 +104,7 @@ func test_add {
     test_all_same_operands
 
     // Tests performing one addition followed by another.
-    func test_multiple_adds {
+    proc test_multiple_adds {
         let x = Int "10"
         let y = Int "10"
 
@@ -121,15 +121,15 @@ func test_add {
 test_add
 
 // Tests the binary subtraction of integers.
-func test_sub {
-    func assert_sub x:Int y:Int exp:Int name:Tape {
+proc test_sub {
+    proc assert_sub x:Int y:Int exp:Int name:Tape {
         let out = Int ""
         sub x y out
         assert_int_eq out exp name
     }
 
     // Tests basic subtraction of integers with the same number of bits.
-    func test_same_num_bits {
+    proc test_same_num_bits {
         assert_sub (Int "0") (Int "0") (Int "00") "0-0"
         assert_sub (Int "1") (Int "0") (Int "10") "1-0"
         assert_sub (Int "1011") (Int "0110") (Int "11100") "1101-110"
@@ -138,14 +138,14 @@ func test_sub {
     test_same_num_bits
 
     // Tests using the same integer as both operands.
-    func test_same_operand {
+    proc test_same_operand {
         let x = Int ("01")
         assert_sub x x (Int "0") "Subtracting same integer as both operands"
     }
     test_same_operand
 
     // Tests writing to one of the input operands.
-    func test_same_out {
+    proc test_same_out {
         let x = Int "11"
         sub x (Int "10") x
         assert_int_eq x (Int "01") "Using integer as input and output"
@@ -153,7 +153,7 @@ func test_sub {
     test_same_out
 
     // Tests subtracting when both inputs and the output are the same integer.
-    func test_all_same_operands {
+    proc test_all_same_operands {
         let x = Int "10"
         sub x x x
         assert_int_eq x (Int "0") "Using integer as all inputs and output"
@@ -161,7 +161,7 @@ func test_sub {
     test_all_same_operands
 
     // Tests performing one subtraction followed by another.
-    func test_multiple_subs {
+    proc test_multiple_subs {
         let x = Int "11"
         let y = Int "10"
 
@@ -178,8 +178,8 @@ func test_sub {
 test_sub
 
 // Tests the increment function, i.e. which performs x+=dx
-func test_inc {
-    func assert_inc x:Int dx:Int exp:Int name:Tape {
+proc test_inc {
+    proc assert_inc x:Int dx:Int exp:Int name:Tape {
         inc x dx
         assert_int_eq x exp name
     }
@@ -191,8 +191,8 @@ func test_inc {
 test_inc
 
 // Tests the decrement function, i.e. which perform x-=dx
-func test_dec {
-    func assert_dec x:Int dx:Int exp:Int name:Tape {
+proc test_dec {
+    proc assert_dec x:Int dx:Int exp:Int name:Tape {
         dec x dx
         assert_int_eq x exp name
     }

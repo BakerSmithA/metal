@@ -20,23 +20,23 @@ funcDeclSpec = do
 
         it "parses function delcarations" $ do
             let expected = FuncDecl "f_name" [] (MoveRight (TapeVar ["tape"]))
-            parseEvalState state program "" "func f_name { right tape }" `shouldParseStm` expected
+            parseEvalState state program "" "proc f_name { right tape }" `shouldParseStm` expected
 
         it "parses function declarations with arguments" $ do
             let args = [("a", SymType), ("bb", TapeType)]
                 expected = FuncDecl "f_name" args (MoveRight (TapeVar ["tape"]))
-            parseEvalState state program "" "func f_name a:Sym bb:Tape { right tape }" `shouldParseStm` expected
+            parseEvalState state program "" "proc f_name a:Sym bb:Tape { right tape }" `shouldParseStm` expected
 
         it "parses function declarations where the name contains a keyword" $ do
             let expected = FuncDecl "left_until" [] (MoveRight (TapeVar ["tape"]))
-            parseEvalState state program "" "func left_until { right tape }" `shouldParseStm` expected
+            parseEvalState state program "" "proc left_until { right tape }" `shouldParseStm` expected
 
         it "allows variables to be shadowed" $ do
             let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
                 func         = FuncDecl "f" [] innerVarDecl
                 outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 comp         = Comp outerVarDecl func
-            parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' }" `shouldParseStm` comp
+            parseEvalState state program "" "let x = \"xyz\" \n proc f { let x = 'a' }" `shouldParseStm` comp
 
         it "allows the types of variables to be changed at inner scopes" $ do
             let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
@@ -45,7 +45,7 @@ funcDeclSpec = do
                 func         = FuncDecl "f" [] body
                 outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 comp         = Comp outerVarDecl func
-            parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' \n write tape x }" `shouldParseStm` comp
+            parseEvalState state program "" "let x = \"xyz\" \n proc f { let x = 'a' \n write tape x }" `shouldParseStm` comp
 
         it "reverts variables after scope is exited" $ do
             let innerVarDecl = VarDecl "x" (S $ SymLit 'a')
@@ -53,46 +53,46 @@ funcDeclSpec = do
                 outerVarDecl = VarDecl "x" (T $ TapeLit "xyz")
                 write        = Write (TapeVar ["x"]) (SymLit 'a')
                 comp         = Comp outerVarDecl (Comp func write)
-            parseEvalState state program "" "let x = \"xyz\" \n func f { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
+            parseEvalState state program "" "let x = \"xyz\" \n proc f { let x = 'a' } \n write x 'a'" `shouldParseStm` comp
 
         it "allows arguments to be used inside the function" $ do
             let args = [("t", TapeType), ("x", SymType)]
                 func = FuncDecl "write_new" args (Write (TapeVar ["t"]) (SymVar ["x"]))
-            parseEmptyState program "" "func write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
+            parseEmptyState program "" "proc write_new t:Tape x:Sym { write t x }" `shouldParseStm` func
 
         it "allows arguments to have the same name as variables outside" $ do
             let args = [("tape", TapeType), ("x", SymType)]
                 func = FuncDecl "write_new" args (Write (TapeVar ["tape"]) (SymVar ["x"]))
-            parseEmptyState program "" "func write_new tape:Tape x:Sym { write tape x }" `shouldParseStm` func
+            parseEmptyState program "" "proc write_new tape:Tape x:Sym { write tape x }" `shouldParseStm` func
 
         it "allows resursive functions" $ do
             let expected = FuncDecl "f" [] (Call "f" [])
-            parseEmptyState program "" "func f { f }" `shouldParseStm` expected
+            parseEmptyState program "" "proc f { f }" `shouldParseStm` expected
 
         it "allows redefinition of function inside function" $ do
             let expected = FuncDecl "f" [] (FuncDecl "f" [] (MoveLeft (TapeVar ["tape"])))
-            parseEvalState state program "" "func f { func f { left tape } }" `shouldParseStm` expected
+            parseEvalState state program "" "proc f { proc f { left tape } }" `shouldParseStm` expected
 
         it "fails if argument names are duplicated" $ do
-            parseEmptyState program "" `shouldFailOn` "func f x:Tape x:Sym { print \"\" }"
+            parseEmptyState program "" `shouldFailOn` "proc f x:Tape x:Sym { print \"\" }"
 
         it "fails to parse if a function name is missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func { right tape }"
+            parseEvalState state program "" `shouldFailOn` "proc { right tape }"
 
         it "fails to parse if the first brace is missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func f_name right tape }"
+            parseEvalState state program "" `shouldFailOn` "proc f_name right tape }"
 
         it "fails to parse if the second brace is missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func f_name { right tape"
+            parseEvalState state program "" `shouldFailOn` "proc f_name { right tape"
 
         it "fails to parse if both braces are missing" $ do
-            parseEvalState state program "" `shouldFailOn` "func f_name right tape"
+            parseEvalState state program "" `shouldFailOn` "proc f_name right tape"
 
         it "fails if the same function is declared twice in the same scope" $ do
-            parseEvalState state program "" `shouldFailOn` "func f { left tape } \n func f { left tape }"
+            parseEvalState state program "" `shouldFailOn` "proc f { left tape } \n proc f { left tape }"
 
         it "fails if the function contains no statements" $ do
-            parseEmptyState program "" `shouldFailOn` "func f {}"
+            parseEmptyState program "" `shouldFailOn` "proc f {}"
 
 funcCallSpec :: Spec
 funcCallSpec = do

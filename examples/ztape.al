@@ -15,7 +15,7 @@ struct ZTape {
 // warning    : adds a marker to the current position of the head, which is
 //              assumed to be the start of the tape.
 // complexity : O(n)
-func zinit z:ZTape contents:Tape {
+proc zinit z:ZTape contents:Tape {
     copy_until contents ' ' z.t
 }
 
@@ -24,7 +24,7 @@ func zinit z:ZTape contents:Tape {
 // warning    : assumes the tape has been initialised using `ztape` with a
 //              marker at the start.
 // complexity : O(n)
-func to_zstart z:ZTape {
+proc to_zstart z:ZTape {
     while read z.t != _start_marker {
         left z.t
     }
@@ -32,14 +32,18 @@ func to_zstart z:ZTape {
     right z.t
 }
 
-func zwrite z:ZTape s:Sym {
+proc zwrite z:ZTape s:Sym {
     write z.t s
 }
 
-func zleft z:ZTape {
+proc zleft z:ZTape {
     left z.t
 }
 
-func zright z:ZTape {
+proc zright z:ZTape {
     right z.t
+}
+
+proc zread z:ZTape t:Tape {
+    write z.t t
 }

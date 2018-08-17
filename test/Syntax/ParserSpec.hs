@@ -51,7 +51,7 @@ structDeclSpec = do
             let struct = StructDecl "S" [("x", SymType)]
                 func   = FuncDecl "f" [("s", CustomType "S")] (Print (SymVar ["s", "x"]))
                 comp   = Comp struct func
-            parseEmptyState program "" "struct S { x:Sym }\nfunc f s:S { print s.x }" `shouldParseStm` comp
+            parseEmptyState program "" "struct S { x:Sym }\nproc f s:S { print s.x }" `shouldParseStm` comp
 
         it "does not allow member access without using the dot operator" $ do
             let struct = StructDecl "S" [("x", CustomType "S")]
@@ -76,10 +76,10 @@ varDeclSpec = do
             let decl     = VarDecl "x" (T (TapeLit "x"))
                 func     = FuncDecl "f" [] (VarDecl "x" (T (TapeLit "y")))
                 expected = Comp decl func
-            parseEmptyState program "" "let x = \"x\" \n func f { let x = \"y\" }" `shouldParseStm` expected
+            parseEmptyState program "" "let x = \"x\" \n proc f { let x = \"y\" }" `shouldParseStm` expected
 
         it "resets variable environment after exiting function parse" $ do
-            let s = "let x = 'x' \n func f { let x = 'y' } \n let x = 'z'"
+            let s = "let x = 'x' \n proc f { let x = 'y' } \n let x = 'z'"
             parseEmptyState program ""  `shouldFailOn` s
 
         it "infers type of a variable assigned to another variable" $ do

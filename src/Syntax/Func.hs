@@ -56,7 +56,7 @@ funcArgsBody name stm = do
 --  FuncDecl : 'func' FuncName FuncDeclArgs '{' Stm '}'
 funcDecl :: ParserM Stm -> ParserM Stm
 funcDecl stm = do
-    _ <- lTok "func"
+    _ <- lTok "proc"
     name <- newFuncId
     (args, body) <- block (funcArgsBody name stm)
 

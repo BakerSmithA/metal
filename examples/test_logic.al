@@ -2,8 +2,8 @@ import test
 import logic
 
 // Tests the bin_not function.
-func test_bin_not {
-    func assert_not p:Sym exp:Tape name:Tape {
+proc test_bin_not {
+    proc assert_not p:Sym exp:Tape name:Tape {
         let out = ""
         bin_not p out
         assert_tape_eq out exp name
@@ -14,8 +14,8 @@ func test_bin_not {
 }
 
 // Tests the bin_or function.
-func test_bin_or {
-    func assert_or p:Sym q:Sym exp:Tape name:Tape {
+proc test_bin_or {
+    proc assert_or p:Sym q:Sym exp:Tape name:Tape {
         let out = ""
         bin_or p q out
         assert_tape_eq out exp name
@@ -28,8 +28,8 @@ func test_bin_or {
 }
 
 // Tests bin_and function.
-func test_bin_and {
-    func assert_and p:Sym q:Sym exp:Tape name:Tape {
+proc test_bin_and {
+    proc assert_and p:Sym q:Sym exp:Tape name:Tape {
         let out = ""
         bin_and p q out
         assert_tape_eq out exp name
@@ -42,8 +42,8 @@ func test_bin_and {
 }
 
 // Tests bin_xor function.
-func test_bin_xor {
-    func assert_xor p:Sym q:Sym exp:Tape name:Tape {
+proc test_bin_xor {
+    proc assert_xor p:Sym q:Sym exp:Tape name:Tape {
         let out = ""
         bin_xor p q out
         assert_tape_eq out exp name
@@ -56,8 +56,8 @@ func test_bin_xor {
 }
 
 // Tests the binary half adder.
-func test_bin_half_adder {
-    func assert_adder p:Sym q:Sym exp:Tape name:Tape {
+proc test_bin_half_adder {
+    proc assert_adder p:Sym q:Sym exp:Tape name:Tape {
         let out = ""
         bin_half_adder p q out
         assert_tape_eq out exp name
@@ -70,8 +70,8 @@ func test_bin_half_adder {
 }
 
 // Tests the binary full adder.
-func test_bin_full_adder {
-    func assert_adder p:Sym q:Sym c_in:Sym exp:Tape name:Tape {
+proc test_bin_full_adder {
+    proc assert_adder p:Sym q:Sym c_in:Sym exp:Tape name:Tape {
         let out = ""
         bin_full_adder p q c_in out
         assert_tape_eq out exp name
@@ -88,8 +88,8 @@ func test_bin_full_adder {
 }
 
 // Tests the binary half subtractor.
-func test_bin_half_sub {
-    func assert_sub p:Sym q:Sym exp:Tape name:Tape {
+proc test_bin_half_sub {
+    proc assert_sub p:Sym q:Sym exp:Tape name:Tape {
         let out = ""
         bin_half_sub p q out
         assert_tape_eq out exp name
@@ -102,8 +102,8 @@ func test_bin_half_sub {
 }
 
 // Tests the binary full subtractor.
-func test_bin_full_sub {
-    func assert_sub b_in:Sym y:Sym x:Sym exp:Tape name:Tape {
+proc test_bin_full_sub {
+    proc assert_sub b_in:Sym y:Sym x:Sym exp:Tape name:Tape {
         let out = ""
         bin_full_sub x y b_in out
         assert_tape_eq out exp name

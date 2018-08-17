@@ -1,7 +1,7 @@
 // Binary NOT gate.
 // effect     : computes (not p) and writes the result to the tape t.
 // complexity : O(1)
-func bin_not p:Sym t:Tape {
+proc bin_not p:Sym t:Tape {
     if p == '1' {
         write t '0'
     } else {
@@ -12,7 +12,7 @@ func bin_not p:Sym t:Tape {
 // Binary OR gate.
 // effect     : computes (p or q) and writes the result to the tape t.
 // complexity : O(1)
-func bin_or p:Sym q:Sym t:Tape {
+proc bin_or p:Sym q:Sym t:Tape {
     if p == '1' or q == '1' {
         write t '1'
     } else {
@@ -23,7 +23,7 @@ func bin_or p:Sym q:Sym t:Tape {
 // Binary AND gate.
 // effect     : computes (p and q) and writes the result to the tape t.
 // complexity : O(1)
-func bin_and p:Sym q:Sym t:Tape {
+proc bin_and p:Sym q:Sym t:Tape {
     if p == '1' and q == '1' {
         write t '1'
     } else {
@@ -34,7 +34,7 @@ func bin_and p:Sym q:Sym t:Tape {
 // Binary XOR gate.
 // effect     : computes (p xor q) and writes the result to tape t.
 // complexity : O(1)
-func bin_xor p:Sym q:Sym t:Tape {
+proc bin_xor p:Sym q:Sym t:Tape {
     // Note that 'p XOR q' is equivalent to '(p OR q) AND (NOT(p AND q))'.
     // a = p OR q
     bin_or p q t
@@ -57,7 +57,7 @@ func bin_xor p:Sym q:Sym t:Tape {
 // writes t+1 : the carry bit of p + q
 // complexity : O(1)
 // ref: http  ://www.electronics-tutorials.ws/combination/comb_7.html
-func bin_half_adder p:Sym q:Sym t:Tape {
+proc bin_half_adder p:Sym q:Sym t:Tape {
     // Sum bit = p xor q
     bin_xor p q t
 
@@ -72,7 +72,7 @@ func bin_half_adder p:Sym q:Sym t:Tape {
 // writes t+1 : the carry-out bit of the addition.
 // complexity : O(1)
 // ref        : http://www.electronics-tutorials.ws/combination/comb_7.html
-func bin_full_adder p:Sym q:Sym carry_in:Sym t:Tape {
+proc bin_full_adder p:Sym q:Sym carry_in:Sym t:Tape {
     bin_half_adder p q t
     // ..|sum0|*carry0|..
     let carry0 = read t
@@ -92,7 +92,7 @@ func bin_full_adder p:Sym q:Sym carry_in:Sym t:Tape {
 // writes t+1 : the borrow bit of p - q.
 // complexity : O(1)
 // ref        : https://www.electronics-tutorials.ws/combination/binary-subtractor.html
-func bin_half_sub p:Sym q:Sym t:Tape {
+proc bin_half_sub p:Sym q:Sym t:Tape {
     // Different bit = p xor q
     bin_xor p q t
 
@@ -107,7 +107,7 @@ func bin_half_sub p:Sym q:Sym t:Tape {
 // writes t+1 : the borrow bit of the subtraction.
 // complexity : O(1)
 // ref        : https://www.electronics-tutorials.ws/combination/binary-subtractor.html
-func bin_full_sub p:Sym q:Sym borrow_in:Sym t:Tape {
+proc bin_full_sub p:Sym q:Sym borrow_in:Sym t:Tape {
     bin_half_sub p q t
     // ..|diff0|*borrow0|..
     let borrow0 = read t

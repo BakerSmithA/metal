@@ -1,7 +1,7 @@
 // effect     : copies the contents of in to out until a terminating character is reached.
 // warning    : copying begins from the current position on each tape.
 // complexity : O(n)
-func copy_until in:Tape term:Sym out:Tape {
+proc copy_until in:Tape term:Sym out:Tape {
     while read in != term {
         write out (read in)
         right in
@@ -11,7 +11,7 @@ func copy_until in:Tape term:Sym out:Tape {
 
 // effect     : moves the read-write head to the start of the tape.
 // complexity : O(n)
-func to_start t:Tape {
+proc to_start t:Tape {
     let saved = read t
     // Mark the current position of the head.
     write t '#'

@@ -1,7 +1,7 @@
 import tape
 
 // effect: writes either '0' or '1' to out depending on whether t1 and t2 are equal.
-func eq_tape t1:Tape t2:Tape out:Tape {
+proc eq_tape t1:Tape t2:Tape out:Tape {
     write out '1'
 
     while ((read t1 != ' ') or (read t2 != ' ')) and (read out == '1') {
@@ -14,7 +14,7 @@ func eq_tape t1:Tape t2:Tape out:Tape {
 }
 
 // effect: prints that the test passed or failed.
-func assert_tape actual:Tape expected:Tape result:Tape name:Tape {
+proc assert_tape actual:Tape expected:Tape result:Tape name:Tape {
     if read result == '1' {
         _print "Passed: "
         _print name
@@ -31,7 +31,7 @@ func assert_tape actual:Tape expected:Tape result:Tape name:Tape {
 
 // effect: tests that actual and expected are equal. If not then the message
 //      will be printed.
-func assert_tape_eq actual:Tape expected:Tape name:Tape {
+proc assert_tape_eq actual:Tape expected:Tape name:Tape {
     to_start actual
     to_start expected
 
