@@ -290,7 +290,7 @@ Below is a procedure which takes a tape and a symbol as input. It then writes th
 // write2.al
 import io
 
-func write2 t:Tape s:Sym {
+proc write2 t:Tape s:Sym {
 	write t s
 	right t
 	write t s
@@ -312,7 +312,7 @@ Procedures may also be recursive. For example, the procedure below moves the rea
 ```c
 // zero.al
 
-func zero t:Tape {
+proc zero t:Tape {
     let saved = read t
     // Mark the current position of the head.
     write t '#'
@@ -364,9 +364,9 @@ Procedure need not only exist at the topmost level; they can be nested within ot
 // nested_funcs.al
 import io
 
-func copy_all src:Tape dest:Tape {
+proc copy_all src:Tape dest:Tape {
 	// Copies a single symbol from one tape to the other.
-	func copy_move src:Tape dest:Tape {
+	proc copy_move src:Tape dest:Tape {
 		write dest (read src)
 		right src
 		right dest
@@ -417,7 +417,7 @@ Next, we'll define a procedure which is called when a user of the struct wants t
 
 ```c
 // struct.al (continued)
-func mark t:Tape marks:Marks {
+proc mark t:Tape marks:Marks {
 	// Save the symbol on the tape.
 	write marks.saved (read t)
 	// Move to the next position to avoid overwriting the saved symbol.
@@ -435,7 +435,7 @@ We need another matching procedure which is used to put back used marks and over
 
 ```c
 // struct.al (continued)
-func unmark t:Tape marks:Marks {
+proc unmark t:Tape marks:Marks {
 	// Get the saved symbol and put it back in the tape.
 	left marks.saved
 	write t (read marks.saved)
