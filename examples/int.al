@@ -215,10 +215,13 @@ proc dec x:Int dx:Int {
 // effect:    : writes the binary representation of x*y to r.
 // complexity : O(n^2) where n is the number of bits.
 proc mult x:Int y:Int r:Int {
-    // Copying allows the same object to be used for both operands.
+    // Append 0 to the end of x. This gives the correct number of bits for
+    // multiplication.
     let cx = Int ""
-    let cy = Int ""
-    copy_operands x y cx cy
+    copy_int x cx
+    right_until cx.bin ' '
+    write cx.bin '0'
+    to_start cx.bin
 
     // Used to count y down to zero.
     let count = Int ""
@@ -231,15 +234,11 @@ proc mult x:Int y:Int r:Int {
     let one = Int ""
     set1_same_len y one
 
-    set0_same_len x r
+    set0_same_len cx r
     // Increment r by x, y times
     while (read is_z) == '0' {
         dec count one
-        inc r x
+        inc r cx
         is_zero count is_z
     }
 }
-
-let r = Int ""
-mult (Int "11000") (Int "111000") r
-_print r.bin

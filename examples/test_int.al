@@ -210,7 +210,7 @@ proc test_inc {
 }
 test_inc
 
-// Tests the decrement function, i.e. which perform x-=dx
+// Tests the decrement function, i.e. which performs x-=dx
 proc test_dec {
     proc assert_dec x:Int dx:Int exp:Int name:Tape {
         dec x dx
@@ -222,3 +222,61 @@ proc test_dec {
     assert_dec (Int "1011") (Int "0110") (Int "11100") "1101-=110"
 }
 test_dec
+
+// Tests the binary subtraction of integers.
+proc test_mult {
+    proc assert_mult x:Int y:Int exp:Int name:Tape {
+        let out = Int ""
+        mult x y out
+        assert_int_eq out exp name
+    }
+
+    // Tests basic subtraction of integers with the same number of bits.
+    proc test_same_num_bits {
+        assert_mult (Int "0") (Int "0") (Int "00") "0*0"
+        assert_mult (Int "1") (Int "0") (Int "00") "1*0"
+        assert_mult (Int "1") (Int "1") (Int "10") "1*1"
+        assert_mult (Int "01") (Int "11") (Int "011") "01*11"
+        assert_mult (Int "11") (Int "11") (Int "1001") "11*11"
+    }
+    test_same_num_bits
+
+    // Tests using the same integer as both operands.
+    /*proc test_same_operand {
+        let x = Int ("01")
+        assert_sub x x (Int "0") "Subtracting_same_integer_as_both_operands"
+    }
+    test_same_operand
+
+    // Tests writing to one of the input operands.
+    proc test_same_out {
+        let x = Int "11"
+        sub x (Int "10") x
+        assert_int_eq x (Int "01") "Using_integer_as_input and_output"
+    }
+    test_same_out
+
+    // Tests subtracting when both inputs and the output are the same integer.
+    proc test_all_same_operands {
+        let x = Int "10"
+        sub x x x
+        assert_int_eq x (Int "0") "Using_integer_as_all_inputs_and_output"
+    }
+    test_all_same_operands
+
+    // Tests performing one subtraction followed by another.
+    proc test_multiple_subs {
+        let x = Int "11"
+        let y = Int "10"
+
+        let r1 = Int ""
+        let r2 = Int ""
+
+        sub x y r1
+        sub r1 y r2
+
+        assert_int_eq r2 (Int "1") "Chaining_subtractions"
+    }
+    test_multiple_subs */
+}
+test_mult
