@@ -211,12 +211,6 @@ proc dec x:Int dx:Int {
     sub x dx x
 }
 
-/* proc append_0 x:Int {
-    right_until x.bin ' '
-    write x.bin '0'
-    to_start x.bin
-} */
-
 // Computes r=x*y
 // effect:    : writes the binary representation of x*y to r.
 // complexity : O(n^2) where n is the number of bits.
