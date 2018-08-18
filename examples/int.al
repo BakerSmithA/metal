@@ -166,6 +166,8 @@ proc add x:Int y:Int r:Int {
     copy_operands x y cx cy
 
     r_add cx cy '0' r
+    // Erase last bit to keep the output the same number of bits as input.
+    write r.bin ' '
     // To allow r to be used with other operations later.
     to_start r.bin
 }
@@ -193,6 +195,8 @@ proc sub x:Int y:Int r:Int {
     copy_operands x y cx cy
 
     r_sub cx cy '0' r
+    // Erase last bit to keep the output the same number of bits as input.
+    write r.bin ' '
     // To allow r to be used with other operations later.
     to_start r.bin
 }

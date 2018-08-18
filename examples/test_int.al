@@ -93,16 +93,16 @@ proc test_add {
 
     // Tests basic adding of integers with same number of bits.
     proc test_same_num_bits {
-        assert_add (Int "0") (Int "0") (Int "00") "0+0"
-        assert_add (Int "1") (Int "0") (Int "10") "1+0"
-        assert_add (Int "1011") (Int "0110") (Int "11001") "1101+110"
-        assert_add (Int "101101011") (Int "010101110") (Int "1110100101") "110101101+011101010"
+        assert_add (Int "00") (Int "00") (Int "00") "0+0"
+        assert_add (Int "10") (Int "00") (Int "10") "1+0"
+        assert_add (Int "10110") (Int "01100") (Int "11001") "1101+110"
+        assert_add (Int "1011010110") (Int "0101011100") (Int "1110100101") "110101101+011101010"
     }
     test_same_num_bits
 
     // Tests using the same integer as both operands.
     proc test_same_operand {
-        let x = Int "01"
+        let x = Int "010"
         assert_add x x (Int "001") "Adding_same_integer_as_both_operands"
     }
     test_same_operand
@@ -150,17 +150,17 @@ proc test_sub {
 
     // Tests basic subtraction of integers with the same number of bits.
     proc test_same_num_bits {
-        assert_sub (Int "0") (Int "0") (Int "00") "0-0"
-        assert_sub (Int "1") (Int "0") (Int "10") "1-0"
-        assert_sub (Int "1011") (Int "0110") (Int "11100") "1101-110"
-        assert_sub (Int "101101011") (Int "010101110") (Int "1100001100") "110101101-011101010"
+        assert_sub (Int "00") (Int "00") (Int "00") "0-0"
+        assert_sub (Int "10") (Int "00") (Int "10") "1-0"
+        assert_sub (Int "10110") (Int "01100") (Int "11100") "1101-110"
+        assert_sub (Int "1011010110") (Int "0101011100") (Int "1100001100") "110101101-011101010"
     }
     test_same_num_bits
 
     // Tests using the same integer as both operands.
     proc test_same_operand {
         let x = Int ("01")
-        assert_sub x x (Int "0") "Subtracting_same_integer_as_both_operands"
+        assert_sub x x (Int "00") "Subtracting_same_integer_as_both_operands"
     }
     test_same_operand
 
@@ -176,7 +176,7 @@ proc test_sub {
     proc test_all_same_operands {
         let x = Int "10"
         sub x x x
-        assert_int_eq x (Int "0") "Using_integer_as_all_inputs_and_output"
+        assert_int_eq x (Int "00") "Using_integer_as_all_inputs_and_output"
     }
     test_all_same_operands
 
@@ -191,7 +191,7 @@ proc test_sub {
         sub x y r1
         sub r1 y r2
 
-        assert_int_eq r2 (Int "1") "Chaining_subtractions"
+        assert_int_eq r2 (Int "10") "Chaining_subtractions"
     }
     test_multiple_subs
 }
@@ -204,9 +204,9 @@ proc test_inc {
         assert_int_eq x exp name
     }
 
-    assert_inc (Int "0") (Int "1") (Int "1") "0+=1"
-    assert_inc (Int "1") (Int "1") (Int "01") "1+=1"
-    assert_inc (Int "1011") (Int "0110") (Int "11001") "1+=1"
+    assert_inc (Int "00") (Int "10") (Int "10") "0+=1"
+    assert_inc (Int "10") (Int "10") (Int "01") "1+=1"
+    assert_inc (Int "10110") (Int "01100") (Int "11001") "1+=1"
 }
 test_inc
 
@@ -217,9 +217,9 @@ proc test_dec {
         assert_int_eq x exp name
     }
 
-    assert_dec (Int "1") (Int "0") (Int "1") "1-=0"
-    assert_dec (Int "1") (Int "1") (Int "0") "1-=1"
-    assert_dec (Int "1011") (Int "0110") (Int "11100") "1101-=110"
+    assert_dec (Int "10") (Int "00") (Int "1") "1-=0"
+    assert_dec (Int "10") (Int "10") (Int "0") "1-=1"
+    assert_dec (Int "10110") (Int "01100") (Int "11100") "1101-=110"
 }
 test_dec
 
@@ -233,11 +233,11 @@ proc test_mult {
 
     // Tests basic subtraction of integers with the same number of bits.
     proc test_same_num_bits {
-        assert_mult (Int "0") (Int "0") (Int "00") "0*0"
-        assert_mult (Int "1") (Int "0") (Int "00") "1*0"
-        assert_mult (Int "1") (Int "1") (Int "10") "1*1"
-        assert_mult (Int "01") (Int "11") (Int "011") "01*11"
-        assert_mult (Int "11") (Int "11") (Int "1001") "11*11"
+        assert_mult (Int "00") (Int "00") (Int "00") "0*0"
+        assert_mult (Int "10") (Int "00") (Int "00") "1*0"
+        assert_mult (Int "10") (Int "10") (Int "10") "1*1"
+        assert_mult (Int "010") (Int "110") (Int "011") "01*11"
+        assert_mult (Int "1100") (Int "1100") (Int "1001") "11*11"
     }
     test_same_num_bits
 
