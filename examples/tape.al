@@ -1,5 +1,6 @@
 // effect     : copies the contents of in to out until a terminating character is reached.
 // warning    : copying begins from the current position on each tape.
+// warning    : leaves the head at the point where the first term is read.
 // complexity : O(n)
 proc copy_until in:Tape term:Sym out:Tape {
     while read in != term {
@@ -10,6 +11,7 @@ proc copy_until in:Tape term:Sym out:Tape {
 }
 
 // effect     : moves the read-write head to the start of the tape.
+// warning    : uses '#' as a marking symbol.
 // complexity : O(n)
 proc to_start t:Tape {
     let saved = read t
@@ -37,6 +39,8 @@ proc to_start t:Tape {
     }
 }
 
+// effect     : moves the read-write head right until the term is encountered.
+// complexity : O(n)
 proc right_until t:Tape term:Sym {
     while read t != term {
         right t

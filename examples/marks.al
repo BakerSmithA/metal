@@ -1,3 +1,5 @@
+import tape
+
 // Stores remaining marks, and any symbols that were replaced.
 // To get the next tape symbol use:
 // > let next = read (marks.free)
@@ -6,6 +8,14 @@ struct Marks {
 	free:Tape
 	// Keeps track of symbols that have been overwritten with marks.
 	saved:Tape
+}
+
+// effect     : initialises m to contain the given free symbols. m is given no
+//              saved symbols.
+// complexity : O(1)
+proc init_marks ms:Marks free_syms:Tape {
+    copy_until free_syms ' ' ms.free
+    to_start ms.free
 }
 
 // effect     : marks the tape with the next available symbol.

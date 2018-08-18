@@ -12,6 +12,7 @@ proc test_bin_not {
     assert_not '0' "1" "not 0"
     assert_not '1' "0" "not 1"
 }
+test_bin_not
 
 // Tests the bin_or function.
 proc test_bin_or {
@@ -26,6 +27,7 @@ proc test_bin_or {
     assert_or '1' '0' "1" "1 or 0"
     assert_or '1' '1' "1" "1 or 1"
 }
+test_bin_or
 
 // Tests bin_and function.
 proc test_bin_and {
@@ -40,6 +42,7 @@ proc test_bin_and {
     assert_and '1' '0' "0" "1 and 0"
     assert_and '1' '1' "1" "1 and 1"
 }
+test_bin_and
 
 // Tests bin_xor function.
 proc test_bin_xor {
@@ -54,6 +57,7 @@ proc test_bin_xor {
     assert_xor '1' '0' "1" "1 xor 0"
     assert_xor '1' '1' "0" "1 xor 1"
 }
+test_bin_xor
 
 // Tests the binary half adder.
 proc test_bin_half_adder {
@@ -68,6 +72,7 @@ proc test_bin_half_adder {
     assert_adder '1' '0' "10" "half_adder 1 0"
     assert_adder '1' '1' "01" "half_adder 1 1"
 }
+test_bin_half_adder
 
 // Tests the binary full adder.
 proc test_bin_full_adder {
@@ -86,6 +91,7 @@ proc test_bin_full_adder {
     assert_adder '1' '1' '0' "01" "full_adder 1 1 0"
     assert_adder '1' '1' '1' "11" "full_adder 1 1 1"
 }
+test_bin_full_adder
 
 // Tests the binary half subtractor.
 proc test_bin_half_sub {
@@ -100,6 +106,7 @@ proc test_bin_half_sub {
     assert_sub '1' '0' "10" "half_sub 1 0"
     assert_sub '1' '1' "00" "half_sub 1 1"
 }
+test_bin_half_sub
 
 // Tests the binary full subtractor.
 proc test_bin_full_sub {
@@ -118,12 +125,4 @@ proc test_bin_full_sub {
     assert_sub '1' '1' '0' "01" "full_sub 0 0"
     assert_sub '1' '1' '1' "11" "full_sub 0 0"
 }
-
-test_bin_not
-test_bin_or
-test_bin_and
-test_bin_xor
-test_bin_half_adder
-test_bin_full_adder
-test_bin_half_sub
 test_bin_full_sub
