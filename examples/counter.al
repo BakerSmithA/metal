@@ -14,12 +14,6 @@ proc ctr_start c:Counter {
     to_start c.t
 }
 
-// effect     : decrements the counter by one.
-// complexity : O(1)
-proc ctr_dec c:Counter {
-    right c.t
-}
-
 // effect     : populates r with 0 if the counter is non-zero, and 1 if the
 //              counter is zero.
 // complexity : O(1)
@@ -29,4 +23,12 @@ proc ctr_is_zero c:Counter r:Tape {
     } else {
         write r '0'
     }
+}
+
+// effect     : decrements the counter by one. Also populates r with 0 if the
+//              counter is non-zero, and 1 if the counter is zero.
+// complexity : O(1)
+proc ctr_dec c:Counter r:Tape {
+    right c.t
+    ctr_is_zero c r
 }

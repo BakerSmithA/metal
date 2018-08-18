@@ -24,7 +24,7 @@ proc it_move it:IntTape dir:Sym {
         } else if (dir == 'r') {
             right it.t
         }
-        ctr_dec it.bit_len
+        ctr_dec it.bit_len is_z
     }
 }
 
@@ -45,9 +45,9 @@ proc it_write_0 it:IntTape {
     ctr_is_zero it.bit_len is_z
 
     while (read is_z) == '0' {
-        right it.t
         write it.t '0'
-        ctr_dec it.bit_len
+        right it.t
+        ctr_dec it.bit_len is_z
     }
 }
 
@@ -68,10 +68,81 @@ proc it_right it:IntTape {
 // complexity : O(1)
 proc it_write it:IntTape num:Int {
     copy_int_cnts num it.t
+    // Writing moves to end of int, so need to reset position.
+    it_left it
 }
 
 // effect     : reads the integer at the current position and writes it to r.
 // complexity : O(1)
 proc it_read it:IntTape r:Int {
-    
+    ctr_start it.bit_len
+
+    let is_z = ""
+    ctr_is_zero it.bit_len is_z
+
+    // Temporary storage for integer number.
+    let binary = ""
+
+    while (read is_z) == '0' {
+        write binary (read it.t)
+        right binary
+        right it.t
+
+        ctr_dec it.bit_len is_z
+    }
+
+    // Reading moves to end of int, so need to reset position.
+    it_left it
+
+    // Finally, copy the read binary number into the output integer.
+    to_start binary
+    init_int binary r
 }
+
+let c = Counter "1234"
+//let it = IntTape "" c
+
+struct Test {
+    t:Tape
+}
+
+let it = IntTape "0000" (Counter "1234")
+
+it_right it
+it_write it (Int "0110")
+_print it.t
+
+it_left it
+it_write it (Int "1001")
+_print it.t
+
+let r = Int ""
+it_right it
+it_read it r
+_print r.bin
+
+/* right it.t
+_print it.t
+left it.t
+_print it.t
+
+write it.t 'X'
+_print it.t
+right it.t
+write it.t 'Y'
+_print it.t */
+
+/* it_right it
+_print it.t
+it_left it
+_print it.t
+
+write it.t 'X'
+_print it.t
+right it.t
+write it.t 'Y'
+_print it.t */
+
+/* let x = Int "1111"
+it_write it x
+_print it.t */
