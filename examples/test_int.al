@@ -9,13 +9,21 @@ proc assert_int_eq actual:Int expected:Int name:Tape {
     assert_tape actual.bin expected.bin r name
 }
 
-// Tests setting the value of an integer.
-proc test_set {
-    let num = Int "001"
-    set num (Int "101")
-    assert_int_eq num (Int "101") "Setting_int"
+// Tests setting the raw binary value of an integer.
+proc test_init_int {
+    let num = Int ""
+    init_int "01" num
+    assert_int_eq num (Int "01") "init_int"
 }
-test_set
+test_init_int
+
+// Tests setting the value of an integer.
+proc test_copy_int {
+    let num = Int "001"
+    copy_int (Int "101") num
+    assert_int_eq num (Int "101") "copying_int"
+}
+test_copy_int
 
 // Tests checking whether an integer is zero.
 proc test_is_zero {

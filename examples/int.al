@@ -10,13 +10,32 @@ struct Int {
     bin:Tape
 }
 
-// Sets the value contained in num to the value contained in new.
-// effect     : writes the contents of new to num.
-// complexity : O(n), where n is the number of bits.
-proc set num:Int new:Int {
-    copy_until new.bin ' ' num.bin
-    to_start num.bin
-    to_start new.bin
+// param binary : binary integer where bits are ordered from least to most
+//                significant. E.g. to represent the number 2 in base 10,
+//                you would use "01".
+// effect       : copies the binary integer in t into the integer.
+// warning      : modifies the position of the read-write head of `binary`.
+// complexity   : O(n)
+proc init_int binary:Tape r:Int {
+    copy_until binary ' ' r.bin
+    to_start r.bin
+}
+
+// effect     : copies the contents (binary representation) of the integer to
+//              the given tape t.
+// complexity : O(n)
+proc copy_int_cnts i:Int t:Tape {
+    copy_until i.bin ' ' t
+    to_start i.bin
+}
+
+// Convenience function for copying integers.
+// effect     : copies the contents of in to out. The head of all x is also
+//              placed back at the start.
+// complexity : O(n)
+proc copy_int in:Int out:Int {
+    copy_int_cnts in out.bin
+    to_start out.bin
 }
 
 // Sets new to contain 0, but with the same number of bits as num.
@@ -104,18 +123,6 @@ proc int_eq x:Int y:Int r:Tape {
 
     to_start x.bin
     to_start y.bin
-}
-
-// Convenience function for copying integers.
-// effect     : copies the contents of in to out. The head of all x is also
-//              placed back at the start.
-// complexity : O(n)
-proc copy_int in:Int out:Int {
-    copy_until in.bin ' ' out.bin
-    // Zero both so the tapes are ready to be used in the addition,
-    // subtraction, etc.
-    to_start in.bin
-    to_start out.bin
 }
 
 // Convenience function for copying operands of binary operations.
