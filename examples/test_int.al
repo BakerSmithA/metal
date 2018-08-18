@@ -231,7 +231,7 @@ proc test_mult {
         assert_int_eq out exp name
     }
 
-    // Tests basic subtraction of integers with the same number of bits.
+    // Tests basic multiplication of integers with the same number of bits.
     proc test_same_num_bits {
         assert_mult (Int "00") (Int "00") (Int "00") "0*0"
         assert_mult (Int "10") (Int "00") (Int "00") "1*0"
@@ -242,41 +242,43 @@ proc test_mult {
     test_same_num_bits
 
     // Tests using the same integer as both operands.
-    /*proc test_same_operand {
-        let x = Int ("01")
-        assert_sub x x (Int "0") "Subtracting_same_integer_as_both_operands"
+    proc test_same_operand {
+        let x = Int ("010")
+        assert_mult x x (Int "001") "Mult_same_integer_as_both_operands"
     }
     test_same_operand
 
     // Tests writing to one of the input operands.
     proc test_same_out {
-        let x = Int "11"
-        sub x (Int "10") x
-        assert_int_eq x (Int "01") "Using_integer_as_input and_output"
+        let x = Int "010"
+        mult x (Int "110") x
+        assert_int_eq x (Int "011") "Using_integer_as_input_and_output"
     }
     test_same_out
 
     // Tests subtracting when both inputs and the output are the same integer.
     proc test_all_same_operands {
-        let x = Int "10"
-        sub x x x
-        assert_int_eq x (Int "0") "Using_integer_as_all_inputs_and_output"
+        let x = Int "010"
+        mult x x x
+        assert_int_eq x (Int "001") "Using_integer_as_all_inputs_and_output"
     }
     test_all_same_operands
 
-    // Tests performing one subtraction followed by another.
-    proc test_multiple_subs {
-        let x = Int "11"
-        let y = Int "10"
+    // Tests performing one multiplication followed by another.
+    proc test_multiple_mult {
+        let x = Int "100"
+        let y = Int "010"
 
         let r1 = Int ""
         let r2 = Int ""
 
-        sub x y r1
-        sub r1 y r2
+        // 1 * 2 = 2
+        mult x y r1
+        // 2 * 2 = 4
+        mult r1 y r2
 
-        assert_int_eq r2 (Int "1") "Chaining_subtractions"
+        assert_int_eq r2 (Int "001") "Chaining_mult"
     }
-    test_multiple_subs */
+    test_multiple_mult
 }
 test_mult
