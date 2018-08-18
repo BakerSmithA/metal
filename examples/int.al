@@ -145,6 +145,9 @@ proc right_operands x:Int y:Int {
 
 // Computes r=x+y
 // effect     : writes the binary representation x+y to r.
+// warning    : The length of r is the same as that of x and y. Therefore, the
+//              user of the function must ensure there are enough bits to store
+//              the result.
 // complexity : O(n), where n is the number of bits.
 proc add x:Int y:Int r:Int {
     proc r_add x:Int y:Int c_in:Sym r:Int {
@@ -174,6 +177,9 @@ proc add x:Int y:Int r:Int {
 
 // Computes r=x-y
 // effect     : writes the binary representation of x-y to r.
+// warning    : The length of r is the same as that of x and y. Therefore, the
+//              user of the function must ensure there are enough bits to store
+//              the result.
 // complexity : O(n), where n is the number of bits.
 proc sub x:Int y:Int r:Int {
     proc r_sub x:Int y:Int borr_in:Sym r:Int {
@@ -203,6 +209,9 @@ proc sub x:Int y:Int r:Int {
 
 // Computes x+=dx
 // effect     : writes the binary representation of x+dx to x.
+// warning    : The length of r is the same as that of x. Therefore, the
+//              user of the function must ensure there are enough bits to store
+//              the result.
 // complexity : O(n)
 proc inc x:Int dx:Int {
     add x dx x
@@ -210,6 +219,9 @@ proc inc x:Int dx:Int {
 
 // Computes x-=dx
 // effect     : writes the binary representation of x-dx to x.
+// warning    : The length of r is the same as that of x. Therefore, the
+//              user of the function must ensure there are enough bits to store
+//              the result.
 // complexity : O(n)
 proc dec x:Int dx:Int {
     sub x dx x
@@ -217,6 +229,9 @@ proc dec x:Int dx:Int {
 
 // Computes r=x*y
 // effect:    : writes the binary representation of x*y to r.
+// warning    : The length of r is the same as that of x and y. Therefore, the
+//              user of the function must ensure there are enough bits to store
+//              the result.
 // complexity : O(n^2) where n is the number of bits.
 proc mult x:Int y:Int r:Int {
     // Append 0 to the end of x. This gives the correct number of bits for
