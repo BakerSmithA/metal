@@ -49,11 +49,11 @@ proc interpret_single instrs:Tape it:IntTape {
     } else if tok == '[' {
         // If the byte at the data pointer is zero, then jump forward to
         // the command after the matching ] command.
-        let r = Int ""
-        it_read it r
+        let x = Int ""
+        it_read it x
 
         let is_z = ""
-        is_zero r is_z
+        is_zero x is_z
 
         if read is_z == '1' {
             right_until instrs ']'
@@ -62,14 +62,14 @@ proc interpret_single instrs:Tape it:IntTape {
     } else if tok == ']' {
         // If the byte at the data pointer is nonzero, then jump it back to the
         // command after the matching [ command.
-        let r = Int ""
-        it_read it r
+        let x = Int ""
+        it_read it x
 
         let is_z = ""
-        is_zero r is_z
+        is_zero x is_z
 
         if read is_z == '0' {
-            left_until instrs ']'
+            left_until instrs '['
         }
     }
 }
