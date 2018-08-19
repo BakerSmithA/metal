@@ -46,3 +46,11 @@ proc right_until t:Tape term:Sym {
         right t
     }
 }
+
+// effect     : moves the read-write head left until the term is encountered.
+// complexity : O(n)
+proc left_until t:Tape term:Sym {
+    while read t != term {
+        left t
+    }
+}
