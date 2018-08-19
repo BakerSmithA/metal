@@ -49,8 +49,15 @@ proc it_write_0 it:IntTape {
         right it.t
         ctr_dec it.bit_len is_z
     }
+    it_left it
 }
 
+// effect     : initialises the int tape with the counter, and to contain 0 in
+//              the first cell. The other cells to the right are lazily added.
+// complexity : O(1)
+proc it_init it:IntTape {
+    it_write_0 it
+}
 
 // effect     : moves the read-write head one cell to the right. If the new
 //              position is empty then a new integer is added to the array.
@@ -60,7 +67,6 @@ proc it_right it:IntTape {
 
     if (read it.t) == ' ' {
         it_write_0 it
-        it_left it
     }
 }
 
@@ -98,51 +104,3 @@ proc it_read it:IntTape r:Int {
     to_start binary
     init_int binary r
 }
-
-let c = Counter "1234"
-//let it = IntTape "" c
-
-struct Test {
-    t:Tape
-}
-
-let it = IntTape "0000" (Counter "1234")
-
-it_right it
-it_write it (Int "0110")
-_print it.t
-
-it_left it
-it_write it (Int "1001")
-_print it.t
-
-let r = Int ""
-it_right it
-it_read it r
-_print r.bin
-
-/* right it.t
-_print it.t
-left it.t
-_print it.t
-
-write it.t 'X'
-_print it.t
-right it.t
-write it.t 'Y'
-_print it.t */
-
-/* it_right it
-_print it.t
-it_left it
-_print it.t
-
-write it.t 'X'
-_print it.t
-right it.t
-write it.t 'Y'
-_print it.t */
-
-/* let x = Int "1111"
-it_write it x
-_print it.t */

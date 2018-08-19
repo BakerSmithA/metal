@@ -2,7 +2,7 @@ import test
 import int
 
 // effect: tests that actual and expected are equal. If not then the message
-//      will be printed.
+//         will be printed.
 proc assert_int_eq actual:Int expected:Int name:Tape {
     let r = ""
     int_eq actual expected r
