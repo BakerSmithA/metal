@@ -1,16 +1,5 @@
 import tape
-
-proc unsafe_print_all t:Tape {
-    while (read t) != ' ' {
-        print (read t)
-        right t
-    }
-}
-
-proc unsafe_print_all_start t:Tape {
-    to_start t
-    unsafe_print_all t
-}
+import io
 
 // effect: writes either '0' or '1' to out depending on whether t1 and t2 are equal.
 proc eq_tape t1:Tape t2:Tape out:Tape {

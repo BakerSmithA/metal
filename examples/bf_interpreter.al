@@ -41,8 +41,10 @@ proc interpret_single instrs:Tape it:IntTape {
         it_write it r
 
     } else if tok == '.' {
-        print 'X'
-        // TODO: output current num
+        let r = Int ""
+        it_read it r
+        int_print r
+        println
 
     } else if tok == '[' {
         // If the byte at the data pointer is zero, then jump forward to
@@ -82,7 +84,7 @@ proc interpret instrs:Tape {
         interpret_single instrs it
         right instrs
     }
-    
+
     _print it.t
 }
 

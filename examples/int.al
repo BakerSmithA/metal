@@ -1,3 +1,4 @@
+import io
 import logic
 import tape
 
@@ -8,6 +9,13 @@ import tape
 struct Int {
     // Binary representation of the number.
     bin:Tape
+}
+
+// effect     : prints the binary representation of the integer.
+// complexity : O(n)
+proc int_print i:Int {
+    unsafe_print_all i.bin
+    to_start i.bin
 }
 
 // param binary : binary integer where bits are ordered from least to most
