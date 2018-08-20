@@ -232,6 +232,16 @@ proc inc x:Int dx:Int {
     add x dx x
 }
 
+// Computes x+=1
+// effect     : writes the binary representation of x+1 to x
+// complexity : O(n)
+proc inc_by_1 x:Int {
+    let one = Int ""
+    set1_same_len x one
+
+    inc x one
+}
+
 // Computes x-=dx
 // effect     : writes the binary representation of x-dx to x.
 // warning    : The length of r is the same as that of x. Therefore, the
@@ -240,6 +250,16 @@ proc inc x:Int dx:Int {
 // complexity : O(n)
 proc dec x:Int dx:Int {
     sub x dx x
+}
+
+// Computes x-=1
+// effect     : writes the binary representation of x-1 to x.
+// complexity : O(n)
+proc dec_by_1 x:Int {
+    let one = Int ""
+    set1_same_len x one
+
+    dec x one
 }
 
 // Computes r=x*y

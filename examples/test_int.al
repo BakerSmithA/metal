@@ -212,11 +212,25 @@ proc test_inc {
         assert_int_eq x exp name
     }
 
-    assert_inc (Int "00") (Int "10") (Int "10") "0+=1"
-    assert_inc (Int "10") (Int "10") (Int "01") "1+=1"
-    assert_inc (Int "10110") (Int "01100") (Int "11001") "1+=1"
+    assert_inc (Int "00") (Int "01") (Int "01") "1+=1"
+    assert_inc (Int "10") (Int "01") (Int "11") "01+=1"
+    assert_inc (Int "10110") (Int "01100") (Int "11001") "10110+=01100"
 }
 test_inc
+
+// Tests incrementing by one, i.e. x+=1
+proc test_inc_by_1 {
+    proc assert_inc_by_1 x:Int exp:Int name:Tape {
+        inc_by_1 x
+        assert_int_eq x exp name
+    }
+
+    assert_inc_by_1 (Int "00") (Int "10") "0+=1"
+    assert_inc_by_1 (Int "110") (Int "001") "11+=1"
+    assert_inc_by_1 (Int "110") (Int "001") "11+=1"
+    assert_inc_by_1 (Int "10110") (Int "01110") "10110+=1"
+}
+test_inc_by_1
 
 // Tests the decrement function, i.e. which performs x-=dx
 proc test_dec {
@@ -230,6 +244,19 @@ proc test_dec {
     assert_dec (Int "10110") (Int "01100") (Int "11100") "1101-=110"
 }
 test_dec
+
+// Tests decrementing by one, i.e. x-=1
+proc test_dec_by_1 {
+    proc assert_dec_by_1 x:Int exp:Int name:Tape {
+        dec_by_1 x
+        assert_int_eq x exp name
+    }
+
+    assert_dec_by_1 (Int "10") (Int "00") "10-=1"
+    assert_dec_by_1 (Int "001") (Int "110") "001-=1"
+    assert_dec_by_1 (Int "01110") (Int "10110") "01110-=1"
+}
+test_dec_by_1
 
 // Tests the binary subtraction of integers.
 proc test_mult {

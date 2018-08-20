@@ -3,15 +3,6 @@ import tape
 import int
 import array_int
 
-// effect     : reads the current integer into r. Also creates a new int
-//              with the value 1 which contains the same number of bits as
-//              the read value.
-// complexity : O(1)
-proc read_one it:IntTape r:Int one:Int {
-    it_read it r
-    set1_same_len r one
-}
-
 // effect : interprets the current command on the tape.
 proc interpret_single instrs:Tape it:IntTape {
     let tok = read instrs
@@ -24,20 +15,14 @@ proc interpret_single instrs:Tape it:IntTape {
 
     } else if tok == '+' {
         let r = Int ""
-        let one = Int ""
-        read_one it r one
-
-        inc r one
-
+        it_read it r
+        inc_by_1 r
         it_write it r
 
     } else if tok == '-' {
         let r = Int ""
-        let one = Int ""
-        read_one it r one
-
-        dec r one
-
+        it_read it r
+        dec_by_1 r
         it_write it r
 
     } else if tok == '.' {
