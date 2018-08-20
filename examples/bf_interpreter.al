@@ -1,7 +1,7 @@
 // Brainfuck langauge interpreter.
 import tape
 import int
-import array_int
+import int_tape
 import ascii
 import io
 

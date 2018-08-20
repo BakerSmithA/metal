@@ -1,4 +1,4 @@
-import array_int
+import int_tape
 import test
 
 // effect : tests that actual and expected are equal. If not then the message
