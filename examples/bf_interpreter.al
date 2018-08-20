@@ -86,8 +86,4 @@ proc interpret instrs:Tape bit_len:Counter should_print:Sym out:Tape {
 }
 
 let out = ""
-interpret main (Counter "1234") '1' out
-
-to_start out
-println
-unsafe_print_all out
+interpret main (Counter "12345678") '1' ""

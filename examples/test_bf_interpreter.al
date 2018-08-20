@@ -11,5 +11,6 @@ proc test_interpreter {
 
     assert_inter "" "" "nothing"
     assert_inter "++++++++++++++++++++++++++++++++++++++++++++++++.+.+.+.+.+." "012345" "incrementing"
+    assert_inter "++++++[->++++++++++++<]>.----[--<+++>]<-.+++++++..+++.[--->+<]>-----.--" "Hello" "Hello"
 }
 test_interpreter
