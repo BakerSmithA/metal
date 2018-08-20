@@ -317,3 +317,18 @@ proc test_mult {
     test_multiple_mult
 }
 test_mult
+
+// Tests moving along a tape by the given number of steps.
+proc test_right_by {
+    proc assert_right_by i:Int exp:Sym name:Tape {
+        let t = "abcd"
+        right_by i t
+        assert_sym_eq (read t) exp name
+    }
+
+    assert_right_by (Int "00") 'a' "right_by_0"
+    assert_right_by (Int "10") 'b' "right_by_1"
+    assert_right_by (Int "01") 'c' "right_by_2"
+    assert_right_by (Int "11") 'd' "right_by_3"
+}
+test_right_by

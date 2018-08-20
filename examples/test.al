@@ -46,3 +46,14 @@ proc assert_tape_eq actual:Tape expected:Tape name:Tape {
     eq_tape actual expected result
     assert_tape actual expected result name
 }
+
+// effect: tests that the two symbols are equal.
+proc assert_sym_eq actual:Sym expected:Sym name:Tape {
+    let actual_t = ""
+    write actual_t actual
+
+    let expected_t = ""
+    write expected_t expected
+
+    assert_tape_eq actual_t expected_t name
+}

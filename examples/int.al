@@ -262,6 +262,14 @@ proc dec_by_1 x:Int {
     dec x one
 }
 
+// Computes x-=1, and populates is_z with whether x is zero.
+// effect     : writes x-=1 to x, and populates r with whether x is zero.
+// complexity : O(n)
+proc check_dec_by_1 x:Int is_z:Tape {
+    dec_by_1 x
+    is_zero x is_z
+}
+
 // Computes r=x*y
 // effect:    : writes the binary representation of x*y to r.
 // warning    : The length of r is the same as that of x and y. Therefore, the
@@ -291,8 +299,23 @@ proc mult x:Int y:Int r:Int {
     set0_same_len cx r
     // Increment r by x, y times
     while (read is_z) == '0' {
-        dec count one
+        check_dec_by_1 count is_z
         inc r cx
-        is_zero count is_z
+    }
+}
+
+// effect     : moves the read-write head right by the given number of steps.
+// complexity : O(n)
+proc right_by i:Int t:Tape {
+    let ci = Int ""
+    copy_int i ci
+
+    // Decrement i until zero is reached, i.e. the location in the array.
+    let is_z = ""
+    is_zero ci is_z
+
+    while read is_z == '0' {
+        check_dec_by_1 ci is_z
+        right t
     }
 }
