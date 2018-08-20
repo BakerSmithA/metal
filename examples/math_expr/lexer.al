@@ -49,6 +49,9 @@ proc try_consume_num input:Tape tok:Tok {
         }
 
         to_start tok.val
+        
+    } else {
+        right input
     }
 }
 
