@@ -9,10 +9,6 @@ import io
 proc interpret_single instrs:Tape it:IntTape should_print:Sym out:Tape {
     let tok = read instrs
 
-    /* unsafe_print_all "TOK: "
-    print tok
-    println */
-
     if tok == '>' {
         it_right it
 
