@@ -5,7 +5,7 @@ import ../io
 let whitespace_tok_type = ' '
 let bin_op_tok_type = '_'
 let num_tok_type = 'n'
-let eof_tok_type = '#'
+let eof_tok_type = '.'
 
 struct Tok {
     type:Tape
@@ -49,7 +49,7 @@ proc try_consume_num input:Tape tok:Tok {
         }
 
         to_start tok.val
-        
+
     } else {
         right input
     }
@@ -72,7 +72,7 @@ proc consume input:Tape tok:Tok {
             set_tok_type tok bin_op_tok_type
             write tok.val next_char
 
-        } else if next_char == '#' {
+        } else if next_char == '.' {
             set_tok_type tok eof_tok_type
 
         } else {

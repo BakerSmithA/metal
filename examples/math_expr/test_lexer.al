@@ -23,7 +23,7 @@ proc test_consume_makes_token {
     assert_consume "+" bin_op_tok_type "+" "plus"
     assert_consume "-" bin_op_tok_type "-" "minus"
     assert_consume "1234" num_tok_type "1234" "number"
-    assert_consume "#" eof_tok_type "" "eof"
+    assert_consume "." eof_tok_type "" "eof"
     assert_consume "   +" bin_op_tok_type "+" "skips_whitespace"
     assert_consume "abc+" bin_op_tok_type "+" "ignores unknown"
 
