@@ -3,10 +3,15 @@ import tape
 import int
 import array_int
 import ascii
+import io
 
-// effect : interprets the current command on the tape.
-proc interpret_single instrs:Tape it:IntTape {
+// effect : interprets the current command on the tape. Writes an output to out.
+proc interpret_single instrs:Tape it:IntTape should_print:Sym out:Tape {
     let tok = read instrs
+
+    /* unsafe_print_all "TOK: "
+    print tok
+    println */
 
     if tok == '>' {
         it_right it
@@ -33,7 +38,12 @@ proc interpret_single instrs:Tape it:IntTape {
         let char = ""
         int_to_ascii x char
 
-        print (read char)
+        if should_print == '1' {
+            print (read char)
+        }
+
+        write out (read char)
+        right out
 
     } else if tok == '[' {
         // If the byte at the data pointer is zero, then jump forward to
@@ -64,19 +74,20 @@ proc interpret_single instrs:Tape it:IntTape {
 }
 
 // effect : interprets the brainfuck instructions until there are no
-//          instructions remaining.
-proc interpret instrs:Tape bit_len:Counter {
+//          instructions remaining. Writes the output to out.
+proc interpret instrs:Tape bit_len:Counter should_print:Sym out:Tape {
     let it = IntTape "" bit_len
     it_init it
 
     while read instrs != ' ' {
-        interpret_single instrs it
+        interpret_single instrs it should_print out
         right instrs
-
-        _print it.t
     }
-
-    /* _print it.t */
 }
 
-interpret main (Counter "12345678")
+let out = ""
+interpret main (Counter "1234") '1' out
+
+to_start out
+println
+unsafe_print_all out

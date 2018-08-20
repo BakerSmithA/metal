@@ -158,6 +158,19 @@ proc right_operands x:Int y:Int {
     right y.bin
 }
 
+proc r_add x:Int y:Int c_in:Sym r:Int {
+    let p = read x.bin
+    let q = read y.bin
+
+    if p != ' ' and q != ' ' {
+        bin_full_adder p q c_in r.bin
+        // Read the carry bit from the tape to be used the next time add is called.
+        let new_cin = read r.bin
+        right_operands x y
+        r_add x y new_cin r
+    }
+}
+
 // Computes r=x+y
 // effect     : writes the binary representation x+y to r.
 // warning    : The length of r is the same as that of x and y. Therefore, the
@@ -165,19 +178,6 @@ proc right_operands x:Int y:Int {
 //              the result.
 // complexity : O(n), where n is the number of bits.
 proc add x:Int y:Int r:Int {
-    proc r_add x:Int y:Int c_in:Sym r:Int {
-        let p = read x.bin
-        let q = read y.bin
-
-        if p != ' ' and q != ' ' {
-            bin_full_adder p q c_in r.bin
-            // Read the carry bit from the tape to be used the next time add is called.
-            let new_cin = read r.bin
-            right_operands x y
-            r_add x y new_cin r
-        }
-    }
-
     // Copying allows the same object to be used for both operands.
     let cx = Int ""
     let cy = Int ""
@@ -190,6 +190,19 @@ proc add x:Int y:Int r:Int {
     to_start r.bin
 }
 
+proc r_sub x:Int y:Int borr_in:Sym r:Int {
+    let p = read x.bin
+    let q = read y.bin
+
+    if p != ' ' and q != ' ' {
+        bin_full_sub p q borr_in r.bin
+        // Read the carry bit from the tape to be used the next time add is called.
+        let new_borr_in = read r.bin
+        right_operands x y
+        r_sub x y new_borr_in r
+    }
+}
+
 // Computes r=x-y
 // effect     : writes the binary representation of x-y to r.
 // warning    : The length of r is the same as that of x and y. Therefore, the
@@ -197,19 +210,6 @@ proc add x:Int y:Int r:Int {
 //              the result.
 // complexity : O(n), where n is the number of bits.
 proc sub x:Int y:Int r:Int {
-    proc r_sub x:Int y:Int borr_in:Sym r:Int {
-        let p = read x.bin
-        let q = read y.bin
-
-        if p != ' ' and q != ' ' {
-            bin_full_sub p q borr_in r.bin
-            // Read the carry bit from the tape to be used the next time add is called.
-            let new_borr_in = read r.bin
-            right_operands x y
-            r_sub x y new_borr_in r
-        }
-    }
-
     // Copying allows the same object to be used for both operands.
     let cx = Int ""
     let cy = Int ""
