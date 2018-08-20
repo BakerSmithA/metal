@@ -2,6 +2,7 @@
 import tape
 import int
 import array_int
+import ascii
 
 // effect : interprets the current command on the tape.
 proc interpret_single instrs:Tape it:IntTape {
@@ -26,10 +27,13 @@ proc interpret_single instrs:Tape it:IntTape {
         it_write it r
 
     } else if tok == '.' {
-        let r = Int ""
-        it_read it r
-        int_print r
-        println
+        let x = Int ""
+        it_read it x
+
+        let char = ""
+        int_to_ascii x char
+
+        print (read char)
 
     } else if tok == '[' {
         // If the byte at the data pointer is zero, then jump forward to
@@ -61,16 +65,18 @@ proc interpret_single instrs:Tape it:IntTape {
 
 // effect : interprets the brainfuck instructions until there are no
 //          instructions remaining.
-proc interpret instrs:Tape {
-    let it = IntTape "" (Counter "1234")
+proc interpret instrs:Tape bit_len:Counter {
+    let it = IntTape "" bit_len
     it_init it
 
     while read instrs != ' ' {
         interpret_single instrs it
         right instrs
+
+        _print it.t
     }
 
-    _print it.t
+    /* _print it.t */
 }
 
-interpret main
+interpret main (Counter "12345678")

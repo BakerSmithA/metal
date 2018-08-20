@@ -306,7 +306,7 @@ proc mult x:Int y:Int r:Int {
 
 // effect     : moves the read-write head right by the given number of steps.
 // complexity : O(n)
-proc right_by i:Int t:Tape {
+proc right_by t:Tape i:Int {
     let ci = Int ""
     copy_int i ci
 

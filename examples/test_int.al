@@ -145,6 +145,12 @@ proc test_add {
         assert_int_eq r2 (Int "11") "Chaining_additions"
     }
     test_multiple_adds
+
+    // Tests addition overflows.
+    proc test_overflow {
+        assert_add (Int "11") (Int "10") (Int "00") "1+1_overflows"
+    }
+    test_overflow
 }
 test_add
 
@@ -202,6 +208,13 @@ proc test_sub {
         assert_int_eq r2 (Int "10") "Chaining_subtractions"
     }
     test_multiple_subs
+
+    // Tests the integer underflows.
+    proc test_underflows {
+        assert_sub (Int "00") (Int "10") (Int "11") "0-1_underflows"
+    }
+
+    test_underflows
 }
 test_sub
 
@@ -322,7 +335,7 @@ test_mult
 proc test_right_by {
     proc assert_right_by i:Int exp:Sym name:Tape {
         let t = "abcd"
-        right_by i t
+        right_by t i
         assert_sym_eq (read t) exp name
     }
 
