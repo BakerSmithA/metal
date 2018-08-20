@@ -29,6 +29,7 @@ proc to_start t:Tape {
             // This is the base case of the function.
             write t saved
 
+            // Break out of the loop.
             write at_start '1'
 
         } else {
