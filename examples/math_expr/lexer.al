@@ -1,15 +1,29 @@
 import ../ascii
 import ../tape
+import ../io
 
 let whitespace_tok_type = ' '
-let plus_tok_type = '+'
-let minus_tok_type = '-'
+let bin_op_tok_type = '_'
 let num_tok_type = 'n'
 let eof_tok_type = '#'
 
 struct Tok {
     type:Tape
     val:Tape
+}
+
+proc print_tok tok:Tok {
+    unsafe_print_all "Type:"
+    unsafe_print_all tok.type
+    println
+    to_start tok.type
+
+    if read tok.val != ' ' {
+        unsafe_print_all "Val:"
+        unsafe_print_all tok.val
+        println
+        to_start tok.val
+    }
 }
 
 // effect     : sets the type of the token, e.g. whitespace.
@@ -51,11 +65,9 @@ proc consume input:Tape tok:Tok {
         if next_char == ' ' {
             set_tok_type tok whitespace_tok_type
 
-        } else if next_char == '+' {
-            set_tok_type tok plus_tok_type
-
-        } else if next_char == '-' {
-            set_tok_type tok minus_tok_type
+        } else if next_char == '+' or next_char == '-' {
+            set_tok_type tok bin_op_tok_type
+            write tok.val next_char
 
         } else if next_char == '#' {
             set_tok_type tok eof_tok_type

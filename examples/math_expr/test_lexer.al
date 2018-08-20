@@ -20,17 +20,11 @@ proc test_consume_makes_token {
         assert_tape_eq actual.val expected.val val_name
     }
 
-    assert_consume "+" plus_tok_type "" "plus"
-    assert_consume "-" minus_tok_type "" "minus"
+    assert_consume "+" bin_op_tok_type "+" "plus"
+    assert_consume "-" bin_op_tok_type "-" "minus"
     assert_consume "1234" num_tok_type "1234" "number"
     assert_consume "#" eof_tok_type "" "eof"
-    assert_consume "   +" plus_tok_type "" "skips_whitespace"
+    assert_consume "   +" bin_op_tok_type "+" "skips_whitespace"
 
 }
 test_consume_makes_token
-
-// Tests consuming input moves the read-write head of the input.
-/* proc test_consume_moves_head {
-
-}
-test_consume_moves_head */
