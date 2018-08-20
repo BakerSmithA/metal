@@ -158,6 +158,7 @@ proc right_operands x:Int y:Int {
     right y.bin
 }
 
+// Private function for addition.
 proc r_add x:Int y:Int c_in:Sym r:Int {
     let p = read x.bin
     let q = read y.bin
@@ -190,6 +191,7 @@ proc add x:Int y:Int r:Int {
     to_start r.bin
 }
 
+// Private function for subtraction.
 proc r_sub x:Int y:Int borr_in:Sym r:Int {
     let p = read x.bin
     let q = read y.bin
