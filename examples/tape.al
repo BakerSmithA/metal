@@ -59,3 +59,21 @@ proc left_until t:Tape term:Sym {
         left t
     }
 }
+
+
+// effect     : appends end onto the end of start.
+// warning    : leaves the read-write of both tapes at their starts.
+// complexity : O(n)
+proc append start:Tape end:Tape {
+    right_until start ' '
+    to_start end
+
+    while read end != ' ' {
+        write start (read end)
+        right start
+        right end
+    }
+
+    to_start start
+    to_start end
+}
