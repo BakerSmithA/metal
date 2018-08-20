@@ -1,6 +1,6 @@
-[![CircleCI](https://circleci.com/gh/BakerSmithA/metal.svg?style=svg)](https://circleci.com/gh/BakerSmithA/metal)
-
 # Metal
+
+[![CircleCI](https://circleci.com/gh/BakerSmithA/metal.svg?style=svg)](https://circleci.com/gh/BakerSmithA/metal)
 
 Metal is a programming language used to describe the function of a Turing machine. This means you're not given a lot of help to do what would normally be essential parts of a language, such as maths. However, since the language is Turing complete any possible computation can still be performed, even with a limited toolset.
 
