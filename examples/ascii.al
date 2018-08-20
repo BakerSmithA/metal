@@ -12,3 +12,13 @@ proc int_to_ascii i:Int r:Tape {
     right_by ascii i_new
     write r (read ascii)
 }
+
+// effect     : writes '1' to r if s is a digit, '0' otherwise.
+// complexity : O(1)
+proc ascii_is_digit s:Sym r:Tape {
+    if s == '0' or s == '1' or s == '2' or s == '3' or s == '4' or s == '5' or s == '6' or s == '7' or s == '8' or s == '9' {
+        write r '1'
+    } else {
+        write r '0'
+    }
+}
