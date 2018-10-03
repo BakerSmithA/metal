@@ -15,6 +15,8 @@ Our first program will be the classic "Hello World" message. Here's the full sou
 
 ```c
 // hello_world.al
+
+// IO module can be found in the 'examples' directory of this repo. 
 import io
 
 print_all "Hello World!"
