@@ -296,7 +296,7 @@ proc write2 t:Tape s:Sym {
 	write t s
 }
 
-write_right main 'c'
+write2 main 'c'
 
 print_all main
 ```
