@@ -261,7 +261,7 @@ $ metal scope.al
 b
 ```
 
-# While
+# Looping
 While loops are Metal's only looping structure. It is executed until the loop condition becomes false. The same scoping rules that apply to if-statements also apply to while-statements.
 
 The program below shows how to print the character before the first `'a'`.
