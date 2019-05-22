@@ -3,10 +3,10 @@ import lexer
 
 // effect : prints an error message to the screen.
 proc err_expected expected:Tape actual:Tok {
-    unsafe_print_all "Expected:"
-    unsafe_print_all expected
+    print_all "Expected:"
+    print_all expected
     println
-    unsafe_print_all "Got:"
+    print_all "Got:"
     println
     print_tok actual
 }
@@ -17,7 +17,7 @@ proc term input:Tape {
     consume input tok
 
     if read tok.type == num_tok_type {
-        unsafe_print_all tok.val
+        print_all tok.val
         to_start tok.val
 
     } else {
